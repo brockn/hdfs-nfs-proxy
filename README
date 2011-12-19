@@ -1,0 +1,53 @@
+ == How to use ==
+
+1) mkdir /mnt/hdfs
+
+2) Add this entry to /etc/fstab
+localhost:/   /mnt/hdfs   nfs4       rowintr,timeo=20,proto=tcp,port=2050      0 0
+
+3) Ensure you have maven installed and hadoop command configured
+with *-site.xml pointing at the namenode
+
+4) mvn package && ./start-nfs-server.sh
+
+Which will build, test, and then startup the HDFS NFS Proxy.
+
+5) Mount hdfs
+
+sudo mount /mnt/hdfs
+
+6) You should now be able to access HDFS.
+
+The script ./start-nfs-client-tests.sh runs basic tests.
+
+ == What is not implemented ==
+
+* Kerberos
+* Appends
+* Attributes dropped when mounting from Mac:
+
+Reccomended:
+14 archive
+25 hidden
+49 timebackup
+55 mounted on fileid
+
+ == What needs improvement ==
+
+* User Mapping
+NFS4 User identities are user@domain. However, the RPC protocol uses UID/GID.
+Currently we map the UID on the incoming request via the system we are currently on.
+I think there is something in Hadoop which does user mapping as well. If so, it might
+make sense to be consistent.
+* Client ID - RFC 3530 (NFS4) has fairly complex logic which I do not follow.
+* Read Ordering
+At present we get a fair number of threads blocked on reads of a single input stream.
+I think we could get better performance if we ordered these like writes because we
+know they will arrive out of order. As such the current impl is doing more seeks
+than required. We also might considering pooling input streams.
+*Write Ordering
+We buffer writes until we find the prereq, this memory consumption is not bounded.
+* DirectoryEntry.getWireSize needs to be fixed, it is gross.
+* Response Cache, when I changed to async execution of requests, I introduced
+a race condition into the response cache. This shouldn't be a huge issue
+as the RFC reccomends a response cache but does not require it.

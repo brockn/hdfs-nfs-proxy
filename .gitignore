@@ -1,0 +1,16 @@
+nfserver.out
+bin/
+/.project
+/.settings
+/.classpath
+/.externalToolBuilders
+/build
+/.idea/
+/logs
+/target
+*.iml
+*.orig
+*~
+conf-home
+conf-road
+conf
