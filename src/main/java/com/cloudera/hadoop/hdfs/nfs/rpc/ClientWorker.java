@@ -14,6 +14,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +31,7 @@ class ClientWorker extends Thread {
   protected static final long RETRANSMIT_PENALTY_TIME = 1000L;
   protected static final long TOO_MANY_PENDING_REQUESTS_PAUSE = 1000L;
   protected static final long EXECUTOR_THREAD_POOL_FULL_PAUSE = 1000L;
-  protected int mMaxPendingRequests = 20;
+  protected int mRestransmitPenaltyThresdhold, mMaxPendingRequests;
   protected Socket mClient;
   protected String mClientName;
   protected OutputStreamHandler mOutputHandler;
@@ -41,13 +42,15 @@ class ClientWorker extends Thread {
   protected long mRetransmists = 0L;
   protected ExecutorService mExecutor;  
   protected String mSessionID;
-
-  
+  protected Configuration mConfiguration;   
   protected static final AtomicInteger SESSIONID = new AtomicInteger(Integer.MAX_VALUE);
-  public ClientWorker(RPCHandler handler, ExecutorService executor, 
+  
+  
+  public ClientWorker(Configuration conf, RPCHandler handler, ExecutorService executor, 
       ConcurrentHashMap<Socket, ClientWorker> clients, 
       Map<Integer, MessageBase> responseCache, 
       Set<Integer> requestsInProgress, Socket client) {
+    mConfiguration = conf;
     mHandler = handler;
     mExecutor = executor;
     mClients = clients;
@@ -57,7 +60,11 @@ class ClientWorker extends Thread {
     mClientName = mClient.getInetAddress().getCanonicalHostName() + ":" + mClient.getPort();
     mSessionID = "0x" + Integer.toHexString(SESSIONID.addAndGet(-5));
     setName("RPCServer-" + mClientName);
+    
+    mMaxPendingRequests = mConfiguration.getInt(RPC_MAX_PENDING_REQUESTS, 20);
+    mRestransmitPenaltyThresdhold = mConfiguration.getInt(RPC_RETRANSMIT_PENALTY_THRESHOLD, 3);
   }
+  
   public void run() {
     InputStream in = null;
     OutputStream out = null;
@@ -74,7 +81,7 @@ class ClientWorker extends Thread {
         // request is used to indicate if we should send
         // a failure packet in case of an error
         request = null;
-        if(mRetransmists >= RETRANSMIT_PENALTY_THRESHOLD) {
+        if(mRetransmists >= mRestransmitPenaltyThresdhold) {
           mRetransmists = 0L;
           mHandler.incrementMetric("RETRANSMIT_PENALTY_BOX", 1);
           Thread.sleep(RETRANSMIT_PENALTY_TIME);

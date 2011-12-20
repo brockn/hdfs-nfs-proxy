@@ -63,7 +63,7 @@ public class RPCServer extends Thread {
         Socket client = mServer.accept();
         LOGGER.info(mHandler.getClass() + " got client " + client.getInetAddress().getCanonicalHostName());
 
-        ClientWorker worker = new ClientWorker(mHandler, mExecutor, mClients, mResponseCache, mRequestsInProgress, client);
+        ClientWorker worker = new ClientWorker(mConfiguration, mHandler, mExecutor, mClients, mResponseCache, mRequestsInProgress, client);
         mClients.put(client, worker);
         worker.start();
       }
