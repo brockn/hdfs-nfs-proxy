@@ -17,6 +17,7 @@ class OutputStreamHandler extends Thread {
   public OutputStreamHandler(OutputStream outputStream, String client) {
     mOutputStream = outputStream;
     mClientName = client;
+    setName("OutputStreamHandler-" + mClientName);
   }
   public void close() {
     this.interrupt();

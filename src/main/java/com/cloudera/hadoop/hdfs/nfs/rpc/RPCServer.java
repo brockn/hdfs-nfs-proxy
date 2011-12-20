@@ -6,6 +6,7 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
-import com.google.common.collect.Sets;
 
 // TODO fix handler generic situation
 @SuppressWarnings("rawtypes")
@@ -32,7 +32,7 @@ public class RPCServer extends Thread {
   protected Configuration mConfiguration;
   protected Map<Integer, MessageBase> mResponseCache = 
     Collections.synchronizedMap(new LRUCache<Integer,MessageBase>(500));
-  protected Set<Integer> mRequestsInProgress = Sets.newHashSet();
+  protected Set<Integer> mRequestsInProgress = Collections.synchronizedSet(new HashSet<Integer>());
   protected ExecutorService mExecutor;
   
   
@@ -49,7 +49,8 @@ public class RPCServer extends Thread {
     mServer = new ServerSocket(mPort);
     // if port is 0, we are supposed to find a port
     // mPort should then be set to the port we found
-    mPort = mServer.getLocalPort();    
+    mPort = mServer.getLocalPort();
+    setName("RPCServer-" + mHandler.getClass().getSimpleName() + "-" + mPort);
   }
   
   public void run() {

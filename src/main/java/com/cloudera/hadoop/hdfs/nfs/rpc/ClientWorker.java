@@ -28,6 +28,9 @@ class ClientWorker extends Thread {
   protected static final Logger LOGGER = LoggerFactory.getLogger(ClientWorker.class);
   protected static final long RETRANSMIT_PENALTY_THRESHOLD = 3L;
   protected static final long RETRANSMIT_PENALTY_TIME = 1000L;
+  protected static final long TOO_MANY_PENDING_REQUESTS_PAUSE = 1000L;
+  protected static final long EXECUTOR_THREAD_POOL_FULL_PAUSE = 1000L;
+  protected int mMaxPendingRequests = 20;
   protected Socket mClient;
   protected String mClientName;
   protected OutputStreamHandler mOutputHandler;
@@ -73,10 +76,17 @@ class ClientWorker extends Thread {
         request = null;
         if(mRetransmists >= RETRANSMIT_PENALTY_THRESHOLD) {
           mRetransmists = 0L;
+          mHandler.incrementMetric("RETRANSMIT_PENALTY_BOX", 1);
           Thread.sleep(RETRANSMIT_PENALTY_TIME);
-          LOGGER.warn(mSessionID + " Client " + mClientName + " is going in the penalty box");
+          LOGGER.warn(mSessionID + " Client " + mClientName + " is going in the penalty box (SLOWDOWN)");
         }        
         mRetransmists = mRetransmists > 0 ? mRetransmists : 0;
+        
+        while(mRequestsInProgress.size() > mMaxPendingRequests) {
+          mHandler.incrementMetric("TOO_MANY_PENDING_REQUESTS", 1);
+          LOGGER.warn(mSessionID + " Client " + mClientName + " is waiting for pending requests to finish (SLOWDOWN)");
+          Thread.sleep(TOO_MANY_PENDING_REQUESTS_PAUSE);
+        }
         
         RPCBuffer requestBuffer = RPCBuffer.from(in);
         mHandler.incrementMetric("CLIENT_BYTES_READ", requestBuffer.length());
@@ -115,6 +125,7 @@ class ClientWorker extends Thread {
           synchronized (mRequestsInProgress) {
             if(mRequestsInProgress.contains(request.getXid())) {
               mRetransmists++;
+              mHandler.incrementMetric("RESTRANMITS", 1);
             } else {
               mRetransmists--;
               mRequestsInProgress.add(request.getXid());
@@ -176,7 +187,6 @@ class ClientWorker extends Thread {
   protected Map<Integer, MessageBase> getResponseCache() {
     return mResponseCache;
   }
-  
   public Set<Integer> getRequestsInProgress() {
     return mRequestsInProgress;
   }
@@ -187,8 +197,9 @@ class ClientWorker extends Thread {
         mExecutor.execute(task);
         break;
       } catch(RejectedExecutionException ex) {
+        mHandler.incrementMetric("THREAD_POOL_FULL", 1);
         LOGGER.warn("Task rejected, thread pool at max capacity: " + task.mClientName + " " + task.mSessionID);
-        Thread.sleep(10L);
+        Thread.sleep(EXECUTOR_THREAD_POOL_FULL_PAUSE);
       }
     }
   }
@@ -251,10 +262,7 @@ class ClientWorker extends Thread {
           LOGGER.error(mSessionID + " Error writing failure packet", x);
         }
       } finally {
-        synchronized (requestsInProgress) {
-          requestsInProgress.remove(mRequest.getXid());
-          requestsInProgress.notifyAll();
-        }
+        requestsInProgress.remove(mRequest.getXid());
       }
     }
   }
