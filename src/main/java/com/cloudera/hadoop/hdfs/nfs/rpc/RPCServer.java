@@ -21,13 +21,11 @@ import org.slf4j.LoggerFactory;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 import com.google.common.collect.Maps;
 
-// TODO fix handler generic situation
-@SuppressWarnings("rawtypes")
-public class RPCServer extends Thread {
+public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase> extends Thread {
   protected static final Logger LOGGER = LoggerFactory.getLogger(RPCServer.class);
   
-  protected RPCHandler mHandler;
-  protected ConcurrentMap<Socket, ClientWorker> mClients = Maps.newConcurrentMap();
+  protected RPCHandler<REQUEST, RESPONSE> mHandler;
+  protected ConcurrentMap<Socket, ClientWorker<REQUEST, RESPONSE>> mClients = Maps.newConcurrentMap();
   protected int mPort;
   protected ServerSocket mServer;
   protected Configuration mConfiguration;
@@ -37,11 +35,11 @@ public class RPCServer extends Thread {
   protected ExecutorService mExecutor;
   
   
-  public RPCServer(RPCHandler rpcHandler, Configuration conf) throws Exception {
+  public RPCServer(RPCHandler<REQUEST, RESPONSE> rpcHandler, Configuration conf) throws Exception {
     this(rpcHandler, conf, 0);
   }
   
-  public RPCServer(RPCHandler rpcHandler, Configuration conf, int port) throws Exception {
+  public RPCServer(RPCHandler<REQUEST, RESPONSE> rpcHandler, Configuration conf, int port) throws Exception {
     mExecutor = Executors.newFixedThreadPool(conf.getInt(RPC_MAX_THREADS, 50));
     
     mHandler = rpcHandler;
@@ -64,7 +62,7 @@ public class RPCServer extends Thread {
         Socket client = mServer.accept();
         LOGGER.info(mHandler.getClass() + " got client " + client.getInetAddress().getCanonicalHostName());
 
-        ClientWorker worker = new ClientWorker(mConfiguration, this, mHandler, client);
+        ClientWorker<REQUEST, RESPONSE> worker = new ClientWorker<REQUEST, RESPONSE>(mConfiguration, this, mHandler, client);
         mClients.put(client, worker);
         worker.start();
       }
@@ -73,7 +71,7 @@ public class RPCServer extends Thread {
     } finally {
       // first close clients
       for(Socket client : mClients.keySet()) {
-        ClientWorker worker = mClients.get(client);
+        ClientWorker<REQUEST, RESPONSE> worker = mClients.get(client);
         if(worker != null && worker.isAlive()) {
           worker.interrupt();
         }
@@ -97,7 +95,7 @@ public class RPCServer extends Thread {
     return mRequestsInProgress;
   }
   
-  public ConcurrentMap<Socket, ClientWorker> getClients() {
+  public ConcurrentMap<Socket, ClientWorker<REQUEST, RESPONSE>> getClients() {
     return mClients;
   }
   public ExecutorService getExecutorService() {

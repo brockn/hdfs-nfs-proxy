@@ -24,7 +24,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.RequiresCredentials;
 import com.cloudera.hadoop.hdfs.nfs.security.AuthenticatedCredentials;
 
 @SuppressWarnings("rawtypes")
-class ClientWorker extends Thread {
+class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> extends Thread {
   protected static final Logger LOGGER = LoggerFactory.getLogger(ClientWorker.class);
   protected static final long RETRANSMIT_PENALTY_THRESHOLD = 3L;
   protected static final long RETRANSMIT_PENALTY_TIME = 1000L;
@@ -33,7 +33,7 @@ class ClientWorker extends Thread {
   protected int mRestransmitPenaltyThresdhold, mMaxPendingRequests;
   protected Socket mClient;
   protected String mClientName;
-  protected RPCServer mRPCServer;
+  protected RPCServer<REQUEST, RESPONSE> mRPCServer;
   
   protected OutputStreamHandler mOutputHandler;
   protected RPCHandler mHandler;
@@ -43,7 +43,7 @@ class ClientWorker extends Thread {
   protected static final AtomicInteger SESSIONID = new AtomicInteger(Integer.MAX_VALUE);
   
   
-  public ClientWorker(Configuration conf, RPCServer server, RPCHandler handler, Socket client) {
+  public ClientWorker(Configuration conf, RPCServer<REQUEST, RESPONSE> server, RPCHandler handler, Socket client) {
     mConfiguration = conf;
     mRPCServer = server;
     mHandler = handler;
@@ -155,7 +155,7 @@ class ClientWorker extends Thread {
         mOutputHandler.close();
       }
       IOUtils.closeSocket(mClient);
-      Map<Socket, ClientWorker> clients = mRPCServer.getClients();
+      Map<Socket, ClientWorker<REQUEST, RESPONSE>> clients = mRPCServer.getClients();
       clients.remove(mClient);
     }
   }
