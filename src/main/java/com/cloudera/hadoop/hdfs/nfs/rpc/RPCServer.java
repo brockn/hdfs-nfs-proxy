@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
+import com.google.common.collect.Maps;
 
 // TODO fix handler generic situation
 @SuppressWarnings("rawtypes")
@@ -26,7 +27,7 @@ public class RPCServer extends Thread {
   protected static final Logger LOGGER = LoggerFactory.getLogger(RPCServer.class);
   
   protected RPCHandler mHandler;
-  protected ConcurrentHashMap<Socket, ClientWorker> mClients = new ConcurrentHashMap<Socket, ClientWorker>();
+  protected ConcurrentMap<Socket, ClientWorker> mClients = Maps.newConcurrentMap();
   protected int mPort;
   protected ServerSocket mServer;
   protected Configuration mConfiguration;
@@ -63,7 +64,7 @@ public class RPCServer extends Thread {
         Socket client = mServer.accept();
         LOGGER.info(mHandler.getClass() + " got client " + client.getInetAddress().getCanonicalHostName());
 
-        ClientWorker worker = new ClientWorker(mConfiguration, mHandler, mExecutor, mClients, mResponseCache, mRequestsInProgress, client);
+        ClientWorker worker = new ClientWorker(mConfiguration, this, mHandler, client);
         mClients.put(client, worker);
         worker.start();
       }
@@ -89,4 +90,18 @@ public class RPCServer extends Thread {
   public int getPort() {
     return mPort;
   }
+  protected Map<Integer, MessageBase> getResponseCache() {
+    return mResponseCache;
+  }
+  public Set<Integer> getRequestsInProgress() {
+    return mRequestsInProgress;
+  }
+  
+  public ConcurrentMap<Socket, ClientWorker> getClients() {
+    return mClients;
+  }
+  public ExecutorService getExecutorService() {
+    return mExecutor;
+  }
+
 }

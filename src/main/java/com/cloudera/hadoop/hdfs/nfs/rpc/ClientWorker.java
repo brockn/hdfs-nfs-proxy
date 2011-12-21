@@ -9,7 +9,6 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,28 +33,20 @@ class ClientWorker extends Thread {
   protected int mRestransmitPenaltyThresdhold, mMaxPendingRequests;
   protected Socket mClient;
   protected String mClientName;
+  protected RPCServer mRPCServer;
+  
   protected OutputStreamHandler mOutputHandler;
   protected RPCHandler mHandler;
-  protected ConcurrentHashMap<Socket, ClientWorker> mClients;
-  protected Map<Integer, MessageBase> mResponseCache;
-  protected Set<Integer> mRequestsInProgress;
   protected long mRetransmists = 0L;
-  protected ExecutorService mExecutor;  
   protected String mSessionID;
   protected Configuration mConfiguration;   
   protected static final AtomicInteger SESSIONID = new AtomicInteger(Integer.MAX_VALUE);
   
   
-  public ClientWorker(Configuration conf, RPCHandler handler, ExecutorService executor, 
-      ConcurrentHashMap<Socket, ClientWorker> clients, 
-      Map<Integer, MessageBase> responseCache, 
-      Set<Integer> requestsInProgress, Socket client) {
+  public ClientWorker(Configuration conf, RPCServer server, RPCHandler handler, Socket client) {
     mConfiguration = conf;
+    mRPCServer = server;
     mHandler = handler;
-    mExecutor = executor;
-    mClients = clients;
-    mResponseCache = responseCache;
-    mRequestsInProgress = requestsInProgress;
     mClient = client;
     mClientName = mClient.getInetAddress().getCanonicalHostName() + ":" + mClient.getPort();
     mSessionID = "0x" + Integer.toHexString(SESSIONID.addAndGet(-5));
@@ -89,7 +80,7 @@ class ClientWorker extends Thread {
         }        
         mRetransmists = mRetransmists > 0 ? mRetransmists : 0;
         
-        while(mRequestsInProgress.size() > mMaxPendingRequests) {
+        while(getRequestsInProgress().size() > mMaxPendingRequests) {
           mHandler.incrementMetric("TOO_MANY_PENDING_REQUESTS", 1);
           LOGGER.warn(mSessionID + " Client " + mClientName + " is waiting for pending requests to finish (SLOWDOWN)");
           Thread.sleep(TOO_MANY_PENDING_REQUESTS_PAUSE);
@@ -129,13 +120,14 @@ class ClientWorker extends Thread {
           if(LOGGER.isDebugEnabled()) {
             LOGGER.debug(mSessionID + " Handling NFS Compound for " + mClientName);
           }
-          synchronized (mRequestsInProgress) {
-            if(mRequestsInProgress.contains(request.getXid())) {
+          Set<Integer> requestsInProgress = getRequestsInProgress();
+          synchronized (requestsInProgress) {
+            if(requestsInProgress.contains(request.getXid())) {
               mRetransmists++;
               mHandler.incrementMetric("RESTRANMITS", 1);
             } else {
               mRetransmists--;
-              mRequestsInProgress.add(request.getXid());
+              requestsInProgress.add(request.getXid());
               ClientTask task = new ClientTask(mClientName, mSessionID, this, mHandler,  request, requestBuffer);
               this.schedule(task);
             }
@@ -163,7 +155,8 @@ class ClientWorker extends Thread {
         mOutputHandler.close();
       }
       IOUtils.closeSocket(mClient);
-      mClients.remove(mClient);
+      Map<Socket, ClientWorker> clients = mRPCServer.getClients();
+      clients.remove(mClient);
     }
   }
   protected void writeApplicationResponse(int xid, MessageBase applicationResponse) throws IOException {
@@ -192,16 +185,17 @@ class ClientWorker extends Thread {
   }
   
   protected Map<Integer, MessageBase> getResponseCache() {
-    return mResponseCache;
+    return mRPCServer.getResponseCache();
   }
   public Set<Integer> getRequestsInProgress() {
-    return mRequestsInProgress;
+    return mRPCServer.getRequestsInProgress();
   }
   
   public void schedule(ClientTask task) throws InterruptedException {
+    ExecutorService executorServer = mRPCServer.getExecutorService();
     while(true) {
       try {
-        mExecutor.execute(task);
+        executorServer.execute(task);
         break;
       } catch(RejectedExecutionException ex) {
         mHandler.incrementMetric("THREAD_POOL_FULL", 1);
