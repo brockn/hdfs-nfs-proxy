@@ -17,6 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+// take from hbase
 package com.cloudera.hadoop.hdfs.nfs;
 import java.io.DataInput;
 import java.io.DataOutput;
