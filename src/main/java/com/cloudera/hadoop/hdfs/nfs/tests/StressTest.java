@@ -29,8 +29,8 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class StressTest {
-  public void runCreateThenRead(int threads, final int files, final int length, final int randomReads) throws Exception {
-    final File nfsRoot = new File("/mnt/hdfs/tmp/nfs-test");
+  public void runCreateThenRead(String name, int threads, final int files, final int length, final int randomReads) throws Exception {
+    final File nfsRoot = new File(name);
     nfsRoot.mkdirs();
     final AtomicInteger threadsAlive = new AtomicInteger(threads); 
     for (int i = 0; i < threads; i++) {
@@ -100,8 +100,9 @@ public class StressTest {
     
   public static void main(String[] args) throws Exception {
     StressTest test = new StressTest();
+    String name = args[0];
     while(true) {
-      test.runCreateThenRead(2, 10, 1024 * 1024, 100);
+      test.runCreateThenRead(name, 2, 10, 1024 * 1024, 100);
     }
   }
 
