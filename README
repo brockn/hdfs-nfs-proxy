@@ -25,12 +25,11 @@ The script ./start-nfs-client-tests.sh runs basic tests.
 * Kerberos
 * Appends
 * Attributes dropped when mounting from Mac:
-
-Reccomended:
-14 archive
-25 hidden
-49 timebackup
-55 mounted on fileid
+    Reccomended:
+    14 archive
+    25 hidden
+    49 timebackup
+    55 mounted on fileid
 
  == What needs improvement ==
 
@@ -45,9 +44,9 @@ At present we get a fair number of threads blocked on reads of a single input st
 I think we could get better performance if we ordered these like writes because we
 know they will arrive out of order. As such the current impl is doing more seeks
 than required. We also might considering pooling input streams.
+* Heavy read loads require a TON of gc
 *Write Ordering
 We buffer writes until we find the prereq, this memory consumption is not bounded.
 * DirectoryEntry.getWireSize needs to be fixed, it is gross.
-* Response Cache, when I changed to async execution of requests, I introduced
-a race condition into the response cache. This shouldn't be a huge issue
-as the RFC reccomends a response cache but does not require it.
+* Use Hadoop metrics insteead of simple MetricsPrinter
+* Persist file handles and client ids to disk (zookeeper?)
