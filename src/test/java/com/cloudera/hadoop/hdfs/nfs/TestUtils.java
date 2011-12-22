@@ -14,13 +14,13 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCPacket;
 import com.cloudera.hadoop.hdfs.nfs.security.AuthenticatedCredentials;
-import com.cloudera.hadoop.hdfs.nfs.security.CredentialsUnix;
+import com.cloudera.hadoop.hdfs.nfs.security.CredentialsSystem;
 
 public class TestUtils {
   protected static final Logger LOGGER = LoggerFactory.getLogger(TestUtils.class);
 
   public static AuthenticatedCredentials newCredentials() {
-    CredentialsUnix creds = new CredentialsUnix();
+    CredentialsSystem creds = new CredentialsSystem();
     creds.setUID(0);
     creds.setGID(0);
     creds.setAuxGIDs(new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10});

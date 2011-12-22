@@ -6,9 +6,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cloudera.hadoop.hdfs.nfs.security.Credentials;
-import com.cloudera.hadoop.hdfs.nfs.security.CredentialsNull;
-import com.cloudera.hadoop.hdfs.nfs.security.CredentialsUnix;
+import com.cloudera.hadoop.hdfs.nfs.security.CredentialsNone;
+import com.cloudera.hadoop.hdfs.nfs.security.CredentialsSystem;
 
+/**
+ * Represents an RPC Request as defined by the RPC RFC.
+ */
 public class RPCRequest extends RPCPacket {
   
   protected static final Logger LOGGER = LoggerFactory.getLogger(RPCRequest.class);
@@ -49,9 +52,9 @@ public class RPCRequest extends RPCPacket {
     mProcedure = buffer.readUint32();
     mCredentialsFlavor = buffer.readInt();
     if(mCredentialsFlavor == RPC_AUTH_NULL) {
-      mCredentials = new CredentialsNull(); 
+      mCredentials = new CredentialsNone(); 
     } else if(mCredentialsFlavor == RPC_AUTH_UNIX) {
-      mCredentials = new CredentialsUnix(); 
+      mCredentials = new CredentialsSystem(); 
     } else {
       throw new UnsupportedOperationException("Unsupported Credentials Flavor " + mCredentialsFlavor);
     }    

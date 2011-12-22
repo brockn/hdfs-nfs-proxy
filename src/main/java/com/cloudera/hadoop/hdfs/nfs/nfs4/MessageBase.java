@@ -7,9 +7,9 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
  * deconstructed (read) from left to right. Wrapper by 
  * wrapper.
  * 
- * RPC.readPart() -> NFS.readPart() -> NFS Data.readPart()
+ * RPC.read() -> NFS.read() -> NFS Data.read()
  * 
- * As such, we use the readPart method as we processing
+ * As such, we use the read method as we processing
  * the message. Each layer down in the stack is responsible
  * for reading it's portion of the message.
  * 
@@ -18,15 +18,7 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
  * 
  * RPC.write() -> NFS.write() -> NFS Data.write()
  * 
- * In our implementation the ApplicationMessage is the
- * unit we pass around. It will first all super.write(buffer)
- * to serialized the RPC portion, write itself out, and then
- * serialized any data it may have. 
- * 
- * This ApplicationMessage could be request/response but
- * is always for NFS/Mountd/PortMap/etc
- * 
- * Right before sending the message we call 
+ * Before sending the message we call 
  * RPCBuffer.writeBufferSize to update the size of the 
  * buffer we which is bytes 1-7 in our case.
  */

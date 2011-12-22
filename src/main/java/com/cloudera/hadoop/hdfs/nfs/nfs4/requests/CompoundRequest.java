@@ -33,7 +33,7 @@ public class CompoundRequest implements MessageBase, RequiresCredentials {
     for (int i = 0; i < count; i++) {
       int id = buffer.readUint32();
       if(OperationFactory.isSupported(id)) {
-        ops.add(OperationFactory.parseRequest(buffer, id));        
+        ops.add(OperationFactory.parseRequest(id, buffer));        
       } else {
         LOGGER.warn("Dropping request with id " + id + ": " + ops);
         throw new UnsupportedOperationException("NFS ID " + id);

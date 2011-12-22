@@ -75,11 +75,11 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.google.common.collect.ImmutableMap;
 
 public class OperationFactory {
-  protected static class Wrapper {
+  protected static class Holder {
     Class<? extends OperationRequest> requestClazz;
     Class<? extends OperationResponse> responseClazz;
     OperationRequestHandler<? extends OperationRequest, ? extends OperationResponse> handler;
-    public Wrapper(
+    public Holder(
         Class<? extends OperationRequest> requestClazz,
         Class<? extends OperationResponse> responseClazz,
         OperationRequestHandler<? extends OperationRequest, ? extends OperationResponse> handler) {
@@ -88,38 +88,46 @@ public class OperationFactory {
       this.handler = handler;
     }
   }
-  protected static ImmutableMap<Integer, Wrapper> operations = ImmutableMap.<Integer, Wrapper>builder()
-      .put(NFS4_OP_ACCESS, new Wrapper(ACCESSRequest.class, ACCESSResponse.class, new ACCESSHandler()))
-      .put(NFS4_OP_CLOSE, new Wrapper(CLOSERequest.class, CLOSEResponse.class, new CLOSEHandler()))
-      .put(NFS4_OP_CREATE, new Wrapper(CREATERequest.class, CREATEResponse.class, new CREATEHandler()))
-      .put(NFS4_OP_COMMIT, new Wrapper(COMMITRequest.class, COMMITResponse.class, new COMMITHandler()))
-      .put(NFS4_OP_GETATTR, new Wrapper(GETATTRRequest.class, GETATTRResponse.class, new GETATTRHandler()))
-      .put(NFS4_OP_GETFH, new Wrapper(GETFHRequest.class, GETFHResponse.class, new GETFHHandler()))
-      .put(NFS4_OP_LOOKUP, new Wrapper(LOOKUPRequest.class, LOOKUPResponse.class, new LOOKUPHandler()))
-      .put(NFS4_OP_OPEN, new Wrapper(OPENRequest.class, OPENResponse.class, new OPENHandler()))
-      .put(NFS4_OP_OPEN_CONFIRM, new Wrapper(OPENCONFIRMRequest.class, OPENCONFIRMResponse.class, new OPENCONFIRMHandler()))
-      .put(NFS4_OP_READ, new Wrapper(READRequest.class, READResponse.class, new READHandler()))
-      .put(NFS4_OP_REMOVE, new Wrapper(REMOVERequest.class, REMOVEResponse.class, new REMOVEHandler()))
-      .put(NFS4_OP_RENAME, new Wrapper(RENAMERequest.class, RENAMEResponse.class, new RENAMEHandler()))
-      .put(NFS4_OP_RENEW, new Wrapper(RENEWRequest.class, RENEWResponse.class, new RENEWHandler()))
-      .put(NFS4_OP_READDIR, new Wrapper(READDIRRequest.class, READDIRResponse.class, new READDIRHandler()))
-      .put(NFS4_OP_RESTOREFH, new Wrapper(RESTOREFHRequest.class, RESTOREFHResponse.class, new RESTOREFHHandler()))
-      .put(NFS4_OP_SETATTR, new Wrapper(SETATTRRequest.class, SETATTRResponse.class, new SETATTRHandler()))
-      .put(NFS4_OP_SAVEFH, new Wrapper(SAVEFHRequest.class, SAVEFHResponse.class, new SAVEFHHandler()))
-      .put(NFS4_OP_PUTROOTFH, new Wrapper(PUTROOTFHRequest.class, PUTROOTFHResponse.class, new PUTROOTFHHandler()))
-      .put(NFS4_OP_PUTFH, new Wrapper(PUTFHRequest.class, PUTFHResponse.class, new PUTFHHandler()))
-      .put(NFS4_OP_SETCLIENTID, new Wrapper(SETCLIENTIDRequest.class, SETCLIENTIDResponse.class, new SETCLIENTIDHandler()))
-      .put(NFS4_OP_SETCLIENTID_CONFIRM, new Wrapper(SETCLIENTIDCONFIRMRequest.class, SETCLIENTIDCONFIRMResponse.class, new SETCLIENTIDCONFIRMHandler()))
-      .put(NFS4_OP_WRITE, new Wrapper(WRITERequest.class, WRITEResponse.class, new WRITEHandler()))
+  protected static ImmutableMap<Integer, Holder> operations = ImmutableMap.<Integer, Holder>builder()
+      .put(NFS4_OP_ACCESS, new Holder(ACCESSRequest.class, ACCESSResponse.class, new ACCESSHandler()))
+      .put(NFS4_OP_CLOSE, new Holder(CLOSERequest.class, CLOSEResponse.class, new CLOSEHandler()))
+      .put(NFS4_OP_CREATE, new Holder(CREATERequest.class, CREATEResponse.class, new CREATEHandler()))
+      .put(NFS4_OP_COMMIT, new Holder(COMMITRequest.class, COMMITResponse.class, new COMMITHandler()))
+      .put(NFS4_OP_GETATTR, new Holder(GETATTRRequest.class, GETATTRResponse.class, new GETATTRHandler()))
+      .put(NFS4_OP_GETFH, new Holder(GETFHRequest.class, GETFHResponse.class, new GETFHHandler()))
+      .put(NFS4_OP_LOOKUP, new Holder(LOOKUPRequest.class, LOOKUPResponse.class, new LOOKUPHandler()))
+      .put(NFS4_OP_OPEN, new Holder(OPENRequest.class, OPENResponse.class, new OPENHandler()))
+      .put(NFS4_OP_OPEN_CONFIRM, new Holder(OPENCONFIRMRequest.class, OPENCONFIRMResponse.class, new OPENCONFIRMHandler()))
+      .put(NFS4_OP_READ, new Holder(READRequest.class, READResponse.class, new READHandler()))
+      .put(NFS4_OP_REMOVE, new Holder(REMOVERequest.class, REMOVEResponse.class, new REMOVEHandler()))
+      .put(NFS4_OP_RENAME, new Holder(RENAMERequest.class, RENAMEResponse.class, new RENAMEHandler()))
+      .put(NFS4_OP_RENEW, new Holder(RENEWRequest.class, RENEWResponse.class, new RENEWHandler()))
+      .put(NFS4_OP_READDIR, new Holder(READDIRRequest.class, READDIRResponse.class, new READDIRHandler()))
+      .put(NFS4_OP_RESTOREFH, new Holder(RESTOREFHRequest.class, RESTOREFHResponse.class, new RESTOREFHHandler()))
+      .put(NFS4_OP_SETATTR, new Holder(SETATTRRequest.class, SETATTRResponse.class, new SETATTRHandler()))
+      .put(NFS4_OP_SAVEFH, new Holder(SAVEFHRequest.class, SAVEFHResponse.class, new SAVEFHHandler()))
+      .put(NFS4_OP_PUTROOTFH, new Holder(PUTROOTFHRequest.class, PUTROOTFHResponse.class, new PUTROOTFHHandler()))
+      .put(NFS4_OP_PUTFH, new Holder(PUTFHRequest.class, PUTFHResponse.class, new PUTFHHandler()))
+      .put(NFS4_OP_SETCLIENTID, new Holder(SETCLIENTIDRequest.class, SETCLIENTIDResponse.class, new SETCLIENTIDHandler()))
+      .put(NFS4_OP_SETCLIENTID_CONFIRM, new Holder(SETCLIENTIDCONFIRMRequest.class, SETCLIENTIDCONFIRMResponse.class, new SETCLIENTIDCONFIRMHandler()))
+      .put(NFS4_OP_WRITE, new Holder(WRITERequest.class, WRITEResponse.class, new WRITEHandler()))
       .build();
       
-    
+    /**
+     * To be used only for testing, push request into the backing map.
+     * @param id of new identifier
+     * @param clazz represents new request type
+     */
     public static void register(int id, Class<? extends OperationRequest> clazz) {
-      operations = ImmutableMap.<Integer, Wrapper>builder()
+      operations = ImmutableMap.<Integer, Holder>builder()
       .putAll(operations)
-      .put(id, new Wrapper(clazz, null, null))
+      .put(id, new Holder(clazz, null, null))
       .build();
-    }  
+    }
+    /**
+     * @param id
+     * @return true if id is a supported operation
+     */
     public static boolean isSupported(int id) {
       return operations.containsKey(id);
     }
@@ -128,7 +136,13 @@ public class OperationFactory {
         throw new UnsupportedOperationException("NFS Operation " + id);
       }      
     }
-    public static OperationRequest parseRequest(RPCBuffer buffer, int id) {
+    /**
+     * Parse a request identified by id from buffer into a NFS specific operation request.
+     * @param buffer to read request from
+     * @param id of request
+     * @return Operation Request associated with id
+     */
+    public static OperationRequest parseRequest(int id, RPCBuffer buffer) {
       checkSupported(id);
       try {
         OperationRequest operation = operations.get(id).requestClazz.newInstance();
@@ -141,15 +155,13 @@ public class OperationFactory {
       }
     }
     
-    @SuppressWarnings("unchecked")
-    public static <IN extends OperationRequest, OUT extends OperationResponse> OperationRequestHandler<IN, OUT> getHandler(int id) {
-      checkSupported(id);
-      return (OperationRequestHandler<IN, OUT>) operations.get(id).handler;
-    }
-
-    
-    
-    public static OperationResponse parseResponse(RPCBuffer buffer, int id) {
+    /**
+     * Parse a response identified by id from buffer into a NFS specific operation response.
+     * @param buffer to read response from
+     * @param id of request
+     * @return Operation Response associated with id
+     */
+    public static OperationResponse parseResponse(int id, RPCBuffer buffer) {
       checkSupported(id);
       try {
         OperationResponse operation = operations.get(id).responseClazz.newInstance();
@@ -161,4 +173,16 @@ public class OperationFactory {
         throw new RuntimeException(e);
       }
     }
+    
+    /**
+     * Get the stateless handler for for a specific request type.
+     * @param id
+     * @return a stateless handler for which accepts this request type
+     */
+    @SuppressWarnings("unchecked")
+    public static <IN extends OperationRequest, OUT extends OperationResponse> OperationRequestHandler<IN, OUT> getHandler(int id) {
+      checkSupported(id);
+      return (OperationRequestHandler<IN, OUT>) operations.get(id).handler;
+    }
+
 }

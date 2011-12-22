@@ -6,6 +6,9 @@ import java.util.Arrays;
 
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
+/**
+ * Represents a specific number of opaque bytes
+ */
 public class OpaqueData implements MessageBase {
 
   public OpaqueData(int size) {

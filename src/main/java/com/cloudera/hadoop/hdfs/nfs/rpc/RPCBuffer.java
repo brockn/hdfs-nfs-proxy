@@ -6,6 +6,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +18,13 @@ import org.slf4j.LoggerFactory;
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
 
 
-
+/**
+ * Class implements the basic RPC protocol. We do not have unsigned 
+ * integers in java so we wrap those calls in signed int/long but 
+ * check to make sure they have not rolled, throwing exception if
+ * they have. This works for now, if we find that the signed space
+ * is not large enough, we might have to handle this differently.
+ */
 public class RPCBuffer  {
   protected static final Logger LOGGER = LoggerFactory.getLogger(RPCBuffer.class);
   
@@ -26,7 +33,13 @@ public class RPCBuffer  {
    * thus if a write is not, we need to pad it
    */
   protected static final int XDR_UNIT_SIZE = 4;
+  /**
+   * In RPC terms this is the last `packet' for this RPC all.
+   */
   protected static final int RPC_LAST_FRAGEMANT = 0x80000000;
+  /**
+   * Remaining bits are the size.
+   */
   protected static final int RPC_SIZE_MASK = 0x7fffffff;
   protected static final int DEFAULT_BUFFER_SIZE = 1024;
     
@@ -136,6 +149,10 @@ public class RPCBuffer  {
     }
     return value == 1;
   }
+  /**
+   * Read a 4 byte integer and then that number of bytes.
+   * @return
+   */
   public byte[] readBytes() {
     return readBytes(readUint32());
   }
@@ -158,9 +175,19 @@ public class RPCBuffer  {
     align();
     return value;
   }
+  /**
+   * Read a 4 byte integer length and associated
+   * bytes converting the bytes to a String.
+   * @return
+   */
   public String readString() {
     byte[] bytes = readBytes();
-    String s = new String(bytes);
+    String s;
+    try {
+      s = new String(bytes, "UTF-8");
+    } catch (UnsupportedEncodingException e) {
+      throw new RuntimeException(e);
+    }
     return s;
   }
   public int readUint32() {
@@ -180,12 +207,24 @@ public class RPCBuffer  {
   public int position() {
     return mBuffer.position();
   }
+  /**
+   * XDR RFC requires we write data aligned by a unit size.
+   * This method aligns the current buffer to that unit size.
+   */
   void align() {
     int remainder = mBuffer.position() % XDR_UNIT_SIZE;
     if (remainder > 0) {
       mBuffer.put(new byte[XDR_UNIT_SIZE - remainder]);
     }
   }
+  /**
+   * Write the lenght of the buffer and then the buffer
+   * itself to the outputstream.
+   * 
+   * @param out
+   * @throws IOException if the outputstream thows an IOException
+   * during the write
+   */
   public void write(OutputStream out) throws IOException {
     putInt(0, RPC_LAST_FRAGEMANT | length() - 4);
     out.write(mBuffer.array(), 0, length());

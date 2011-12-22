@@ -12,6 +12,9 @@ import org.apache.hadoop.util.Shell;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Implements UID -&gt; User and User -&gt; UID mapping for Linux.
+ */
 public class UserIDMapperSystem extends UserIDMapper {
   private static final Logger LOGGER = LoggerFactory.getLogger(UserIDMapperSystem.class);
 

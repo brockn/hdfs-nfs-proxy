@@ -10,6 +10,9 @@ import org.slf4j.LoggerFactory;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 
+/**
+ * Base class all credentials must extend. 
+ */
 public abstract class Credentials implements MessageBase {
   
   public Credentials() {

@@ -4,6 +4,9 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Represents a RPC Response as defined by the RPC RFC.
+ */
 public class RPCResponse extends RPCPacket {
   protected static final Logger LOGGER = LoggerFactory.getLogger(RPCResponse.class);
 

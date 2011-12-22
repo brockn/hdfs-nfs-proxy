@@ -1,6 +1,8 @@
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-
-public interface WireSize {
+/**
+ * Return the exact size of the object when written out in byte form.
+ */
+public interface WireSize extends MessageBase {
   public int getWireSize();
 }

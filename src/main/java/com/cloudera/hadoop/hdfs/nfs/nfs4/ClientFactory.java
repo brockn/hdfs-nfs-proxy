@@ -4,6 +4,10 @@ import java.util.Map;
 
 import com.google.common.collect.Maps;
 
+/**
+ * Class responsible for keeping a global map of shorthand
+ * clientids to Client objects.
+ */
 public class ClientFactory {
   protected static final Map<Long, Client> mShortHandMap = Maps.newHashMap();
   protected static final Map<OpaqueData, Client> mClientMap = Maps.newHashMap();

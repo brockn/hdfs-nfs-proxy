@@ -23,27 +23,41 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.RequiresCredentials;
 import com.cloudera.hadoop.hdfs.nfs.security.AuthenticatedCredentials;
 
-@SuppressWarnings("rawtypes")
+/**
+ * ClientWorker handles a socket connection to the server and terminates when the
+ * input stream throws an EOF Exception. As all requests execute in an async
+ * fashion, the worker sleeps under two conditions: 1) the client retransmits
+ * requests past a certain threshold 2) the client submits a requests and
+ * the number of in progress requests exceeds some threshold. This sleep
+ * obviously stops the client from sending addition requests and likely
+ * causes the underlying TCP client to be sent the TCP SLOW DOWN packet.
+ * 
+ * @param <REQUEST>
+ * @param <RESPONSE>
+ */
 class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> extends Thread {
   protected static final Logger LOGGER = LoggerFactory.getLogger(ClientWorker.class);
   protected static final long RETRANSMIT_PENALTY_THRESHOLD = 3L;
   protected static final long RETRANSMIT_PENALTY_TIME = 1000L;
   protected static final long TOO_MANY_PENDING_REQUESTS_PAUSE = 1000L;
   protected static final long EXECUTOR_THREAD_POOL_FULL_PAUSE = 1000L;
-  protected int mRestransmitPenaltyThresdhold, mMaxPendingRequests;
+
+  protected int mRestransmitPenaltyThreshold;
+  protected int mMaxPendingRequests;
   protected Socket mClient;
   protected String mClientName;
   protected RPCServer<REQUEST, RESPONSE> mRPCServer;
-  
   protected OutputStreamHandler mOutputHandler;
-  protected RPCHandler mHandler;
+  protected RPCHandler<REQUEST, RESPONSE> mHandler;
+  /**
+   * Number of retransmits received
+   */
   protected long mRetransmists = 0L;
   protected String mSessionID;
   protected Configuration mConfiguration;   
   protected static final AtomicInteger SESSIONID = new AtomicInteger(Integer.MAX_VALUE);
   
-  
-  public ClientWorker(Configuration conf, RPCServer<REQUEST, RESPONSE> server, RPCHandler handler, Socket client) {
+  public ClientWorker(Configuration conf, RPCServer<REQUEST, RESPONSE> server, RPCHandler<REQUEST, RESPONSE> handler, Socket client) {
     mConfiguration = conf;
     mRPCServer = server;
     mHandler = handler;
@@ -53,7 +67,7 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
     setName("RPCServer-" + mClientName);
     
     mMaxPendingRequests = mConfiguration.getInt(RPC_MAX_PENDING_REQUESTS, 20);
-    mRestransmitPenaltyThresdhold = mConfiguration.getInt(RPC_RETRANSMIT_PENALTY_THRESHOLD, 3);
+    mRestransmitPenaltyThreshold = mConfiguration.getInt(RPC_RETRANSMIT_PENALTY_THRESHOLD, 3);
   }
   
   public void run() {
@@ -72,7 +86,7 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
         // request is used to indicate if we should send
         // a failure packet in case of an error
         request = null;
-        if(mRetransmists >= mRestransmitPenaltyThresdhold) {
+        if(mRetransmists >= mRestransmitPenaltyThreshold) {
           mRetransmists = 0L;
           mHandler.incrementMetric("RETRANSMIT_PENALTY_BOX", 1);
           Thread.sleep(RETRANSMIT_PENALTY_TIME);
@@ -128,7 +142,7 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
             } else {
               mRetransmists--;
               requestsInProgress.add(request.getXid());
-              ClientTask task = new ClientTask(mClientName, mSessionID, this, mHandler,  request, requestBuffer);
+              ClientTask<REQUEST, RESPONSE> task = new ClientTask<REQUEST, RESPONSE>(mClientName, mSessionID, this, mHandler,  request, requestBuffer);
               this.schedule(task);
             }
           }
@@ -191,7 +205,13 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
     return mRPCServer.getRequestsInProgress();
   }
   
-  public void schedule(ClientTask task) throws InterruptedException {
+  /**
+   * Schedule task blocking until successful or interrupted.
+   * @param task
+   * @throws InterruptedException if interrupted while waiting
+   * for room in the thread pool.
+   */
+  public void schedule(ClientTask<REQUEST, RESPONSE> task) throws InterruptedException {
     ExecutorService executorServer = mRPCServer.getExecutorService();
     while(true) {
       try {
@@ -205,17 +225,21 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
     }
   }
 
-  protected static class ClientTask implements Runnable {
+  /**
+   * Task submitted to Executor for execution of the 
+   * client's request.
+   */
+  protected static class ClientTask<REQUEST extends MessageBase, RESPONSE extends MessageBase> implements Runnable {
     protected static final Logger LOGGER = LoggerFactory.getLogger(ClientTask.class);
     protected String mClientName;
     protected String mSessionID;
-    protected RPCHandler mHandler;
-    protected ClientWorker mClientWorker;
+    protected RPCHandler<REQUEST, RESPONSE> mHandler;
+    protected ClientWorker<REQUEST, RESPONSE> mClientWorker;
     protected RPCRequest mRequest;
     protected RPCBuffer mBuffer;
     
     public ClientTask(String clientName, String sessionID, 
-        ClientWorker clientWorker, RPCHandler handler, 
+        ClientWorker<REQUEST, RESPONSE> clientWorker, RPCHandler<REQUEST, RESPONSE> handler, 
         RPCRequest request, RPCBuffer buffer) {
       mClientName = clientName;
       mSessionID = sessionID;
@@ -225,7 +249,6 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
       mBuffer = buffer;
     }
     
-    @SuppressWarnings("unchecked")
     @Override
     public void run() {
       Set<Integer> requestsInProgress = mClientWorker.getRequestsInProgress();
@@ -236,7 +259,7 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
          */
         MessageBase applicationResponse = responseCache.get(mRequest.getXid());
         if(applicationResponse == null) {
-          MessageBase applicationRequest = mHandler.createRequest();
+          REQUEST applicationRequest = mHandler.createRequest();
           applicationRequest.read(mBuffer);
           if(applicationRequest instanceof RequiresCredentials) {
             RequiresCredentials requiresCredentials = (RequiresCredentials)applicationRequest;

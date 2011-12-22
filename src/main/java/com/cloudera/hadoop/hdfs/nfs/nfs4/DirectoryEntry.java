@@ -11,7 +11,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
-public class DirectoryEntry  implements MessageBase, WireSize {
+public class DirectoryEntry implements WireSize {
   protected long mCookie;
   protected String mName;
   protected Bitmap mAttrs;

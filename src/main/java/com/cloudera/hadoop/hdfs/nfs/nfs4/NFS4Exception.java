@@ -1,5 +1,8 @@
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
+/**
+ * Exception representing an NFS specific error code.
+ */
 public class NFS4Exception extends Exception {
   private static final long serialVersionUID = 6096916929311308879L;
   int error;

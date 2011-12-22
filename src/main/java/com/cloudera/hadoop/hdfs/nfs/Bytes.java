@@ -1,4 +1,3 @@
-package com.cloudera.hadoop.hdfs.nfs;
 /**
  * Copyright 2010 The Apache Software Foundation
  *
@@ -18,6 +17,7 @@ package com.cloudera.hadoop.hdfs.nfs;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.cloudera.hadoop.hdfs.nfs;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;

@@ -35,10 +35,14 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.OperationResponse;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCHandler;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
 import com.cloudera.hadoop.hdfs.nfs.security.Credentials;
-import com.cloudera.hadoop.hdfs.nfs.security.CredentialsUnix;
+import com.cloudera.hadoop.hdfs.nfs.security.CredentialsSystem;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+/**
+ * NFS4 Request handler. The class takes a CompoundRequest, processes
+ * the request and returns a CompoundResponse.
+ */
 public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   protected static final Logger LOGGER = LoggerFactory.getLogger(NFS4Handler.class);
   protected final Map<String, FileHolder> mPathMap = Maps.newHashMap();
@@ -51,10 +55,17 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   protected Map<String, AtomicLong> mMetrics = Maps.newTreeMap();
   protected Map<FSDataOutputStream, WriteOrderHandler> mWriteOrderHandlerMap = Maps.newHashMap();
   
+  /**
+   * Create a handler object with a default configuration object
+   */
   public NFS4Handler() {
    this(new Configuration()); 
   }
   
+  /**
+   * Create a handler with the configuration passed into the constructor
+   * @param configuration
+   */
   public NFS4Handler(Configuration configuration) {
     mConfiguration = configuration;
     mMetricsPrinter = new MetricsPrinter(mMetrics);
@@ -63,10 +74,13 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     mMetricsPrinter.start();
   }
   
+  /**
+   * Process a CompoundRequest and return a CompoundResponse.
+   */
   public CompoundResponse process(final RPCRequest rpcRequest, final CompoundRequest compoundRequest, final String clientHostPort, final String sessionID) {
     Credentials creds = (Credentials)compoundRequest.getCredentials();
     // FIXME below is a hack regarding CredentialsUnix
-    if(creds == null || !(creds instanceof CredentialsUnix)) {
+    if(creds == null || !(creds instanceof CredentialsSystem)) {
       CompoundResponse response = new CompoundResponse();
       response.setStatus(NFS4ERR_WRONGSEC);
       return response;
@@ -138,6 +152,18 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     }
   }
  
+  /**
+   * Files which are in the process of being created need to 
+   * exist from a NFS perspective even if they do not exist
+   * from an HDFS perspective. This method intercepts requests
+   * for files that are open and calls FileSystem.exists for
+   * other files.
+   * 
+   * @param fs
+   * @param path
+   * @return true if the file exists or is open for write
+   * @throws IOException
+   */
   public synchronized boolean fileExists(FileSystem fs, Path path) throws IOException {
     FileHolder fileWrapper = mPathMap.get(realPath(path));
     if(fileWrapper != null && fileWrapper.isOpenForWrite()) {
@@ -145,6 +171,12 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     }
     return fs.exists(path);
   }
+  /**
+   * Return a FileHandle if it exists or create a new one.
+   * 
+   * @param path
+   * @return a FileHandle
+   */
   public synchronized FileHandle createFileHandle(Path path) {
     String realPath = realPath(path);
     FileHolder file = mPathMap.get(realPath);
@@ -162,6 +194,14 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     this.incrementMetric("FILE_HANDLES_CREATED", 1);
     return fileHandle;
   }
+  /**
+   * The NFS fileid is translated to an inode on the host. As
+   * such we need to have a unique fileid for each path. Return
+   * the file id for a given path or throw a NFSException(STALE).
+   * @param path
+   * @return fileid
+   * @throws NFS4Exception if the file does not have a FileHandle/
+   */
   public synchronized long getFileID(Path path) throws NFS4Exception {
     FileHolder file =  mPathMap.get(realPath(path));
     if(file != null) {
@@ -169,6 +209,20 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     }
     throw new NFS4Exception(NFS4ERR_STALE, "Path " + realPath(path));
   }
+  /**
+   * Close the resources allocated in the server, block until the 
+   * writes for this file have been processed and close the underlying
+   * stream. No lock is held while we wait for the writes to be
+   * processed.
+   * 
+   * @param sessionID
+   * @param stateID
+   * @param seqID
+   * @param fileHandle
+   * @return and updated StateID
+   * @throws NFS4Exception if the file is open or the stateid is old
+   * @throws IOException if the underlying streams throw an excpetion
+   */
   public StateID close(String sessionID, StateID stateID, int seqID, FileHandle fileHandle) 
       throws NFS4Exception, IOException {
     FileHolder fileWrapper = null;
@@ -208,6 +262,15 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       return file.getStateID();
     }
   }
+  /**
+   * Confirm a file in accordance with NFS OPEN_CONFIRM.
+   * 
+   * @param stateID
+   * @param seqID
+   * @param fileHandle
+   * @return the stateid associated with the open file
+   * @throws NFS4Exception if the stateid is old or open file is owned by another stateid
+   */
   public synchronized StateID confirm(StateID stateID, int seqID, FileHandle fileHandle) throws NFS4Exception {
     FileHolder fileWrapper =  mFileHandleMap.get(fileHandle);
     OpenFile<?> file = null;
@@ -229,6 +292,12 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     }
     throw new NFS4Exception(NFS4ERR_STALE);
   }
+  /**
+   * Returns true if the file is open.
+   * 
+   * @param path
+   * @return true if the file is open for read or write
+   */
   public synchronized boolean isFileOpen(Path path) {
     FileHolder fileWrapper =  mPathMap.get(realPath(path));
     if(fileWrapper != null) {
@@ -236,6 +305,17 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     }
     return false;
   }
+  /**
+   * Open if not open or obtain the input stream opened by the StateID.
+   *  
+   * @param stateID
+   * @param fs
+   * @param fileHandle
+   * @return FSDataInputStream for reading
+   * @throws NFS4Exception if the file is already open for write, 
+   *  the open is not confirmed or the file handle is stale.
+   * @throws IOException if the file open throws an IOException
+   */
   public synchronized FSDataInputStream forRead(StateID stateID, FileSystem fs, FileHandle fileHandle) 
       throws NFS4Exception, IOException {
     FileHolder fileWrapper =  mFileHandleMap.get(fileHandle);
@@ -262,6 +342,16 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     }
     throw new NFS4Exception(NFS4ERR_STALE);
   }
+  /**
+   * Create or return the a WriteOrderHandler for a given
+   * FSDataOutputStream.
+   * 
+   * @param name
+   * @param out
+   * @return the WriteOrderHandler
+   * @throws IOException of the output stream throws an IO Exception 
+   * while creating the WriteOrderHandler.
+   */
   public WriteOrderHandler getWriteOrderHandler(String name, FSDataOutputStream out) throws IOException {
     WriteOrderHandler writeOrderHandler;
     synchronized (mWriteOrderHandlerMap) {
@@ -276,6 +366,14 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     }
     return writeOrderHandler;
   }
+  /**
+   * Get the WriteOrderHandler for a commit operation.
+   * 
+   * @param fs
+   * @param fileHandle
+   * @return WriteOrderHandler
+   * @throws NFS4Exception if the file handle is stale
+   */
   public synchronized WriteOrderHandler forCommit(FileSystem fs, FileHandle fileHandle) throws NFS4Exception {
     FileHolder fileWrapper =  mFileHandleMap.get(fileHandle);
     if(fileWrapper != null) {
@@ -291,6 +389,16 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     throw new NFS4Exception(NFS4ERR_STALE);
   }
   
+  /**
+   * 
+   * @param stateID
+   * @param fs
+   * @param fileHandle
+   * @param overwrite
+   * @return
+   * @throws NFS4Exception
+   * @throws IOException
+   */
   public synchronized FSDataOutputStream forWrite(StateID stateID, FileSystem fs, FileHandle fileHandle, boolean overwrite) 
       throws NFS4Exception, IOException {
     FileHolder fileWrapper =  mFileHandleMap.get(fileHandle);
@@ -351,6 +459,12 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
 //    return false;
 //  }
   
+  /**
+   * Get the Path for a FileHandle
+   * @param fileHandle
+   * @return Path for FileHandler
+   * @throws NFS4Exception if FileHandle is stale
+   */
   public synchronized Path getPath(FileHandle fileHandle) throws NFS4Exception {
     FileHolder file =  mFileHandleMap.get(fileHandle);
     if(file != null) {
@@ -358,6 +472,12 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     }
     throw new NFS4Exception(NFS4ERR_STALE);
   }
+  /**
+   * Get the FileHandle for a Path
+   * @param path
+   * @return FileHandle for path
+   * @throws NFS4Exception if the FileHandle for the Path is stale
+   */
   public synchronized FileHandle getFileHandle(Path path) throws NFS4Exception {
     FileHolder file = mPathMap.get(realPath(path));
     if(file != null) {
@@ -365,13 +485,25 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     }
     throw new NFS4Exception(NFS4ERR_STALE);
   }
+  /**
+   * Files open for write will have an unreliable length according to the name
+   * node. As such, this call intercepts calls for open files and returns the
+   * length of the as reported by the output stream.
+   *  
+   * @param status
+   * @return the current file length including data written to the output stream
+   * @throws NFS4Exception if the getPos() call of the output stream throws IOException
+   */
   public synchronized long getFileSize(FileStatus status) throws NFS4Exception {
     FileHolder fileWrapper = mPathMap.get(realPath(status.getPath()));
     if(fileWrapper != null) {
       OpenFile<FSDataOutputStream> file = fileWrapper.getFSDataOutputStream();
       if(file != null) {
         try {
-          return file.get().getPos();
+          FSDataOutputStream out = file.get();
+          synchronized(out) {
+            return out.getPos();
+          }
         } catch (IOException e) {
           throw new NFS4Exception(NFS4ERR_SERVERFAULT, e);
         }          
@@ -379,9 +511,16 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     }
     return status.getLen();
   }
+  /**
+   * @return the ClientFactory in use by the NFS4 Handler
+   */
   public ClientFactory getClientFactory() {
     return mClientFactory;
   }
+  /**
+   * Class represents an open input/output stream internally
+   * to the NFS4Handler class.
+   */
   protected static class OpenFile<T extends Closeable> implements Closeable {
     protected boolean mConfirmed;
     protected T mResource;
@@ -432,11 +571,13 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     public StateID getStateID() {
       return mStateID;
     }
-    public FileHolder getFileWrapper() {
+    public FileHolder getFileHolder() {
       return mFileWrapper;
     }
-    
   }
+  /**
+   * Class which represents an HDFS file internally
+   */
   protected static class FileHolder {
     protected String mPath;
     protected FileHandle mFileHandle;
@@ -512,7 +653,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     
     @Override
     public String toString() {
-      return "FileWrapper [mPath=" + mPath + ", mFileHandle=" + mFileHandle
+      return "FileHolder [mPath=" + mPath + ", mFileHandle=" + mFileHandle
           + ", mFSDataOutputStream=" + mOutputStream + ", mFileID="
           + mFileID + "]";
     }
@@ -541,6 +682,9 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     }
   }
 
+  /**
+   * Create or increment a named counter
+   */
   public void incrementMetric(String name, long count) {
     name = name.toUpperCase();
     AtomicLong counter;
@@ -553,7 +697,11 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     }
     counter.addAndGet(count);
   }
-  
+
+  /**
+   * Simple thread used to dump out metrics to 
+   * the log every minute so. FIXME use hadoop metrics
+   */
   protected static class MetricsPrinter extends Thread {
     Map<String, AtomicLong> mMetrics;
     public MetricsPrinter( Map<String, AtomicLong> metrics) {
@@ -591,6 +739,9 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   public CompoundRequest createRequest() {
     return new CompoundRequest();
   }
+  /**
+   * @return start time of the NFS server
+   */
   public long getStartTime() {
     return mStartTime;
   }

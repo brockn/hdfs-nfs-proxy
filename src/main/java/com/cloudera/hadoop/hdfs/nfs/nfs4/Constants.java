@@ -291,7 +291,7 @@ public class Constants {
   public static final int    NFS4_FH4_VOL_MIGRATION       = 0x00000004;
   public static final int    NFS4_FH4_VOL_RENAME          = 0x00000008;
   
-  public static final long NFS4_COOKIE_OFFSET = 10000L;
+  public static final long NFS4_COOKIE_OFFSET = Integer.MAX_VALUE;
 
   public static final int NFS4_COMMIT_UNSTABLE4       = 0;
   public static final int NFS4_COMMIT_DATA_SYNC4      = 1;

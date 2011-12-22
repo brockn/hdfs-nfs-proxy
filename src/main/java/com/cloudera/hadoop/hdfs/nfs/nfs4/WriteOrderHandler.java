@@ -21,10 +21,15 @@ import com.cloudera.hadoop.hdfs.nfs.Bytes;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+/**
+ * Responsible for queuing writes until prerequisite writes become
+ * available and processing the writes when prerequisite writes
+ * are available. This is required because a the NFS server
+ * event writes from a client writing sequentially arrive wildly
+ * out of order.
+ */
 public class WriteOrderHandler extends Thread {
   protected static final Logger LOGGER = LoggerFactory.getLogger(WriteOrderHandler.class);
-  protected static final long TIMEOUT = 30000L; 
-  // at 5s we often had writes fail due to a delayed write from the client by 20s
   protected FSDataOutputStream mOutputStream;
   protected ConcurrentMap<Long, Write> mPendingWrites = Maps.newConcurrentMap();
   protected List<Integer> mProcessedWrites = Lists.newArrayList();
@@ -58,7 +63,7 @@ public class WriteOrderHandler extends Thread {
       mNFSException = e;
     }
   }
-  // turns out NFS clients will send the same write twice if the write is slow
+  // turns out NFS clients will send the same write twice if the write rate is slow
   protected Write checkWriteState(Write write) throws NFS4Exception {
     Write other = mPendingWrites.get(write.offset);
     if(other != null && !write.equals(other)) {
@@ -99,7 +104,13 @@ public class WriteOrderHandler extends Thread {
     if(!this.isAlive()) {
       throw new NFS4Exception(NFS4ERR_PERM, "WriteOrderHandler is dead");
     }
-  }  
+  }
+  /**
+   * Block until the outputstream reaches the specified offset. 
+   * @param offset
+   * @throws IOException thrown if the underlying stream throws an IOException
+   * @throws NFS4Exception thrown if the thread processing writes dies
+   */
   public void sync(long offset) throws IOException, NFS4Exception {
     LOGGER.info("Sync for " + mOutputStream + " and " + offset);
     while(getCurrentPos() < offset) {
@@ -107,6 +118,12 @@ public class WriteOrderHandler extends Thread {
       pause(10L);
     }
   }
+  /**
+   * Close the underlying stream blocking until all writes have been processed.
+   * 
+   * @throws IOException thrown if the underlying stream throws an IOException
+   * @throws NFS4Exception thrown if the thread processing writes dies
+   */
   public void close() throws IOException, NFS4Exception {
     mClosed.set(true);
     while(getCurrentPos() < mExpectedLength.get() ||
@@ -130,11 +147,30 @@ public class WriteOrderHandler extends Thread {
       throw new IOException("Interrupted while paused", e);
     }
   }
+  /**
+   * Get the current position of the output stream.
+   * @return
+   * @throws IOException
+   */
   public long getCurrentPos() throws IOException {
     synchronized(mOutputStream) {
       return mOutputStream.getPos();
     }
   }
+  /**
+   * Queues write of the specified bytes for the underlying outputstream.
+   * 
+   * @param xid
+   * @param offset
+   * @param sync
+   * @param data
+   * @param start
+   * @param length
+   * @return
+   * @throws IOException if file is closed or underlying stream throws IOException
+   * or if the thread is interrupted while putting the write on the queue
+   * @throws NFS4Exception if random write
+   */
   public int write(int xid, long offset, boolean sync, byte[] data, int start, int length) 
       throws IOException, NFS4Exception {
     checkException();

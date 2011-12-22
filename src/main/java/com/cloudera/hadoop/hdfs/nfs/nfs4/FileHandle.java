@@ -5,6 +5,9 @@ import java.util.Arrays;
 
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
+/**
+ * Represents a NFS FileHandle.
+ */
 public class FileHandle implements MessageBase {
   protected byte[] mBytes;
   public FileHandle() {

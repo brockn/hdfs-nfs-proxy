@@ -8,7 +8,11 @@ import org.apache.hadoop.fs.FileSystem;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
 
-
+/**
+ * Class represents the state of a request as 
+ * we process each individual request in the 
+ * compound request
+ */
 public class Session {
   protected FileHandle mCurrentFileHandle;
   protected FileHandle mSavedFileHandle;

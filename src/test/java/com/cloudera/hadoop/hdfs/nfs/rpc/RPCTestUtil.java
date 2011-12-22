@@ -6,7 +6,7 @@ import static org.junit.Assert.*;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCResponse;
 import com.cloudera.hadoop.hdfs.nfs.rpc.XID;
-import com.cloudera.hadoop.hdfs.nfs.security.CredentialsNull;
+import com.cloudera.hadoop.hdfs.nfs.security.CredentialsNone;
 
 
 public class RPCTestUtil {
@@ -22,7 +22,7 @@ public class RPCTestUtil {
     assertEquals(NFS_PROG, base.getProgram());
     assertEquals(NFS_VERSION, base.getProgramVersion());
     assertEquals(NFS_PROC_COMPOUND, base.getProcedure());
-    base.setCredentials(new CredentialsNull());
+    base.setCredentials(new CredentialsNone());
     assertEquals(RPC_AUTH_NULL, base.getCredentials().getCredentialsFlavor());
     return base;
   }

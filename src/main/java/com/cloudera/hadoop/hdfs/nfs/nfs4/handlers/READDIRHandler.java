@@ -79,26 +79,8 @@ public class READDIRHandler extends OperationRequestHandler<READDIRRequest, READ
     List<DirectoryEntry>  entries = Lists.newArrayList();    
     for (; cookie < (fileStati.length + NFS4_COOKIE_OFFSET); cookie++) {
       fileStatus = fileStati[(int)(cookie - NFS4_COOKIE_OFFSET)];
-      // FIXME
       // we have to force creation of a file handle because that creates
-      // a fileid which is required later in the getAttrs else it fails
-      // like so:
-//      hdfs.nfs.nfs4.NFS4Exception: errno = 70: Path /tmp
-//          at hdfs.nfs.nfs4.NFS4Server.getFileID(NFS4Server.java:155)
-//          at hdfs.nfs.nfs4.attrs.FileIDHandler.handle(FileIDHandler.java:16)
-//          at hdfs.nfs.nfs4.attrs.FileIDHandler.handle(FileIDHandler.java:1)
-//          at hdfs.nfs.nfs4.attrs.Attribute.getAttrs(Attribute.java:124)
-//          at hdfs.nfs.nfs4.handlers.READDIRHandler.readAttrs(READDIRHandler.java:133)
-//          at hdfs.nfs.nfs4.handlers.READDIRHandler.doHandle(READDIRHandler.java:105)
-//          at hdfs.nfs.nfs4.handlers.READDIRHandler.doHandle(READDIRHandler.java:1)
-//          at hdfs.nfs.nfs4.handlers.OperationRequestHandler.handle(OperationRequestHandler.java:22)
-//          at hdfs.nfs.nfs4.NFS4Server$1.run(NFS4Server.java:92)
-//          at hdfs.nfs.nfs4.NFS4Server$1.run(NFS4Server.java:1)
-//          at java.security.AccessController.doPrivileged(Native Method)
-//          at javax.security.auth.Subject.doAs(Subject.java:396)
-//          at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1127)
-//          at hdfs.nfs.nfs4.NFS4Server.process(NFS4Server.java:82)
-//          at hdfs.nfs.rpc.RPCServer$ClientWorker.run(RPCServer.java:155)
+      // a fileid which is required later in the getAttrs.
       server.createFileHandle(fileStatus.getPath());
       DirectoryEntry entry = readAttrs(server, session, request.getAttrs(), fs, fileStatus);
       entry.setName(fileStatus.getPath().getName());

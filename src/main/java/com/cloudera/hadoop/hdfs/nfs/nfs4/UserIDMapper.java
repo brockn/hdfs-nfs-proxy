@@ -9,7 +9,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.Shell;
 
-
+/**
+ * Implementing classes need to map RPC UID's to String usernames
+ * and String usernames to UIDs. Same for group information.
+ */
 public abstract class UserIDMapper {
   
   public abstract int getGIDForGroup(String user, int defaultGID) throws Exception;
@@ -34,6 +37,9 @@ public abstract class UserIDMapper {
     return (UserIDMapper)ReflectionUtils.newInstance(clazz, conf);
   }
 
+  /**
+   * @return String username associated with the current process
+   */
   public static String getCurrentUser() {
     String user = System.getenv("USER");
     if(user != null) {

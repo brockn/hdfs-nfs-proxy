@@ -9,16 +9,19 @@ import org.slf4j.LoggerFactory;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.UserIDMapper;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
-public class CredentialsUnix extends Credentials implements AuthenticatedCredentials {
+/**
+ * Implementation of RPC AUTH_SYS
+ */
+public class CredentialsSystem extends Credentials implements AuthenticatedCredentials {
 
-  protected static final Logger LOGGER = LoggerFactory.getLogger(CredentialsUnix.class);  
+  protected static final Logger LOGGER = LoggerFactory.getLogger(CredentialsSystem.class);  
   
   protected int mUID, mGID;
   protected int[] mAuxGIDs;
   protected String mHostName;
   protected int mStamp;
   
-  public CredentialsUnix() {
+  public CredentialsSystem() {
     super();
     this.mCredentialsLength = 0;
     this.mVerifierFlavor = RPC_VERIFIER_NULL;

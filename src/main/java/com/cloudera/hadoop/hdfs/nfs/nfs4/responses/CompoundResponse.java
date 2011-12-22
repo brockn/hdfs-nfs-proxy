@@ -25,7 +25,7 @@ public class CompoundResponse implements MessageBase, Status {
     for (int i = 0; i < count; i++) {
       int id = buffer.readUint32();
       if(OperationFactory.isSupported(id)) {
-        ops.add(OperationFactory.parseResponse(buffer, id));        
+        ops.add(OperationFactory.parseResponse(id, buffer));        
       }
     }
     mOperations = ImmutableList.<OperationResponse>builder().addAll(ops).build();

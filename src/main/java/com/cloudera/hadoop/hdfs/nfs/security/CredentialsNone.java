@@ -8,16 +8,19 @@ import org.slf4j.LoggerFactory;
 
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
-public class CredentialsNull extends Credentials {
+/**
+ * Implementation of AUTH_NONE
+ */
+public class CredentialsNone extends Credentials {
   
-  public CredentialsNull() {
+  public CredentialsNone() {
     super();
     this.mCredentialsLength = 0;
     this.mVerifierFlavor = RPC_VERIFIER_NULL;
     this.mVeriferLength = 0;
   }
 
-  protected static final Logger LOGGER = LoggerFactory.getLogger(CredentialsNull.class);
+  protected static final Logger LOGGER = LoggerFactory.getLogger(CredentialsNone.class);
 
   @Override
   public void read(RPCBuffer buffer) {
@@ -27,7 +30,7 @@ public class CredentialsNull extends Credentials {
     }
     buffer.skip(mCredentialsLength);
     /*
-     * CredentialsNull so we have nothing to read. 
+     * CredentialsNone so we have nothing to read. 
      */
     mVerifierFlavor = buffer.readInt();
     mVeriferLength = buffer.readInt();

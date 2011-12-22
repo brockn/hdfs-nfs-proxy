@@ -15,10 +15,25 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.OperationRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.OperationResponse;
 
+/**
+ * Subclasses process a specific Request, Response pair. They MUST
+ * be stateless as one instance will be created per JVM.
+ * @param <IN>
+ * @param <OUT>
+ */
 public abstract class OperationRequestHandler<IN extends OperationRequest, OUT extends OperationResponse> {
   protected static final Logger LOGGER = LoggerFactory.getLogger(OperationRequestHandler.class);
 
-  public OUT handle(NFS4Handler server, Session session, IN request) throws IOException {
+  /**
+   * Handle request and any exception throwing during the process.
+   * @param server
+   * @param session
+   * @param request
+   * @return response of correct type regardless of an
+   * exception being thrown during implementing classes
+   * handling of request.
+   */
+  public OUT handle(NFS4Handler server, Session session, IN request) {
     try {
       return doHandle(server, session, request);
     } catch(Exception ex) {
@@ -52,7 +67,23 @@ public abstract class OperationRequestHandler<IN extends OperationRequest, OUT e
       return response;
     }
   }
+  /**
+   * Implementing classes actually handle the request in this method.
+   * 
+   * @param server
+   * @param session
+   * @param request
+   * @return
+   * @throws NFS4Exception
+   * @throws IOException
+   * @throws UnsupportedOperationException
+   */
   protected abstract OUT doHandle(NFS4Handler server, Session session, IN request) 
       throws NFS4Exception, IOException, UnsupportedOperationException;  
+  
+  /**
+   * @return a response object of the correct type. Used so the handle() method
+   * can return an object of the correct type when an error is encountered.
+   */
   protected abstract OUT createResponse();
 }
