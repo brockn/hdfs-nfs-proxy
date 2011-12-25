@@ -106,6 +106,7 @@ public class OPENHandler extends
     boolean overwrite = request.getOpenType() == NFS4_OPEN4_CREATE;
     FSDataOutputStream out = server.forWrite(stateID, fs, session.getCurrentFileHandle(), overwrite);
     out.sync(); // create file in namenode
+    LOGGER.info(session.getSessionID() + " Opened " + path + " for write " + out);
     OPENResponse response = createResponse();
     response.setStateID(stateID);
     // TODO this is wrong but files in HDFS are currently immutable once closed

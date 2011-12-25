@@ -21,6 +21,8 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
+import java.util.Set;
+
 import com.cloudera.hadoop.hdfs.nfs.nfs4.handlers.ACCESSHandler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.handlers.CLOSEHandler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.handlers.COMMITHandler;
@@ -131,6 +133,29 @@ public class OperationFactory {
       .put(NFS4_OP_SETCLIENTID_CONFIRM, new Holder(SETCLIENTIDCONFIRMRequest.class, SETCLIENTIDCONFIRMResponse.class, new SETCLIENTIDCONFIRMHandler()))
       .put(NFS4_OP_WRITE, new Holder(WRITERequest.class, WRITEResponse.class, new WRITEHandler()))
       .build();
+  
+  // ensure the id's are setup correctly
+  static {
+    Set<Integer> ids = operations.keySet();
+    if(ids.isEmpty()) {
+      throw new RuntimeException("No operations");
+    }
+    for(Integer id : ids) {
+      Holder holder = operations.get(id);
+      try {
+        Identifiable request = holder.requestClazz.newInstance();
+        if(request.getID() != id) {
+          throw new RuntimeException(request.getClass().getName() + " has id " + request.getID() + " and not " + id);  
+        }
+        Identifiable response = holder.responseClazz.newInstance();
+        if(response.getID() != id) {
+          throw new RuntimeException(response.getClass().getName() + " has id " + response.getID() + " and not " + id);  
+        }
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
       
     /**
      * To be used only for testing, push request into the backing map.

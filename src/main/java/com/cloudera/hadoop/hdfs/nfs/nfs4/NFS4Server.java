@@ -36,8 +36,17 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCServer;
  * so it can be configured from the command line.
  */
 public class NFS4Server extends Configured implements Tool {
+  NFS4Handler mNFSServer;
+  RPCServer<CompoundRequest, CompoundResponse> mRPCServer;
+
   public static void main(String[] args) throws Exception {
     System.exit(ToolRunner.run(new Configuration(), new NFS4Server(), args));
+  }
+  
+  public void start(int port) throws Exception {
+    mNFSServer = new NFS4Handler(getConf());
+    mRPCServer = new RPCServer<CompoundRequest, CompoundResponse>(mNFSServer, getConf(), port);
+    mRPCServer.start();    
   }
 
   @Override
@@ -50,14 +59,22 @@ public class NFS4Server extends Configured implements Tool {
       GenericOptionsParser.printGenericCommandUsage(System.err);
       return 1;
     }
-    NFS4Handler server = new NFS4Handler(getConf());
-    RPCServer<CompoundRequest, CompoundResponse> rpcServer = 
-        new RPCServer<CompoundRequest, CompoundResponse>(server, getConf(), port);
-    rpcServer.start();
-    while(rpcServer.isAlive()) {
+    start(port);
+    while(mRPCServer.isAlive()) {
       Thread.sleep(10000L);
     }
     return 0;
+  }
+  
+  public boolean isAlive() {
+    return mRPCServer.isAlive();
+  }
+  public void shutdown() {
+    mRPCServer.interrupt();
+    mRPCServer.shutdown();
+  }
+  public int getPort() {
+    return mRPCServer.getPort();
   }
 
 }

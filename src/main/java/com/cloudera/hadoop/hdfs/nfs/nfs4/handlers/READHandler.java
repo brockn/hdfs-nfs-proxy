@@ -66,15 +66,13 @@ public class READHandler extends OperationRequestHandler<READRequest, READRespon
       byte[] data = new byte[size];
       int count = inputStream.read(data);
       long fileLength = -1;
-//      if(count == -1 && 
-//          request.getOffset() < (fileLength = fs.getFileStatus(path).getLen())) {
-//        count = inputStream.read(data);
-//      }
-      if(count != data.length) {
+      if(count > 0 && count != data.length && 
+          (request.getOffset() + count) < (fileLength = fs.getFileStatus(path).getLen())) {
         LOGGER.info("Short read "+path+
             " at pos = " + request.getOffset() +
             ", wanted " + data.length + " and read " + count + 
             ", fileLength = " + fileLength);
+        server.incrementMetric("NFS_SHORT_READS", 1);
       }
       boolean eof = count < 0;
       if(eof) {

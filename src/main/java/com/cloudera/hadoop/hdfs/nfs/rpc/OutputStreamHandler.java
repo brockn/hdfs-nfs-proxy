@@ -36,7 +36,6 @@ class OutputStreamHandler extends Thread {
   protected static final Logger LOGGER = LoggerFactory.getLogger(OutputStreamHandler.class);
   protected BlockingQueue<RPCBuffer> mQueue = new ArrayBlockingQueue<RPCBuffer>(10, true);
   protected OutputStream mOutputStream;
-  protected IOException mException;
   protected String mClientName;
   protected volatile boolean mShutdown;
   /**
@@ -67,10 +66,8 @@ class OutputStreamHandler extends Thread {
    * @throws IOException
    */
   public void add(RPCBuffer buffer) throws IOException {
-    if(mException != null) {
-      IOException copy = mException;
-      mException = null;
-      throw copy;
+    if(!this.isAlive()) {
+      throw new IOException("Write thread dead");
     }
     try {
       mQueue.put(buffer);
@@ -82,13 +79,25 @@ class OutputStreamHandler extends Thread {
     while(!mShutdown) {
       try {
         try {
-          mQueue.take().write(mOutputStream);
+          RPCBuffer buffer = mQueue.take();
+          buffer.write(mOutputStream);
         } catch (InterruptedException e) {
-          LOGGER.info("OutputHandler for " + mClientName + " quitting.");
+          LOGGER.info("OutputStreamHandler for " + mClientName + " quitting.");
           break;
         }
       } catch (IOException e) {
-        mException = e;
+        LOGGER.warn("OutputStreamHandler for " + mClientName + " got error on write", e);
+      }
+    }
+    while(true) {
+      try {
+        RPCBuffer buffer = mQueue.poll();
+        if(buffer == null) {
+          break;
+        }
+        buffer.write(mOutputStream);
+      } catch(Exception e) {
+        LOGGER.warn("OutputStreamHandler for " + mClientName + " got error on final write", e);
       }
     }
   }

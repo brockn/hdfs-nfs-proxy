@@ -23,6 +23,7 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,6 +106,25 @@ public abstract class Attribute implements MessageBase, Identifiable {
             .put(NFS4_FATTR4_TYPE, new AttributeHolder(Type.class, new TypeHandler()))
             .build();
 
+  
+  // ensure the id's are setup correctly
+  static {
+    Set<Integer> ids = attributes.keySet();
+    if(ids.isEmpty()) {
+      throw new RuntimeException("No attributes");
+    }
+    for(Integer id : ids) {
+      try {
+        Identifiable attribute = attributes.get(id).clazz.newInstance();
+        if(attribute.getID() != id) {
+          throw new RuntimeException(attribute.getClass().getName() + " has id " + attribute.getID() + " and not " + id);  
+        }
+      } catch(Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+  
   public static Bitmap getSupported() {
     Bitmap attrs = new Bitmap();
     for(Integer id : attributes.keySet()) {

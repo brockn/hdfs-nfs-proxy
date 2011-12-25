@@ -88,21 +88,24 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
     } catch(Exception ex) {
       LOGGER.error("Error on handler " + mHandler.getClass(), ex);
     } finally {
-      // first close clients
-      for(Socket client : mClients.keySet()) {
-        ClientWorker<REQUEST, RESPONSE> worker = mClients.get(client);
-        if(worker != null && worker.isAlive()) {
-          worker.interrupt();
-        }
-        IOUtils.closeSocket(client);
-      }
-      // then server
-      if(mServer != null) {
-        try {
-          mServer.close();
-        } catch (Exception e) {}
-      }
+      shutdown();
     }
+  }
+  public void shutdown() {
+    // first close clients
+    for(Socket client : mClients.keySet()) {
+      ClientWorker<REQUEST, RESPONSE> worker = mClients.get(client);
+      if(worker != null && worker.isAlive()) {
+        worker.interrupt();
+      }
+      IOUtils.closeSocket(client);
+    }
+    // then server
+    if(mServer != null) {
+      try {
+        mServer.close();
+      } catch (Exception e) {}
+    }    
   }
   public int getPort() {
     return mPort;

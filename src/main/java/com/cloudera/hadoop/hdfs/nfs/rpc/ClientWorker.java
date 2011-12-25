@@ -56,10 +56,9 @@ import com.cloudera.hadoop.hdfs.nfs.security.AuthenticatedCredentials;
  */
 class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> extends Thread {
   protected static final Logger LOGGER = LoggerFactory.getLogger(ClientWorker.class);
-  protected static final long RETRANSMIT_PENALTY_THRESHOLD = 3L;
-  protected static final long RETRANSMIT_PENALTY_TIME = 1000L;
-  protected static final long TOO_MANY_PENDING_REQUESTS_PAUSE = 1000L;
-  protected static final long EXECUTOR_THREAD_POOL_FULL_PAUSE = 1000L;
+  protected static final long RETRANSMIT_PENALTY_TIME = 100L;
+  protected static final long TOO_MANY_PENDING_REQUESTS_PAUSE = 10L;
+  protected static final long EXECUTOR_THREAD_POOL_FULL_PAUSE = 10L;
 
   protected int mRestransmitPenaltyThreshold;
   protected int mMaxPendingRequests;
@@ -109,13 +108,17 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
           mRetransmists = 0L;
           mHandler.incrementMetric("RETRANSMIT_PENALTY_BOX", 1);
           Thread.sleep(RETRANSMIT_PENALTY_TIME);
-          LOGGER.warn(mSessionID + " Client " + mClientName + " is going in the penalty box (SLOWDOWN)");
+          if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug(mSessionID + " Client " + mClientName + " is going in the penalty box (SLOWDOWN)");
+          }
         }        
         mRetransmists = mRetransmists > 0 ? mRetransmists : 0;
         
         while(getRequestsInProgress().size() > mMaxPendingRequests) {
           mHandler.incrementMetric("TOO_MANY_PENDING_REQUESTS", 1);
-          LOGGER.warn(mSessionID + " Client " + mClientName + " is waiting for pending requests to finish (SLOWDOWN)");
+          if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug(mSessionID + " Client " + mClientName + " is waiting for pending requests to finish (SLOWDOWN)");
+          }
           Thread.sleep(TOO_MANY_PENDING_REQUESTS_PAUSE);
         }
         
@@ -158,11 +161,13 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
             if(requestsInProgress.contains(request.getXid())) {
               mRetransmists++;
               mHandler.incrementMetric("RESTRANMITS", 1);
+              LOGGER.info(mSessionID + " ignoring request " + request.getXid());
             } else {
               mRetransmists--;
               requestsInProgress.add(request.getXid());
               ClientTask<REQUEST, RESPONSE> task = new ClientTask<REQUEST, RESPONSE>(mClientName, mSessionID, this, mHandler,  request, requestBuffer);
               this.schedule(task);
+              LOGGER.info(mSessionID + " scheduling request " + request.getXid());
             }
           }
         } else {
@@ -272,7 +277,9 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
     public void run() {
       Set<Integer> requestsInProgress = mClientWorker.getRequestsInProgress();
       Map<Integer, MessageBase> responseCache = mClientWorker.getResponseCache();
+      boolean removed = false;
       try {
+        LOGGER.info(mSessionID + " starting xid " + mRequest.getXid());
         /*
          *   TODO ensure credentials are the same for request/cached response.
          */
@@ -292,10 +299,12 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
             throw x;
           }
           responseCache.put(mRequest.getXid(), applicationResponse);
+          requestsInProgress.remove(mRequest.getXid()); // duplicates will be served out of cache
+          removed = true;
         }
         mClientWorker.writeApplicationResponse(mRequest.getXid(), applicationResponse);
       } catch(Exception ex) {
-        LOGGER.error(mSessionID + " Error from client " + mClientName, ex);
+        LOGGER.error(mSessionID + " Error from client " + mClientName + " xid = " +  mRequest.getXid(), ex);
         try {
           RPCResponse response = new RPCResponse(mRequest.getXid(), RPC_VERSION);
           response.setReplyState(RPC_REPLY_STATE_DENIED);
@@ -305,7 +314,10 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
           LOGGER.error(mSessionID + " Error writing failure packet", x);
         }
       } finally {
-        requestsInProgress.remove(mRequest.getXid());
+        if(!removed) {
+          requestsInProgress.remove(mRequest.getXid());
+        }
+        LOGGER.info(mSessionID + " finishing xid " + mRequest.getXid());
       }
     }
   }

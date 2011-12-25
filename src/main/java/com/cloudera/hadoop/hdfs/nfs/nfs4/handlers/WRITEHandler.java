@@ -53,7 +53,7 @@ public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITERes
     String file = path.toUri().getPath();
     FSDataOutputStream out = server.forWrite(request.getStateID(), session.getFileSystem(), fileHandle, false);
     
-    LOGGER.info(session.getSessionID() + " Write accepted " + file + " "  + request.getOffset());
+    LOGGER.info(session.getSessionID() + " xid = " + session.getXID() + ", write accepted " + file + " "  + request.getOffset());
 
     WriteOrderHandler writeOrderHandler = server.getWriteOrderHandler(file, out);
     boolean sync = request.getStable() != NFS4_COMMIT_UNSTABLE4;

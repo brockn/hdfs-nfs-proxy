@@ -17,37 +17,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudera.hadoop.hdfs.nfs.nfs4.responses;
+package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static org.junit.Assert.*;
 
-import com.cloudera.hadoop.hdfs.nfs.nfs4.Status;
-import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
+import org.apache.hadoop.conf.Configuration;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
+public class TestNFS4Server {
 
-public class RENEWResponse extends OperationResponse implements Status {
-
-  protected int mStatus;
-
-  @Override
-  public void read(RPCBuffer buffer) {
-    mStatus = buffer.readUint32();
+  NFS4Server mNFS4Server;
+  int mPort;
+  
+  @Before
+  public void setup() throws Exception {
+    Configuration conf = new Configuration();
+    mNFS4Server = new NFS4Server();
+    mNFS4Server.setConf(conf);
+    mNFS4Server.start(0);
+    mPort = mNFS4Server.getPort();
   }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint32(mStatus);
+  
+  @After
+  public void cleanup() {
+    if(mNFS4Server != null) {
+      mNFS4Server.shutdown();
+    }
   }
-  @Override
-  public int getStatus() {
-    return mStatus;
-  }
-  @Override
-  public void setStatus(int status) {
-    this.mStatus = status;
-  }
-  @Override
-  public int getID() {
-    return NFS4_OP_RENEW;
+  
+  // TODO implement tests
+  @Test
+  public void testTODO() {
+    assertTrue(mNFS4Server.isAlive());
   }
 }

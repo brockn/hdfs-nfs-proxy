@@ -39,7 +39,7 @@ public class MaxName extends Attribute {
 
   @Override
   public int getID() {
-    return NFS4_FATTR4_MAXREAD;
+    return NFS4_FATTR4_MAXNAME;
   }
 
   public long getSize() {
