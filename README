@@ -45,7 +45,7 @@ I think we could get better performance if we ordered these like writes because 
 know they will arrive out of order. As such the current impl is doing more seeks
 than required. We also might considering pooling input streams.
 * Heavy read loads require a TON of gc
-*Write Ordering
+* Write Ordering
 We buffer writes until we find the prereq, this memory consumption is not bounded.
 * DirectoryEntry.getWireSize needs to be fixed, it is gross.
 * Use Hadoop metrics insteead of simple MetricsPrinter
