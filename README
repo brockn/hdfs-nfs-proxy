@@ -50,3 +50,23 @@ We buffer writes until we find the prereq, this memory consumption is not bounde
 * DirectoryEntry.getWireSize needs to be fixed, it is gross.
 * Use Hadoop metrics insteead of simple MetricsPrinter
 * Persist file handles and client ids to disk (zookeeper?)
+
+
+ == FAQ ==
+*All user/groups show up as `nobody'?
+
+NFS4 returns user/group with user@domain. Today by default it responds with
+user@clientDomain. The client then uses the idmap service to lookup the user
+for a uid. As such, it's likely you have not configured idmap.
+
+Say the domain is acme.com, you would change: /etc/idmapd.conf from:
+ Domain = localdomain
+
+to:
+
+ Domain = bashkew.com
+
+and then restart idmapd:
+ 
+/etc/init.d/rpcidmapd restart
+
