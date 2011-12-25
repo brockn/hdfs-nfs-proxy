@@ -44,7 +44,9 @@ At present we get a fair number of threads blocked on reads of a single input st
 I think we could get better performance if we ordered these like writes because we
 know they will arrive out of order. As such the current impl is doing more seeks
 than required. We also might considering pooling input streams.
-* Heavy read loads require a TON of gc
+* Heavy read loads use a fair amount of old gen likely due to our responnse cache
+and the size of read responses. If this becomes an issue we could easily exclude 
+read requests from the response cache.
 * Write Ordering
 We buffer writes until we find the prereq, this memory consumption is not bounded.
 * DirectoryEntry.getWireSize needs to be fixed, it is gross.
