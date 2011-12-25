@@ -3,7 +3,7 @@
 1) mkdir /mnt/hdfs
 
 2) Add this entry to /etc/fstab
-localhost:/   /mnt/hdfs   nfs4       rowintr,timeo=20,proto=tcp,port=2050      0 0
+localhost:/   /mnt/hdfs   nfs4       rw,intr,timeo=600,proto=tcp,port=2050      0 0
 
 3) Ensure you have maven installed and hadoop command configured
 with *-site.xml pointing at the namenode
