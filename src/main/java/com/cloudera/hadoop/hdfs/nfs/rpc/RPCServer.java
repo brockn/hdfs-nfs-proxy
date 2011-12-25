@@ -96,7 +96,7 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
     for(Socket client : mClients.keySet()) {
       ClientWorker<REQUEST, RESPONSE> worker = mClients.get(client);
       if(worker != null && worker.isAlive()) {
-        worker.interrupt();
+        worker.shutdown();
       }
       IOUtils.closeSocket(client);
     }

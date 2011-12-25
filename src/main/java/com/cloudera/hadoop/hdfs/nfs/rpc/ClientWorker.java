@@ -70,7 +70,7 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
   /**
    * Number of retransmits received
    */
-  protected long mRetransmists = 0L;
+  protected long mRetransmits = 0L;
   protected String mSessionID;
   protected Configuration mConfiguration;   
   protected static final AtomicInteger SESSIONID = new AtomicInteger(Integer.MAX_VALUE);
@@ -104,15 +104,15 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
         // request is used to indicate if we should send
         // a failure packet in case of an error
         request = null;
-        if(mRetransmists >= mRestransmitPenaltyThreshold) {
-          mRetransmists = 0L;
+        if(mRetransmits >= mRestransmitPenaltyThreshold) {
+          mRetransmits = 0L;
           mHandler.incrementMetric("RETRANSMIT_PENALTY_BOX", 1);
           Thread.sleep(RETRANSMIT_PENALTY_TIME);
           if(LOGGER.isDebugEnabled()) {
             LOGGER.debug(mSessionID + " Client " + mClientName + " is going in the penalty box (SLOWDOWN)");
           }
         }        
-        mRetransmists = mRetransmists > 0 ? mRetransmists : 0;
+        mRetransmits = mRetransmits > 0 ? mRetransmits : 0;
         
         while(getRequestsInProgress().size() > mMaxPendingRequests) {
           mHandler.incrementMetric("TOO_MANY_PENDING_REQUESTS", 1);
@@ -159,11 +159,11 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
           Set<Integer> requestsInProgress = getRequestsInProgress();
           synchronized (requestsInProgress) {
             if(requestsInProgress.contains(request.getXid())) {
-              mRetransmists++;
-              mHandler.incrementMetric("RESTRANMITS", 1);
+              mRetransmits++;
+              mHandler.incrementMetric("RESTRANSMITS", 1);
               LOGGER.info(mSessionID + " ignoring request " + request.getXid());
             } else {
-              mRetransmists--;
+              mRetransmits--;
               requestsInProgress.add(request.getXid());
               ClientTask<REQUEST, RESPONSE> task = new ClientTask<REQUEST, RESPONSE>(mClientName, mSessionID, this, mHandler,  request, requestBuffer);
               this.schedule(task);
@@ -196,6 +196,9 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
       Map<Socket, ClientWorker<REQUEST, RESPONSE>> clients = mRPCServer.getClients();
       clients.remove(mClient);
     }
+  }
+  public void shutdown() {
+    this.interrupt();
   }
   protected void writeApplicationResponse(int xid, MessageBase applicationResponse) throws IOException {
     if(LOGGER.isDebugEnabled()) {

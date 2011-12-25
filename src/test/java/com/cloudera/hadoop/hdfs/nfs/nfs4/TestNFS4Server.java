@@ -19,12 +19,25 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.net.UnknownHostException;
+
 import static org.junit.Assert.*;
 
 import org.apache.hadoop.conf.Configuration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
+import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
+import com.cloudera.hadoop.hdfs.nfs.rpc.RPCResponse;
+import com.cloudera.hadoop.hdfs.nfs.rpc.RPCTestUtil;
 
 public class TestNFS4Server {
 
@@ -46,10 +59,31 @@ public class TestNFS4Server {
       mNFS4Server.shutdown();
     }
   }
-  
-  // TODO implement tests
   @Test
-  public void testTODO() {
+  public void testNull() throws UnknownHostException, IOException {
     assertTrue(mNFS4Server.isAlive());
+    RPCRequest request = RPCTestUtil.createRequest();
+    request.setProcedure(NFS_PROC_NULL);
+    RPCBuffer buffer = new RPCBuffer();
+    request.write(buffer);
+    
+    Socket socket = new Socket("localhost", mPort);
+    try {
+      OutputStream out = socket.getOutputStream();
+      InputStream in = socket.getInputStream();
+      
+      buffer.write(out);
+      
+      buffer = RPCBuffer.from(in);
+      RPCResponse response = new RPCResponse();
+      response.read(buffer);
+      assertEquals(request.getXid(), response.getXid());
+      assertEquals(RPC_REPLY_STATE_ACCEPT, response.getReplyState());
+      assertEquals(RPC_ACCEPT_SUCCESS, response.getAcceptState());
+    } finally {
+      try {
+        socket.close();
+      } catch(Exception ex) {}
+    }
   }
 }
