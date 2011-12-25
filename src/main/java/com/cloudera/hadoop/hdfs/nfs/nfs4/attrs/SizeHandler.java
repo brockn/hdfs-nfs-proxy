@@ -31,9 +31,17 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
+import com.cloudera.hadoop.hdfs.nfs.rpc.LRUCache;
 
 public class SizeHandler extends AttributeHandler<Size> {
 
+  /**
+   * Store the last 1000 truncate requests so we don't process
+   * one twice. Not perfect but should work well enough.
+   */
+  protected LRUCache<Integer, Object> mProcessedRequests = new LRUCache<Integer, Object>(1000);
+  protected final Object value = new Object();
+  
   @Override
   public Size get(NFS4Handler server, Session session, FileSystem fs,
       FileStatus fileStatus) throws NFS4Exception {
@@ -49,15 +57,22 @@ public class SizeHandler extends AttributeHandler<Size> {
     if(size.getSize() != 0) {
       throw new UnsupportedOperationException("Setting size to non-zero (truncate) is not supported.");
     }
-    // open the file, overwriting if needed. Creation of an empty file with
-    // overwrite on is the only way we can support truncating files
-    FSDataOutputStream out = server.forWrite(stateID, fs, session.getCurrentFileHandle(), true);
-    if(out.getPos() != 0) {
-      stateID = server.close(session.getSessionID(), stateID, stateID.getSeqID(), session.getCurrentFileHandle());
-      out = server.forWrite(stateID, fs, session.getCurrentFileHandle(), true); 
+    synchronized (mProcessedRequests) {
+      if(mProcessedRequests.containsKey(session.getXID())) {
+        return true;
+      }
+      mProcessedRequests.put(session.getXID(), value);
+      // open the file, overwriting if needed. Creation of an empty file with
+      // overwrite on is the only way we can support truncating files
+      FSDataOutputStream out = server.forWrite(stateID, fs, session.getCurrentFileHandle(), true);
+      if(out.getPos() != 0) {
+        stateID = server.close(session.getSessionID(), stateID, stateID.getSeqID(), session.getCurrentFileHandle());
+        out = server.forWrite(stateID, fs, session.getCurrentFileHandle(), true); 
+      }
+      out.sync();
+      return true;
+      
     }
-    out.sync();
-    return true;
   }
 
 }
