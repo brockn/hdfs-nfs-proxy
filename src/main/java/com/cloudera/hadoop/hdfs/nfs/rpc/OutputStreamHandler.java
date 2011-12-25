@@ -66,7 +66,7 @@ class OutputStreamHandler extends Thread {
    * @throws IOException
    */
   public void add(RPCBuffer buffer) throws IOException {
-    if(!this.isAlive()) {
+    if(mShutdown || !this.isAlive()) {
       throw new IOException("Write thread dead");
     }
     try {
