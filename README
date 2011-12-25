@@ -35,7 +35,7 @@ The script ./start-nfs-client-tests.sh runs basic tests.
 
 * User Mapping
 NFS4 User identities are user@domain. However, the RPC protocol uses UID/GID.
-Currently we map the UID on the incoming request via the system we are currently on.
+Currently we map the UID on the incoming request via the system the daemon executes on.
 I think there is something in Hadoop which does user mapping as well. If so, it might
 make sense to be consistent.
 * Client ID - RFC 3530 (NFS4) has fairly complex logic which I do not follow.
@@ -44,7 +44,7 @@ At present we get a fair number of threads blocked on reads of a single input st
 I think we could get better performance if we ordered these like writes because we
 know they will arrive out of order. As such the current impl is doing more seeks
 than required. We also might considering pooling input streams.
-* Heavy read loads use a fair amount of old gen likely due to our responnse cache
+* Heavy read loads use a fair amount of old gen likely due to our response cache
 and the size of read responses. If this becomes an issue we could easily exclude 
 read requests from the response cache.
 * Write Ordering
