@@ -57,7 +57,7 @@ public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITERes
 
     WriteOrderHandler writeOrderHandler = server.getWriteOrderHandler(file, out);
     boolean sync = request.getStable() != NFS4_COMMIT_UNSTABLE4;
-    int count = writeOrderHandler.write(session.getXID(), request.getOffset(), 
+    int count = writeOrderHandler.write(path.toUri().getPath(), session.getXID(), request.getOffset(), 
         sync, request.getData(), request.getStart(), request.getLength());
     
     WRITEResponse response = createResponse();

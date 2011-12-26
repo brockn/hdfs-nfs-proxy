@@ -113,7 +113,8 @@ public class WriteOrderHandler extends Thread {
     long preWritePos = getCurrentPos();
     checkState(preWritePos == write.offset, " Offset = " + write.offset + ", pos = " + preWritePos);
     mOutputStream.write(write.data, write.start, write.length);
-    LOGGER.info("Writing to " + mOutputStream  + " " + write.offset + ", " + write.length + ", new offset = " + getCurrentPos());
+    LOGGER.info("Writing to " + write.name  + " " + write.offset + ", " 
+        + write.length + ", new offset = " + getCurrentPos() + ", hash = " + write.hashCode);
     if(write.sync) {
       mOutputStream.sync();
     }
@@ -198,7 +199,7 @@ public class WriteOrderHandler extends Thread {
    * or if the thread is interrupted while putting the write on the queue
    * @throws NFS4Exception if random write
    */
-  public int write(int xid, long offset, boolean sync, byte[] data, int start, int length) 
+  public int write(String name, int xid, long offset, boolean sync, byte[] data, int start, int length) 
       throws IOException, NFS4Exception {
     checkException();
     if(mClosed.get()) {
@@ -226,7 +227,7 @@ public class WriteOrderHandler extends Thread {
             mExpectedLength.set(offset);
           }
         }
-        mWriteQueue.put(new Write(xid, offset, sync, data, start, length));
+        mWriteQueue.put(new Write(name, xid, offset, sync, data, start, length));
         if(sync) {
           sync(offset);
         }
@@ -238,19 +239,23 @@ public class WriteOrderHandler extends Thread {
   }
   
   protected static class Write {
+    String name;
     int xid;
     long offset;
     boolean sync;
     byte[] data;
     int start;
     int length;
-    public Write(int xid, long offset, boolean sync, byte[] data, int start, int length) {
+    int hashCode;
+    public Write(String name, int xid, long offset, boolean sync, byte[] data, int start, int length) {
+      this.name = name;
       this.xid = xid;
       this.offset = offset;
       this.sync = sync;
       this.data = data;
       this.start = start;
       this.length = length;
+      this.hashCode = hashCode();
     }
     @Override
     public int hashCode() {

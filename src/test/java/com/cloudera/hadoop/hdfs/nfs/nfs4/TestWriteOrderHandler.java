@@ -72,7 +72,7 @@ public class TestWriteOrderHandler {
       new Thread() {
         public void run() {
           try {
-            int count = writeOrderHandler.write(xid.incrementAndGet(), offset, false, buffer, 0, buffer.length);
+            int count = writeOrderHandler.write("a file", xid.incrementAndGet(), offset, false, buffer, 0, buffer.length);
             if(count != buffer.length) {
               errors.add(new Exception("Expected to write " + buffer.length + " but wrote " + count));
             }
@@ -96,7 +96,7 @@ public class TestWriteOrderHandler {
           }
           fail(msg);
         }
-        if(System.currentTimeMillis() - start > 10000) {
+        if(System.currentTimeMillis() - start > 20000) {
           fail("Timed out waiting for writes: expectedPos = " + expectedPos + ", pos = " + out.getPos());
         }
       }    
