@@ -33,6 +33,8 @@ The script ./start-nfs-client-tests.sh runs basic tests.
 
  == What needs improvement ==
 
+* Locking in NFS4Handler is very coarse grained. In addition, we lock FSDataOutputStream
+for getPos() calls all over the place. This might be uneeded.
 * User Mapping
 NFS4 User identities are user@domain. However, the RPC protocol uses UID/GID.
 Currently we map the UID on the incoming request via the system the daemon executes on.
@@ -55,7 +57,7 @@ We buffer writes until we find the prereq, this memory consumption is not bounde
 
 
  == FAQ ==
-*All user/groups show up as `nobody'?
+* All user/groups show up as `nobody'?
 
 NFS4 returns user/group with user@domain. Today by default it responds with
 user@clientDomain. The client then uses the idmap service to lookup the user
