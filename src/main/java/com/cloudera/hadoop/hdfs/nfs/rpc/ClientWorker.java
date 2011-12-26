@@ -167,7 +167,9 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
               requestsInProgress.add(request.getXid());
               ClientTask<REQUEST, RESPONSE> task = new ClientTask<REQUEST, RESPONSE>(mClientName, mSessionID, this, mHandler,  request, requestBuffer);
               this.schedule(task);
-              LOGGER.info(mSessionID + " scheduling request " + request.getXid());
+              if(LOGGER.isDebugEnabled()) {
+                LOGGER.debug(mSessionID + " scheduling request " + request.getXid());
+              }
             }
           }
         } else {
@@ -282,7 +284,9 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
       Map<Integer, MessageBase> responseCache = mClientWorker.getResponseCache();
       boolean removed = false;
       try {
-        LOGGER.info(mSessionID + " starting xid " + mRequest.getXid());
+        if(LOGGER.isDebugEnabled()) {
+          LOGGER.debug(mSessionID + " starting xid " + mRequest.getXid());
+        }
         /*
          *   TODO ensure credentials are the same for request/cached response.
          */
@@ -320,7 +324,9 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
         if(!removed) {
           requestsInProgress.remove(mRequest.getXid());
         }
-        LOGGER.info(mSessionID + " finishing xid " + mRequest.getXid());
+        if(LOGGER.isDebugEnabled()) {
+          LOGGER.debug(mSessionID + " finishing xid " + mRequest.getXid());
+        }
       }
     }
   }
