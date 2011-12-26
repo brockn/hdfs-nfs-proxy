@@ -114,6 +114,9 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
         }        
         mRetransmits = mRetransmits > 0 ? mRetransmits : 0;
         
+        // TODO sync IO request will burn threads in the fixed pool
+        // while we wait for requests to finish. This is not good.
+        // we need a async return path for requests which will block
         while(getRequestsInProgress().size() > mMaxPendingRequests) {
           mHandler.incrementMetric("TOO_MANY_PENDING_REQUESTS", 1);
           if(LOGGER.isDebugEnabled()) {
