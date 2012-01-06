@@ -62,6 +62,7 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
 
   protected int mRestransmitPenaltyThreshold;
   protected int mMaxPendingRequests;
+  protected int mMaxPendingRequestWaits;
   protected Socket mClient;
   protected String mClientName;
   protected RPCServer<REQUEST, RESPONSE> mRPCServer;
@@ -86,6 +87,7 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
     
     mMaxPendingRequests = mConfiguration.getInt(RPC_MAX_PENDING_REQUESTS, 20);
     mRestransmitPenaltyThreshold = mConfiguration.getInt(RPC_RETRANSMIT_PENALTY_THRESHOLD, 3);
+    mMaxPendingRequestWaits = 500;
   }
   
   public void run() {
@@ -114,10 +116,12 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
         }        
         mRetransmits = mRetransmits > 0 ? mRetransmits : 0;
         
-        // TODO sync IO request will burn threads in the fixed pool
-        // while we wait for requests to finish. This is not good.
-        // we need a async return path for requests which will block
-        while(getRequestsInProgress().size() > mMaxPendingRequests) {
+        // Some requests will burn a thread while waiting for a
+        // condition. For example close waits for writes to finish
+        // and rename waits for a few ms for the file to close
+        // if open. We should have an async return path.
+        int count = 0;
+        while(getRequestsInProgress().size() > mMaxPendingRequests && count++ < mMaxPendingRequestWaits) {
           mHandler.incrementMetric("TOO_MANY_PENDING_REQUESTS", 1);
           if(LOGGER.isDebugEnabled()) {
             LOGGER.debug(mSessionID + " Client " + mClientName + " is waiting for pending requests to finish (SLOWDOWN)");

@@ -65,6 +65,19 @@ public class RENAMEHandler extends OperationRequestHandler<RENAMERequest, RENAME
       throw new NFS4Exception(NFS4ERR_EXIST, "Path " + newPath + " exists.");
     }
     // we won't support renaming files which are open
+    // but it happens fairly often that due to tcp/ip
+    // the rename request is received before the close.
+    // Below we delay the rename if the file is open 
+    for (int i = 0; i < 5; i++) {
+      if(!server.isFileOpen(oldPath)) {
+        break;
+      }
+      try {
+        Thread.sleep(100L);
+      } catch (InterruptedException e) {
+        throw new IOException("Interrupted while waiting for file to close", e);
+      }
+    }
     if(server.isFileOpen(oldPath)) {
       throw new NFS4Exception(NFS4ERR_FILE_OPEN);
     }
