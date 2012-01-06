@@ -35,16 +35,6 @@ import org.slf4j.LoggerFactory;
 
 import com.cloudera.hadoop.hdfs.nfs.LogUtils;
 import com.cloudera.hadoop.hdfs.nfs.TestUtils;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.Bitmap;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.Callback;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.ClientID;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.DirectoryEntry;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData8;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Attribute;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CLOSERequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
@@ -77,18 +67,16 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.SETCLIENTIDCONFIRMResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.SETCLIENTIDResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.WRITEResponse;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
-import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-public class BasicClient {
-  protected static final Logger LOGGER = LoggerFactory.getLogger(BasicClient.class);
+public abstract class BaseClient {
+  protected static final Logger LOGGER = LoggerFactory.getLogger(BaseClient.class);
 
   protected long clientID = 0;
   protected OpaqueData8 clientVerifer;
-  protected NFS4Handler mServer = new NFS4Handler();
   protected Path ROOT = new Path("/");
   protected Map<FileHandle, StateID> mFileHandleStateID = Maps.newHashMap();
   protected Map<Path, FileHandle> mPathFileHandleMap = Maps.newHashMap();
@@ -96,7 +84,8 @@ public class BasicClient {
   protected Map<FileHandle, ImmutableMap<Integer, Attribute>> mFileHandleAttributeMap = Maps.newHashMap();
 
   
-  public BasicClient() {
+  
+  protected void initialize() {
     CompoundRequest compoundRequest = newRequest();
     List<OperationRequest> operations = Lists.newArrayList();
     operations.add(new PUTROOTFHRequest());
@@ -114,6 +103,14 @@ public class BasicClient {
     mFileHandlePathMap.put(fileHandle, ROOT);
     getAttrs(ROOT);
   }
+  
+  protected abstract CompoundResponse doMakeRequest(CompoundRequest request) throws IOException;
+
+  
+  public void shutdown() {
+    
+  }
+  
   /**
    * Copies the message to byes and reads it back in again. 
    * Should execute both serialization and deserialization
@@ -142,13 +139,20 @@ public class BasicClient {
    */
   protected List<OperationResponse> makeRequest(CompoundRequest request) {
     request = serde(request);
-    CompoundResponse response = mServer.process(new RPCRequest(), request, "localhost", "test");
+    CompoundResponse response;
+    try {
+      response = doMakeRequest(request);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
     assertEquals(NFS4_OK, response.getStatus());
     assertEquals(request.getOperations().size(), response.getOperations().size());
     response = serde(response);
     assertEquals(request.getOperations().size(), response.getOperations().size());
     return Lists.newArrayList(response.getOperations());
   }
+  
+  
   protected FileHandle lookup(Path path) {
     Path parent;
     LOGGER.info("Lookup on " + path);

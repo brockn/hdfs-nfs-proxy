@@ -38,33 +38,18 @@ import com.google.common.collect.ImmutableList;
 
 public class TestWithClient {
   
-  protected String getOwner(File file) throws IOException {
-    String[] cmd =  new String[]{"stat","-c","%U",file.getAbsolutePath()};
-    return Shell.execCommand(cmd).trim();
-  }
-  protected String getOwnerGroup(File file) throws IOException {
-    String[] cmd =  new String[]{"/usr/bin/stat","-c","%G", file.getAbsolutePath()};
-    return Shell.execCommand(cmd).trim();
-  }
-  protected void doCompareFileStatusFile(FileStatus fileStatus) throws IOException {
-    File file = new File(fileStatus.path.toString());
-    assertEquals(getOwner(file) + "@localhost", fileStatus.getOwner());
-    assertEquals(getOwnerGroup(file) + "@localhost", fileStatus.getOwnerGroup());
-    assertEquals(file.length(), fileStatus.getSize());
-    assertEquals(file.lastModified(), fileStatus.getMTime());      
-    assertEquals(file.isDirectory(), fileStatus.isDir());
-  }
-  protected void compareFileStatusFile(FileStatus fileStatus) throws IOException, InterruptedException {
-    try {
-      doCompareFileStatusFile(fileStatus);
-    } catch(AssertionError error) {
-      Thread.sleep(100L);
-      doCompareFileStatusFile(fileStatus);
-    }
-  }
+  
   @Test
-  public void testReadDir() throws IOException, InterruptedException {
-    BasicClient client = new BasicClient();
+  public void testReadDirLocal() throws IOException, InterruptedException {
+    doReadDir(new LocalClient());
+  }
+
+  @Test
+  public void testReadDirNetwork() throws IOException, InterruptedException {
+    doReadDir(new NetworkClient());
+  }
+
+  public void doReadDir(BaseClient client) throws IOException, InterruptedException {
     /*
      * traverse through a directory that does not change often
      * and ensure it checks out the same as through the native api
@@ -82,8 +67,16 @@ public class TestWithClient {
   }
   
   @Test
-  public void testSmallReadSize() throws Exception {
-    BasicClient client = new BasicClient();
+  public void testSmallReadSizeLocal() throws Exception {
+    doSmallReadSize(new LocalClient());
+  }
+  
+  @Test
+  public void testSmallReadSizeNetwork() throws Exception {
+    doSmallReadSize(new NetworkClient());
+  }
+  
+  public void doSmallReadSize(BaseClient client) throws Exception {
     BufferedReader reader = new BufferedReader(new InputStreamReader(client.forRead(new Path("/etc/passwd"), 5)));
     String line;
     
@@ -99,8 +92,16 @@ public class TestWithClient {
   }
   
   @Test
-  public void testLargeReadSize() throws Exception {
-    BasicClient client = new BasicClient();
+  public void testLargeReadSizeLocal() throws Exception {
+    doLargeReadSize(new LocalClient());
+  }
+  
+  @Test
+  public void testLargeReadSizeNetwork() throws Exception {
+    doLargeReadSize(new NetworkClient());
+  }
+  
+  public void doLargeReadSize(BaseClient client) throws Exception {
     BufferedReader reader = new BufferedReader(new InputStreamReader(client.forRead(new Path("/etc/passwd"), 1024 * 1024)));
     String line;
     
@@ -116,8 +117,15 @@ public class TestWithClient {
   }
 
   @Test
-  public void testNormalReadSize() throws Exception {
-    BasicClient client = new BasicClient();
+  public void testNormalReadSizeLocal() throws Exception {
+    doNormalReadSize(new LocalClient());
+  }
+  
+  @Test
+  public void testNormalReadSizeNetwork() throws Exception {
+    doNormalReadSize(new NetworkClient());
+  }
+  public void doNormalReadSize(BaseClient client) throws Exception {
     BufferedReader reader = new BufferedReader(new InputStreamReader(client.forRead(new Path("/etc/passwd"), NFS4_MAX_RWSIZE)));
     String line;
     
@@ -133,8 +141,16 @@ public class TestWithClient {
   }
   
   @Test
-  public void testWrite() throws Exception {
-    BasicClient client = new BasicClient();
+  public void testWriteLocal() throws Exception {
+    doWrite(new LocalClient());
+  }
+  
+  @Test
+  public void testWriteNetwork() throws Exception {
+    doWrite(new NetworkClient());
+  }
+  
+  public void doWrite(BaseClient client) throws Exception {
     File file = new File("/tmp", UUID.randomUUID().toString());
     Path path = new Path(file.getAbsolutePath());
     try {
@@ -154,4 +170,30 @@ public class TestWithClient {
       file.delete();
     }
   }
+  
+  protected String getOwner(File file) throws IOException {
+    String[] cmd =  new String[]{"stat","-c","%U",file.getAbsolutePath()};
+    return Shell.execCommand(cmd).trim();
+  }
+  protected String getOwnerGroup(File file) throws IOException {
+    String[] cmd =  new String[]{"/usr/bin/stat","-c","%G", file.getAbsolutePath()};
+    return Shell.execCommand(cmd).trim();
+  }
+  protected void doCompareFileStatusFile(FileStatus fileStatus) throws IOException {
+    File file = new File(fileStatus.path.toString());
+    assertEquals(getOwner(file) + "@localdomain", fileStatus.getOwner());
+    assertEquals(getOwnerGroup(file) + "@localdomain", fileStatus.getOwnerGroup());
+    assertEquals(file.length(), fileStatus.getSize());
+    assertEquals(file.lastModified(), fileStatus.getMTime());      
+    assertEquals(file.isDirectory(), fileStatus.isDir());
+  }
+  protected void compareFileStatusFile(FileStatus fileStatus) throws IOException, InterruptedException {
+    try {
+      doCompareFileStatusFile(fileStatus);
+    } catch(AssertionError error) {
+      Thread.sleep(100L);
+      doCompareFileStatusFile(fileStatus);
+    }
+  }
+
 }

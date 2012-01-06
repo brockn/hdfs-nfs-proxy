@@ -28,6 +28,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -65,8 +66,10 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
   protected int mMaxPendingRequestWaits;
   protected Socket mClient;
   protected String mClientName;
+  protected String mClientHost;
   protected RPCServer<REQUEST, RESPONSE> mRPCServer;
   protected OutputStreamHandler mOutputHandler;
+  protected BlockingQueue<RPCBuffer> mOutputBufferQueue;
   protected RPCHandler<REQUEST, RESPONSE> mHandler;
   /**
    * Number of retransmits received
@@ -81,9 +84,11 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
     mRPCServer = server;
     mHandler = handler;
     mClient = client;
-    mClientName = mClient.getInetAddress().getCanonicalHostName() + ":" + mClient.getPort();
+    mClientHost = mClient.getInetAddress().getCanonicalHostName();
+    mClientName = mClientHost + ":" + mClient.getPort();
     mSessionID = "0x" + Integer.toHexString(SESSIONID.addAndGet(-5));
     setName("RPCServer-" + mClientName);
+    mOutputBufferQueue = mRPCServer.getOutputQueue(mClientHost);
     
     mMaxPendingRequests = mConfiguration.getInt(RPC_MAX_PENDING_REQUESTS, 20);
     mRestransmitPenaltyThreshold = mConfiguration.getInt(RPC_RETRANSMIT_PENALTY_THRESHOLD, 3);
@@ -99,7 +104,7 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
       mClient.setPerformancePreferences(0, 1, 0);
       in = mClient.getInputStream();
       out = mClient.getOutputStream();
-      mOutputHandler = new OutputStreamHandler(out, mClientName);
+      mOutputHandler = new OutputStreamHandler(out, mOutputBufferQueue, mClientName);
       mOutputHandler.setDaemon(true);
       mOutputHandler.start();
       while(true) {
@@ -209,7 +214,7 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
   public void shutdown() {
     this.interrupt();
   }
-  protected void writeApplicationResponse(int xid, MessageBase applicationResponse) throws IOException {
+  protected void writeApplicationResponse(int xid, MessageBase applicationResponse) throws IOException, InterruptedException {
     if(LOGGER.isDebugEnabled()) {
       LOGGER.debug(mSessionID + " Writing " + applicationResponse.getClass().getSimpleName() + " to "  + mClientName);
     }
@@ -220,17 +225,17 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
     response.write(responseBuffer);
     applicationResponse.write(responseBuffer);
     responseBuffer.flip();
-    mOutputHandler.add(responseBuffer);
+    mOutputBufferQueue.put(responseBuffer);
     mHandler.incrementMetric("CLIENT_BYTES_WROTE", responseBuffer.length());
   }
-  protected void writeRPCResponse(RPCResponse response) throws IOException {
+  protected void writeRPCResponse(RPCResponse response) throws IOException, InterruptedException {
     if(LOGGER.isDebugEnabled()) {
       LOGGER.debug(mSessionID + " Writing bare RPC Response to "  + mClientName);
     }
     RPCBuffer responseBuffer = new RPCBuffer();
     response.write(responseBuffer);
     responseBuffer.flip();
-    mOutputHandler.add(responseBuffer);
+    mOutputBufferQueue.put(responseBuffer);
     mHandler.incrementMetric("CLIENT_BYTES_WROTE", responseBuffer.length());
   }
   

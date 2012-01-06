@@ -21,8 +21,8 @@ package com.cloudera.hadoop.hdfs.nfs.rpc;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
  */
 class OutputStreamHandler extends Thread {
   protected static final Logger LOGGER = LoggerFactory.getLogger(OutputStreamHandler.class);
-  protected BlockingQueue<RPCBuffer> mQueue = new ArrayBlockingQueue<RPCBuffer>(10, true);
+  protected BlockingQueue<RPCBuffer> mWorkQueue;
   protected OutputStream mOutputStream;
   protected String mClientName;
   protected volatile boolean mShutdown;
@@ -44,8 +44,9 @@ class OutputStreamHandler extends Thread {
    * @param outputStream
    * @param client
    */
-  public OutputStreamHandler(OutputStream outputStream, String client) {
+  public OutputStreamHandler(OutputStream outputStream, BlockingQueue<RPCBuffer> workQueue, String client) {
     mOutputStream = outputStream;
+    mWorkQueue = workQueue;
     mClientName = client;
     mShutdown = false;
     setName("OutputStreamHandler-" + mClientName);
@@ -55,49 +56,53 @@ class OutputStreamHandler extends Thread {
    */
   public void close() {
     mShutdown = true;
-    this.interrupt();
   }
-  /**
-   * Place buffer on an internal blocking queue to be written
-   * later by the OutputStreamHandler. If OutputStreamHandler
-   * encounters an error writing to the stream, the error will
-   * be rethrown on the next call to the add(buffer) method.
-   * @param buffer
-   * @throws IOException
-   */
-  public void add(RPCBuffer buffer) throws IOException {
-    if(mShutdown || !this.isAlive()) {
-      throw new IOException("Write thread dead");
-    }
+  protected void put(RPCBuffer buffer) {
     try {
-      mQueue.put(buffer);
+      mWorkQueue.put(buffer);
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
   }
   public void run() {
     while(!mShutdown) {
+      RPCBuffer buffer = null;
       try {
-        try {
-          RPCBuffer buffer = mQueue.take();
+        buffer = mWorkQueue.poll(1L, TimeUnit.SECONDS);
+        if(buffer != null) {
           buffer.write(mOutputStream);
-        } catch (InterruptedException e) {
-          LOGGER.info("OutputStreamHandler for " + mClientName + " quitting.");
-          break;
+          mOutputStream.flush();
         }
+        buffer = null;
       } catch (IOException e) {
         LOGGER.warn("OutputStreamHandler for " + mClientName + " got error on write", e);
+      } catch (InterruptedException e) {
+        LOGGER.info("OutputStreamHandler for " + mClientName + " interrupted");
+      } finally {
+        if(buffer != null) {
+          put(buffer);
+        }
       }
     }
+    // process the rest of the queue in case the client
+    // does not plan to reconnect. If it does, the write
+    // will likely throw an exception and items will be 
+    // processed by the next output stream handler
     while(true) {
+      RPCBuffer buffer = null;
       try {
-        RPCBuffer buffer = mQueue.poll();
+        buffer = mWorkQueue.poll();
         if(buffer == null) {
           break;
         }
         buffer.write(mOutputStream);
+        buffer = null;
       } catch(Exception e) {
         LOGGER.warn("OutputStreamHandler for " + mClientName + " got error on final write", e);
+      } finally {
+        if(buffer != null) {
+          put(buffer);
+        }
       }
     }
   }

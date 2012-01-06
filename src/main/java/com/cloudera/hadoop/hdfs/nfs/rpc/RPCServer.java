@@ -22,12 +22,14 @@ package com.cloudera.hadoop.hdfs.nfs.rpc;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -54,13 +56,13 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
     Collections.synchronizedMap(new LRUCache<Integer,MessageBase>(500));
   protected Set<Integer> mRequestsInProgress = Collections.synchronizedSet(new HashSet<Integer>());
   protected ExecutorService mExecutor;
-  
+  protected Map<String, BlockingQueue<RPCBuffer>> mOutputQueueMap = Maps.newHashMap();
   
   public RPCServer(RPCHandler<REQUEST, RESPONSE> rpcHandler, Configuration conf) throws Exception {
     this(rpcHandler, conf, 0);
   }
   
-  public RPCServer(RPCHandler<REQUEST, RESPONSE> rpcHandler, Configuration conf, int port) throws Exception {
+  public RPCServer(RPCHandler<REQUEST, RESPONSE> rpcHandler, Configuration conf, int port) throws IOException {
     mExecutor =  new ThreadPoolExecutor(10, conf.getInt(RPC_MAX_THREADS, 500),
         30, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
     
@@ -82,7 +84,8 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
       
       while (true) {
         Socket client = mServer.accept();
-        LOGGER.info(mHandler.getClass() + " got client " + client.getInetAddress().getCanonicalHostName());
+        String name = client.getInetAddress().getCanonicalHostName() + ":" + client.getPort();
+        LOGGER.info(mHandler.getClass() + " got client " + name);
 
         ClientWorker<REQUEST, RESPONSE> worker = new ClientWorker<REQUEST, RESPONSE>(mConfiguration, this, mHandler, client);
         mClients.put(client, worker);
@@ -112,6 +115,14 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
   }
   public int getPort() {
     return mPort;
+  }
+  protected BlockingQueue<RPCBuffer> getOutputQueue(String name) {
+    synchronized(mOutputQueueMap) {
+      if(!mOutputQueueMap.containsKey(name)) {
+        mOutputQueueMap.put(name, new LinkedBlockingQueue<RPCBuffer>(1000));
+      }
+      return mOutputQueueMap.get(name);
+    }
   }
   protected Map<Integer, MessageBase> getResponseCache() {
     return mResponseCache;

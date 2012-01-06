@@ -86,4 +86,64 @@ public class TestNFS4Server {
       } catch(Exception ex) {}
     }
   }
+  
+  /**
+   * Test to ensure most of the time we are able to receive a packet 
+   * after disconnect. Why most of the time? There is a race in that
+   * the server will not always throw an when trying to write the packet
+   * after we have stopped listening. 
+   */
+  @Test
+  public void testDiscconnectReconnect() throws UnknownHostException, IOException {
+    int failures = 0, attempts = 10;
+    for (int i = 0; i < attempts; i++) {
+      try {
+        doDiscconnectReconnect();
+      } catch(Exception ex) {
+        failures++;
+      }
+    }
+    assertTrue("failures = " + failures, failures <= 2);
+  }
+  
+  protected void doDiscconnectReconnect() throws UnknownHostException, IOException {
+    assertTrue(mNFS4Server.isAlive());
+    RPCRequest request = RPCTestUtil.createRequest();
+    request.setProcedure(NFS_PROC_NULL);
+    RPCBuffer buffer = new RPCBuffer();
+    request.write(buffer);
+    
+    Socket socket = new Socket("localhost", mPort);
+    socket.setTcpNoDelay(true);
+    socket.setPerformancePreferences(0, 1, 0);
+    socket.setSoTimeout(2000);
+    try {
+      OutputStream out = socket.getOutputStream();
+      InputStream in = socket.getInputStream();
+      
+      buffer.write(out);
+      out.flush();    
+      in.close();
+      out.close();
+      socket.close();
+      
+      socket = new Socket("localhost", mPort);
+      socket.setTcpNoDelay(true);
+      socket.setPerformancePreferences(0, 1, 0);
+      socket.setSoTimeout(2000);
+      out = socket.getOutputStream();
+      in = socket.getInputStream();
+      
+      buffer = RPCBuffer.from(in);
+      RPCResponse response = new RPCResponse();
+      response.read(buffer);
+      assertEquals(request.getXid(), response.getXid());
+      assertEquals(RPC_REPLY_STATE_ACCEPT, response.getReplyState());
+      assertEquals(RPC_ACCEPT_SUCCESS, response.getAcceptState());
+    } finally {
+      try {
+        socket.close();
+      } catch(Exception ex) {}
+    }
+  }
 }
