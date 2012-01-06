@@ -62,9 +62,11 @@ public class WriteOrderHandler extends Thread {
   
   public WriteOrderHandler(FSDataOutputStream outputStream) throws IOException {
     mOutputStream = outputStream;
-    mExpectedLength.set(getCurrentPos());
+    mExpectedLength.set(mOutputStream.getPos());
   }
-  
+  public long getCurrentPos() throws IOException {
+    return mOutputStream.getPos();
+  }
   public void run() {
     try {
       while(true) {
@@ -104,17 +106,17 @@ public class WriteOrderHandler extends Thread {
   protected void checkPendingWrites() throws IOException {
     Write write = null;
     synchronized (mPendingWrites) {
-      while((write = mPendingWrites.remove(getCurrentPos())) != null) {
+      while((write = mPendingWrites.remove(mOutputStream.getPos())) != null) {
         doWrite(write);
       }      
     }
   }
   protected void doWrite(Write write) throws IOException {
-    long preWritePos = getCurrentPos();
+    long preWritePos = mOutputStream.getPos();
     checkState(preWritePos == write.offset, " Offset = " + write.offset + ", pos = " + preWritePos);
     mOutputStream.write(write.data, write.start, write.length);
     LOGGER.info("Writing to " + write.name  + " " + write.offset + ", " 
-        + write.length + ", new offset = " + getCurrentPos() + ", hash = " + write.hashCode);
+        + write.length + ", new offset = " + mOutputStream.getPos() + ", hash = " + write.hashCode);
     if(write.sync) {
       mOutputStream.sync();
     }
@@ -138,7 +140,7 @@ public class WriteOrderHandler extends Thread {
    */
   public void sync(long offset) throws IOException, NFS4Exception {
     LOGGER.info("Sync for " + mOutputStream + " and " + offset);
-    while(getCurrentPos() < offset) {
+    while(mOutputStream.getPos() < offset) {
       checkException();
       pause(10L);
     }
@@ -154,7 +156,7 @@ public class WriteOrderHandler extends Thread {
    */
   public void close() throws IOException, NFS4Exception {
     mClosed.set(true);
-    while(getCurrentPos() < mExpectedLength.get() ||
+    while(mOutputStream.getPos() < mExpectedLength.get() ||
         !(mPendingWrites.isEmpty() && mWriteQueue.isEmpty())) {
       pause(10L);
       sync(mExpectedLength.get());
@@ -164,8 +166,8 @@ public class WriteOrderHandler extends Thread {
       mOutputStream.close();
     }
     checkState(mPendingWrites.isEmpty(), "Pending writes for " + mOutputStream + " at " + 
-        getCurrentPos() + " = " + mPendingWrites);    
-    LOGGER.info("Closing " + mOutputStream + " at " + getCurrentPos());
+        mOutputStream.getPos() + " = " + mPendingWrites);    
+    LOGGER.info("Closing " + mOutputStream + " at " + mOutputStream.getPos());
     this.interrupt();
   }
   protected void pause(long ms) throws IOException {
@@ -173,16 +175,6 @@ public class WriteOrderHandler extends Thread {
       Thread.sleep(ms);
     } catch (InterruptedException e) {
       throw new IOException("Interrupted while paused", e);
-    }
-  }
-  /**
-   * Get the current position of the output stream.
-   * @return
-   * @throws IOException
-   */
-  public long getCurrentPos() throws IOException {
-    synchronized(mOutputStream) {
-      return mOutputStream.getPos();
     }
   }
   /**
@@ -215,10 +207,10 @@ public class WriteOrderHandler extends Thread {
           return length;
         }
         mProcessedWrites.add(xid);
-        if(offset < getCurrentPos()) {
+        if(offset < mOutputStream.getPos()) {
           throw new NFS4Exception(NFS4ERR_PERM, "Unable to process write (random write) at " + 
               offset + 
-              ", pos = " + getCurrentPos() +
+              ", pos = " + mOutputStream.getPos() +
               ", sync = " + sync + 
               ", length = " + length);
         }

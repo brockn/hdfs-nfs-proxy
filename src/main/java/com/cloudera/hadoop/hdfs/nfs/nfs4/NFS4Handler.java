@@ -64,15 +64,15 @@ import com.google.common.collect.Maps;
  */
 public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   protected static final Logger LOGGER = LoggerFactory.getLogger(NFS4Handler.class);
-  protected final Map<String, FileHolder> mPathMap = Maps.newHashMap();
-  protected final Map<FileHandle, FileHolder> mFileHandleMap = Maps.newHashMap();
+  protected final Map<String, FileHolder> mPathMap = Maps.newConcurrentMap();
+  protected final Map<FileHandle, FileHolder> mFileHandleMap = Maps.newConcurrentMap();
   protected final Configuration mConfiguration;
   protected final ClientFactory mClientFactory = new ClientFactory();
   protected static final AtomicLong FILEID = new AtomicLong(0L);
   protected long mStartTime = System.currentTimeMillis();
   protected MetricsPrinter mMetricsPrinter;
   protected Map<String, AtomicLong> mMetrics = Maps.newTreeMap();
-  protected Map<FSDataOutputStream, WriteOrderHandler> mWriteOrderHandlerMap = Maps.newHashMap();
+  protected Map<FSDataOutputStream, WriteOrderHandler> mWriteOrderHandlerMap = Maps.newConcurrentMap();
   
   /**
    * Create a handler object with a default configuration object
@@ -484,7 +484,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
    * @return Path for FileHandler
    * @throws NFS4Exception if FileHandle is stale
    */
-  public synchronized Path getPath(FileHandle fileHandle) throws NFS4Exception {
+  public Path getPath(FileHandle fileHandle) throws NFS4Exception {
     FileHolder file =  mFileHandleMap.get(fileHandle);
     if(file != null) {
       return new Path(file.getPath());
@@ -497,7 +497,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
    * @return FileHandle for path
    * @throws NFS4Exception if the FileHandle for the Path is stale
    */
-  public synchronized FileHandle getFileHandle(Path path) throws NFS4Exception {
+  public FileHandle getFileHandle(Path path) throws NFS4Exception {
     FileHolder file = mPathMap.get(realPath(path));
     if(file != null) {
       return file.getFileHandle();        
@@ -513,16 +513,14 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
    * @return the current file length including data written to the output stream
    * @throws NFS4Exception if the getPos() call of the output stream throws IOException
    */
-  public synchronized long getFileSize(FileStatus status) throws NFS4Exception {
+  public long getFileSize(FileStatus status) throws NFS4Exception {
     FileHolder fileWrapper = mPathMap.get(realPath(status.getPath()));
     if(fileWrapper != null) {
       OpenFile<FSDataOutputStream> file = fileWrapper.getFSDataOutputStream();
       if(file != null) {
         try {
           FSDataOutputStream out = file.get();
-          synchronized(out) {
-            return out.getPos();
-          }
+          return out.getPos();
         } catch (IOException e) {
           throw new NFS4Exception(NFS4ERR_SERVERFAULT, e);
         }          
