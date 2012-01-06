@@ -33,8 +33,7 @@ The script ./start-nfs-client-tests.sh runs basic tests.
 
  == What needs improvement ==
 
-* Locking in NFS4Handler is very coarse grained. In addition, we lock FSDataOutputStream
-for getPos() calls all over the place. This might be uneeded.
+* Locking in NFS4Handler is coarse grained
 * User Mapping
 NFS4 User identities are user@domain. However, the RPC protocol uses UID/GID.
 Currently we map the UID on the incoming request via the system the daemon executes on.
@@ -54,7 +53,7 @@ We buffer writes until we find the prereq, this memory consumption is not bounde
 * DirectoryEntry.getWireSize needs to be fixed, it is gross.
 * Use Hadoop metrics insteead of simple MetricsPrinter
 * Persist file handles and client ids to disk (zookeeper?)
-
+* Bitmap is ugly
 
  == FAQ ==
 * All user/groups show up as `nobody'?
