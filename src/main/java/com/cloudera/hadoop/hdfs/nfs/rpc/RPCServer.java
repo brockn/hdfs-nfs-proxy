@@ -30,7 +30,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IOUtils;
@@ -59,7 +61,8 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
   }
   
   public RPCServer(RPCHandler<REQUEST, RESPONSE> rpcHandler, Configuration conf, int port) throws Exception {
-    mExecutor = Executors.newFixedThreadPool(conf.getInt(RPC_MAX_THREADS, 50));
+    mExecutor =  new ThreadPoolExecutor(10, conf.getInt(RPC_MAX_THREADS, 500),
+        30, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
     
     mHandler = rpcHandler;
     mConfiguration = conf;
