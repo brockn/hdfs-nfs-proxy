@@ -90,8 +90,8 @@ public class TestNFS4Server {
   /**
    * Test to ensure most of the time we are able to receive a packet 
    * after disconnect. Why most of the time? There is a race in that
-   * the server will not always throw an when trying to write the packet
-   * after we have stopped listening. 
+   * the server will not always throw an exception when trying to write
+   * the packet after we have stopped listening. 
    */
   @Test
   public void testDiscconnectReconnect() throws UnknownHostException, IOException {
