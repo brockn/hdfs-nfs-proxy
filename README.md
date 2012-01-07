@@ -69,6 +69,14 @@ A simple metrics system is used. We should use Hadoops Metric System.
          - Bitmap
 
 # FAQ
+
+* What is this good for? or Can I replace my expensive NAS?
+
+This is another way to access HDFS. It is not a replacement 
+for NAS when you need the functionality NAS provides. To be sure,
+this does not provide you the ability to run Oracle over NFS on 
+top of HDFS.
+
 * All user/groups show up as nobody?
 
 NFS4 returns user/group with user@domain. Today by default it responds with
