@@ -1,16 +1,20 @@
 # How to use
 
+1. Requirements:
+        - HDFS Instance with CDH3 or Apache Hadoop 0.23
+        - RHEL (or equivalent) 5.7 or 6.X as NFS Clients
+
 1. Create the mount location
 
         mkdir /mnt/hdfs
 
-2. Add this entry to /etc/fstab
+1. Add this entry to /etc/fstab
 
         localhost:/   /mnt/hdfs   nfs4       rw,intr,timeo=600,proto=tcp,port=2050      0 0
 
-3. Ensure you have maven installed and hadoop command configured with *-site.xml pointing at the namenode.
+1. Ensure you have maven installed and hadoop command configured with *-site.xml pointing at the namenode.
 
-4. Build the package with dependencies and start
+1. Build the package with dependencies and start
 
         mvn package && ./start-nfs-server.sh
 
@@ -20,11 +24,11 @@
         mvn package -Dhadoop.version=0.23.0-SNAPSHOT
 
 
-5. Mount hdfs
+1. Mount hdfs
 
        sudo mount /mnt/hdfs
 
-6. You should now be able to access HDFS. Note: The script ./start-nfs-client-tests.sh runs basic tests.
+1. You should now be able to access HDFS. Note: The script ./start-nfs-client-tests.sh runs basic tests.
 
 # What needs improvement (in no order)
 
