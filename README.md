@@ -1,6 +1,8 @@
 # How to use
 
-1. mkdir /mnt/hdfs
+1. Create the mount location
+
+    mkdir /mnt/hdfs
 
 2. Add this entry to /etc/fstab
 
@@ -9,17 +11,17 @@
 3. Ensure you have maven installed and hadoop command configured
 with *-site.xml pointing at the namenode
 
-4. Build the package with dependencies and start:
+4. Build the package with dependencies and start
 
-mvn package && ./start-nfs-server.sh
+    mvn package && ./start-nfs-server.sh
 
 Which will build, test, and then startup the HDFS NFS Proxy.
 
 5. Mount hdfs
 
-sudo mount /mnt/hdfs
+   sudo mount /mnt/hdfs
 
-6. You should now be able to access HDFS.
+6. You should now be able to access HDFS
 
 The script ./start-nfs-client-tests.sh runs basic tests.
 
@@ -28,11 +30,11 @@ The script ./start-nfs-client-tests.sh runs basic tests.
 * Kerberos
 * Appends
 * Attributes dropped when mounting from Mac:
-** Reccomended:
-** 14 archive
-** 25 hidden
-** 49 timebackup
-** 55 mounted on fileid
+    Reccomended:
+    14 archive
+    25 hidden
+    49 timebackup
+    55 mounted on fileid
 
 # What needs improvement
 
@@ -66,15 +68,16 @@ user@clientDomain. The client then uses the idmap service to lookup the user
 for a uid. As such, it's likely you have not configured idmap.
 
 Say the domain is acme.com, you would change: /etc/idmapd.conf from:
- Domain = localdomain
+
+    Domain = localdomain
 
 to:
 
- Domain = bashkew.com
+    Domain = bashkew.com
 
 and then restart idmapd:
  
-/etc/init.d/rpcidmapd restart
+    /etc/init.d/rpcidmapd restart
 
 * I am trying to do an operation as any user who is not running the daemon and
 I get errors?
@@ -84,7 +87,7 @@ Unless you have Secure Impersonation configured for the user running the proxy
 or are running the proxy as the same user who is running the namenode you will
 only be able to access HDFS as user running the proxy.
 
-Say I have the proxy running as `noland' and I copy a file as root into
+Say I have the proxy running as noland and I copy a file as root into
 /user/root, I will get this error below:
 
     org.apache.hadoop.security.AccessControlException: Permission denied: 
