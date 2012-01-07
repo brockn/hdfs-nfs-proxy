@@ -29,12 +29,8 @@ The script ./start-nfs-client-tests.sh runs basic tests.
 
 * Kerberos
 * Appends
-* Attributes dropped when mounting from Mac:
-     > Reccomended:
-     > 14 archive
-     > 25 hidden
-     > 49 timebackup
-     > 55 mounted on fileid
+* Attributes dropped when mounting from Mac. Reccomended: 14 archive, 25 hidden,
+ 49 timebackup, 55 mounted on fileid
 
 # What needs improvement
 
