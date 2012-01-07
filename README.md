@@ -1,6 +1,7 @@
 # How to use
 
 1. Requirements:
+
         - HDFS Instance with CDH3 or Apache Hadoop 0.23
         - RHEL (or equivalent) 5.7 or 6.X as NFS Clients
 
