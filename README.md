@@ -90,10 +90,10 @@ and then restart idmapd:
 * I am trying to do an operation as any user who is not running the daemon and
 I get errors?
 
-Unless you have Secure Impersonation configured for the user running the proxy
-(http://hadoop.apache.org/common/docs/current/Secure_Impersonation.html)
-or are running the proxy as the same user who is running the namenode you will
-only be able to access HDFS as user running the proxy.
+You will only be able to access HDFS as the user running the daemon unless
+you run the daemon as the user running the namenode (e.g. hadoop or hdfs)
+or have Secure Impersonation configured for the user running the proxy
+(http://hadoop.apache.org/common/docs/current/Secure_Impersonation.html).
 
 Say I have the proxy running as noland and I copy a file as root into
 /user/root, I will get this error below:
@@ -101,3 +101,5 @@ Say I have the proxy running as noland and I copy a file as root into
     org.apache.hadoop.security.AccessControlException: Permission denied: 
       user=noland, access=WRITE, inode="/user/root":root:hadoop:drwxr-xr-x
 
+The easiest option is to start the daemon as hadoop, hdfs or whatever user
+is running your namenode.
