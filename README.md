@@ -27,7 +27,7 @@
 
 1. Mount hdfs
 
-       sudo mount /mnt/hdfs
+        sudo mount /mnt/hdfs
 
 1. You should now be able to access HDFS. Note: The script ./start-nfs-client-tests.sh runs basic tests.
 
