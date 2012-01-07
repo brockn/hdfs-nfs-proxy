@@ -88,7 +88,8 @@ class OutputStreamHandler extends Thread {
     // does not plan to reconnect. If it does, the write
     // will likely throw an exception and items will be 
     // processed by the next output stream handler
-    while(true) {
+    boolean run = true;
+    while(run) {
       RPCBuffer buffer = null;
       try {
         buffer = mWorkQueue.poll();
@@ -99,6 +100,7 @@ class OutputStreamHandler extends Thread {
         buffer = null;
       } catch(Exception e) {
         LOGGER.warn("OutputStreamHandler for " + mClientName + " got error on final write", e);
+        run = false;
       } finally {
         if(buffer != null) {
           put(buffer);
