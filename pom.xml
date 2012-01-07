@@ -12,7 +12,6 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
 
   <properties>
     <compileSource>1.6</compileSource>
-    <hadoop.version>0.20.2-cdh3u2</hadoop.version>
     <junit.version>4.8.1</junit.version>
     <commons-logging.version>1.1.1</commons-logging.version>
   </properties>
@@ -23,12 +22,6 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
       <artifactId>junit</artifactId>
       <version>${junit.version}</version>
       <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-core</artifactId>
-      <version>${hadoop.version}</version>
     </dependency>
 
     <dependency>
@@ -68,13 +61,6 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
     </dependency>
 
     <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-test</artifactId>
-      <version>${hadoop.version}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
       <version>1.8.5</version>
@@ -87,7 +73,17 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
     </dependency>
   </dependencies>
 
+
   <repositories>
+    <repository>
+      <id>apache.snapshots</id>
+      <name>Apache Snapshot Repository</name>
+      <url>http://repository.apache.org/snapshots</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+    </repository>
+
     <repository>
       <id>cdh.releases.repo</id>
       <url>https://repository.cloudera.com/content/groups/cdh-releases-rcs</url>
@@ -112,6 +108,13 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
       </releases>
     </repository>
   </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>apache-snapshots</id>
+      <url>https://repository.apache.org/content/repositories/snapshots</url>
+    </pluginRepository>
+  </pluginRepositories>
 
   <build>
     <plugins>
@@ -210,4 +213,38 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
       </plugin>
     </plugins>
   </reporting>
+
+ <profiles>
+    <profile>
+      <id>hadoop-0.20</id>
+      <activation>
+        <property>
+          <name>!hadoop.version</name>
+        </property>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.hadoop</groupId>
+          <artifactId>hadoop-core</artifactId>
+          <version>0.20.2-cdh3u2</version>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>hadoop-0.23</id>
+      <activation>
+        <property>
+          <name>hadoop.version</name>
+        </property>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.hadoop</groupId>
+          <artifactId>hadoop-common</artifactId>
+          <version>${hadoop.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
+
 </project>

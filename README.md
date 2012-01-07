@@ -14,7 +14,11 @@
 
         mvn package && ./start-nfs-server.sh
 
-    Which will build, test, and then startup the HDFS NFS Proxy.
+    Which will build, test, and then startup the HDFS NFS Proxy using CDH. You can use Apache Hadoop 0.23 or
+    greater with the following command:
+
+        mvn package -Dhadoop.version=0.23.0-SNAPSHOT
+
 
 5. Mount hdfs
 
