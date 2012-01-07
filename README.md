@@ -36,6 +36,7 @@ Currently we map the UID on the incoming request via the system the daemon execu
 I think there is something in Hadoop which does user mapping as well. If so, it might
 make sense to be consistent.
 * RFC 3530 (NFS4):
+
          - Client ID logic is complex and not completely followed.
          - Many reccomended attributes are not implemented such as 14 archive, 25 hidden,
          49 timebackup, 55 mounted on fileid
@@ -57,7 +58,8 @@ read requests from the response cache.
 We buffer writes until we find the prereq, this memory consumption is not bounded.
 * Metrics:
 A simple metrics system is used. We should use Hadoops Metric System. 
-* Damn Ugly: 
+* Damn Ugly:
+ 
          - DirectoryEntry.getWireSize is sick and wrong
          - Bitmap
 
