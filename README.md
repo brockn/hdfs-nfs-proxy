@@ -1,37 +1,40 @@
- == How to use ==
+# How to use
 
-1) mkdir /mnt/hdfs
+1. mkdir /mnt/hdfs
 
-2) Add this entry to /etc/fstab
-localhost:/   /mnt/hdfs   nfs4       rw,intr,timeo=600,proto=tcp,port=2050      0 0
+2. Add this entry to /etc/fstab
 
-3) Ensure you have maven installed and hadoop command configured
+    localhost:/   /mnt/hdfs   nfs4       rw,intr,timeo=600,proto=tcp,port=2050      0 0
+
+3. Ensure you have maven installed and hadoop command configured
 with *-site.xml pointing at the namenode
 
-4) mvn package && ./start-nfs-server.sh
+4. Build the package with dependencies and start:
+
+mvn package && ./start-nfs-server.sh
 
 Which will build, test, and then startup the HDFS NFS Proxy.
 
-5) Mount hdfs
+5. Mount hdfs
 
 sudo mount /mnt/hdfs
 
-6) You should now be able to access HDFS.
+6. You should now be able to access HDFS.
 
 The script ./start-nfs-client-tests.sh runs basic tests.
 
- == What is not implemented ==
+# What is not implemented
 
 * Kerberos
 * Appends
 * Attributes dropped when mounting from Mac:
-    Reccomended:
-    14 archive
-    25 hidden
-    49 timebackup
-    55 mounted on fileid
+** Reccomended:
+** 14 archive
+** 25 hidden
+** 49 timebackup
+** 55 mounted on fileid
 
- == What needs improvement ==
+# What needs improvement
 
 * Locking in NFS4Handler is coarse grained
 * User Mapping
@@ -55,7 +58,7 @@ We buffer writes until we find the prereq, this memory consumption is not bounde
 * Persist file handles and client ids to disk (zookeeper?)
 * Bitmap is ugly
 
- == FAQ ==
+# FAQ
 * All user/groups show up as `nobody'?
 
 NFS4 returns user/group with user@domain. Today by default it responds with
@@ -72,4 +75,18 @@ to:
 and then restart idmapd:
  
 /etc/init.d/rpcidmapd restart
+
+* I am trying to do an operation as any user who is not running the daemon and
+I get errors?
+
+Unless you have Secure Impersonation configured for the user running the proxy
+(http://hadoop.apache.org/common/docs/current/Secure_Impersonation.html)
+or are running the proxy as the same user who is running the namenode you will
+only be able to access HDFS as user running the proxy.
+
+Say I have the proxy running as `noland' and I copy a file as root into
+/user/root, I will get this error below:
+
+    org.apache.hadoop.security.AccessControlException: Permission denied: 
+      user=noland, access=WRITE, inode="/user/root":root:hadoop:drwxr-xr-x
 
