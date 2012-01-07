@@ -30,11 +30,11 @@ The script ./start-nfs-client-tests.sh runs basic tests.
 * Kerberos
 * Appends
 * Attributes dropped when mounting from Mac:
-    Reccomended:
-    14 archive
-    25 hidden
-    49 timebackup
-    55 mounted on fileid
+     > Reccomended:
+     > 14 archive
+     > 25 hidden
+     > 49 timebackup
+     > 55 mounted on fileid
 
 # What needs improvement
 
@@ -61,7 +61,7 @@ We buffer writes until we find the prereq, this memory consumption is not bounde
 * Bitmap is ugly
 
 # FAQ
-* All user/groups show up as `nobody'?
+* All user/groups show up as nobody?
 
 NFS4 returns user/group with user@domain. Today by default it responds with
 user@clientDomain. The client then uses the idmap service to lookup the user
