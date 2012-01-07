@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+CONFIG_DIR=${1:-/usr/lib/hadoop/conf}
 if [[ -f target/nfsserver.pid ]]
 then
     pid=`<target/nfsserver.pid`
@@ -13,7 +14,7 @@ then
         fi
     fi
 fi
-nohup java -Xms1024m -Xmx1024m -cp target/hadoop-nfs-proxy-1.0-SNAPSHOT-with-deps.jar:$(readlink -f /usr/lib/hadoop/conf) \
+nohup java -Xms1024m -Xmx1024m -cp target/hadoop-nfs-proxy-1.0-SNAPSHOT-with-deps.jar:$CONFIG_DIR \
     com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Server 2050 1>target/nfsserver.out 2>target/nfsserver.err </dev/null &
 pid="$!"
 echo $pid > target/nfsserver.pid
