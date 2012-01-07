@@ -26,36 +26,39 @@
 
 6. You should now be able to access HDFS. Note: The script ./start-nfs-client-tests.sh runs basic tests.
 
-# What is not implemented
+# What needs improvement (in no order)
 
-* Kerberos
-* Appends
-* Attributes dropped when mounting from Mac. Reccomended: 14 archive, 25 hidden,
- 49 timebackup, 55 mounted on fileid
-
-# What needs improvement
-
-* Locking in NFS4Handler is coarse grained
-* User Mapping
+* Locking:
+NFS4Handler has coarse grained locking and is heavily used
+* User Mapping: 
 NFS4 User identities are user@domain. However, the RPC protocol uses UID/GID.
 Currently we map the UID on the incoming request via the system the daemon executes on.
 I think there is something in Hadoop which does user mapping as well. If so, it might
 make sense to be consistent.
-* Client ID - RFC 3530 (NFS4) has fairly complex logic which I do not follow.
-* Read Ordering
-At present we get a fair number of threads blocked on reads of a single input stream.
+* RFC 3530 (NFS4):
+    - Client ID logic is complex and not completely followed.
+    - Many reccomended attributes are not implemented such as 14 archive, 25 hidden,
+      49 timebackup, 55 mounted on fileid
+    - Kerberos
+    - File appends
+    - Filehandles and not persisted and at present if the server restarts, all clients
+      need to be restarted.
+* Read Ordering: 
+We recieve a fair number of threads blocked on reads of a single input stream.
 I think we could get better performance if we ordered these like writes because we
 know they will arrive out of order. As such the current impl is doing more seeks
 than required. We also might considering pooling input streams.
-* Heavy read loads use a fair amount of old gen likely due to our response cache
+* Garbage Collection:
+Heavy read loads use a fair amount of old gen likely due to our response cache
 and the size of read responses. If this becomes an issue we could easily exclude 
 read requests from the response cache.
-* Write Ordering
+* Write Ordering:
 We buffer writes until we find the prereq, this memory consumption is not bounded.
-* DirectoryEntry.getWireSize needs to be fixed, it is gross.
-* Use Hadoop metrics insteead of simple MetricsPrinter
-* Persist file handles and client ids to disk (zookeeper?)
-* Bitmap is ugly
+* Metrics:
+A simple metrics system is used. We should use Hadoops Metric System. 
+* Damn Ugly: 
+    - DirectoryEntry.getWireSize is sick and wrong
+    - Bitmap
 
 # FAQ
 * All user/groups show up as nobody?
