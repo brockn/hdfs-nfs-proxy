@@ -95,7 +95,7 @@ public class TestNFS4Server {
    */
   @Test
   public void testDiscconnectReconnect() throws UnknownHostException, IOException {
-    int failures = 0, attempts = 10;
+    int attempts = 10, maxFailures = 5, failures = 0;
     for (int i = 0; i < attempts; i++) {
       try {
         doDiscconnectReconnect();
@@ -103,7 +103,7 @@ public class TestNFS4Server {
         failures++;
       }
     }
-    assertTrue("failures = " + failures, failures <= 2);
+    assertTrue("failures = " + failures, failures <= maxFailures);
   }
   
   protected void doDiscconnectReconnect() throws UnknownHostException, IOException {
