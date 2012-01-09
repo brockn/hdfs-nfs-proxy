@@ -72,6 +72,7 @@ public class NetworkClient extends BaseClient {
     request.write(buffer);
     
     buffer.write(mOutputStream);
+    mOutputStream.flush();
     
     buffer = RPCBuffer.from(mInputStream);
     RPCResponse rpcResponse = new RPCResponse();
