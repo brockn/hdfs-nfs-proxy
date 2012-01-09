@@ -71,6 +71,11 @@ A simple metrics system is used. We should use Hadoops Metric System.
 
 # FAQ
 
+* I am running an NFS Server on port 2049, how can I configure this to use another port?
+
+         1) Change 2049 in start-nfs-server.sh to say 2050
+         2) Add port=2050 to the mount options
+
 * What is this good for? or Can I replace my expensive NAS?
 
 This is another way to access HDFS. It is not a replacement 
