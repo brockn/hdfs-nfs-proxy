@@ -3,7 +3,8 @@
 1. Requirements:
 
         - HDFS Instance with CDH3 or Apache Hadoop 0.23
-        - RHEL (or equivalent) 5.7 or 6.X as NFS Clients
+        - Note that this has only been tested on RHEL (or equivalent) 
+          with 5.7 or 6.X as NFS Clients
 
 1. Create the mount location
 
@@ -11,7 +12,7 @@
 
 1. Add this entry to /etc/fstab
 
-        localhost:/   /mnt/hdfs   nfs4       rw,intr,timeo=600,proto=tcp,port=2050      0 0
+        localhost:/   /mnt/hdfs   nfs4       rw,intr,timeo=600,proto=tcp      0 0
 
 1. Ensure you have maven installed and hadoop command configured with *-site.xml pointing at the namenode.
 

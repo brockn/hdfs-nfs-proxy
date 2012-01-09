@@ -15,6 +15,6 @@ then
     fi
 fi
 nohup java -Xms1024m -Xmx1024m -cp target/hadoop-nfs-proxy-1.0-SNAPSHOT-with-deps.jar:$CONFIG_DIR \
-    com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Server 2050 1>target/nfsserver.out 2>target/nfsserver.err </dev/null &
+    com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Server 2049 1>target/nfsserver.out 2>target/nfsserver.err </dev/null &
 pid="$!"
 echo $pid > target/nfsserver.pid
