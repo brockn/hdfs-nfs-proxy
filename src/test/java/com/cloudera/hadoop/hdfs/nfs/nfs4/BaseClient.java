@@ -37,6 +37,7 @@ import com.cloudera.hadoop.hdfs.nfs.LogUtils;
 import com.cloudera.hadoop.hdfs.nfs.TestUtils;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Attribute;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CLOSERequest;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.COMMITRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.GETATTRRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.GETFHRequest;
@@ -52,6 +53,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.SETCLIENTIDCONFIRMRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.SETCLIENTIDRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.WRITERequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CLOSEResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.COMMITResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CompoundResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.GETATTRResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.GETFHResponse;
@@ -85,7 +87,7 @@ public abstract class BaseClient {
 
   
   
-  protected void initialize() {
+  protected void initialize() throws NFS4Exception {
     CompoundRequest compoundRequest = newRequest();
     List<OperationRequest> operations = Lists.newArrayList();
     operations.add(new PUTROOTFHRequest());
@@ -93,7 +95,7 @@ public abstract class BaseClient {
     
     compoundRequest.setOperations(operations);
 
-    List<OperationResponse> operationResponses = makeRequest(compoundRequest);
+    List<OperationResponse> operationResponses = getResult(compoundRequest);
     
     getResponse(operationResponses.remove(0), PUTROOTFHResponse.class);
     
@@ -132,12 +134,13 @@ public abstract class BaseClient {
     return message;
   }
   /**
-   * Makes request to server.
+   * Makes request to server returning result without 
+   * checking the status of the response.
    * 
    * @param request
    * @return CompoundResponse
    */
-  protected List<OperationResponse> makeRequest(CompoundRequest request) {
+  protected CompoundResponse makeRequest(CompoundRequest request) {
     request = serde(request);
     CompoundResponse response;
     try {
@@ -145,15 +148,28 @@ public abstract class BaseClient {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    assertEquals(NFS4_OK, response.getStatus());
+    return serde(response);
+  }
+  /**
+   * Makes request to server and converts response
+   * to a list of OperationResponses. Status information
+   * is checked and an assertion error is thrown if not OK.
+   * 
+   * @param request
+   * @return CompoundResponse
+   */
+  protected List<OperationResponse> getResult(CompoundRequest request) throws NFS4Exception {
+    CompoundResponse response = makeRequest(request);
+    if(response.getStatus() != NFS4_OK) {
+      throw new NFS4Exception(response.getStatus());
+    }
     assertEquals(request.getOperations().size(), response.getOperations().size());
     response = serde(response);
     assertEquals(request.getOperations().size(), response.getOperations().size());
     return Lists.newArrayList(response.getOperations());
   }
-  
-  
-  protected FileHandle lookup(Path path) {
+    
+  protected FileHandle lookup(Path path) throws NFS4Exception {
     Path parent;
     LOGGER.info("Lookup on " + path);
     if(path.equals(ROOT)) {
@@ -184,7 +200,7 @@ public abstract class BaseClient {
     
     compoundRequest.setOperations(operations);
     
-    List<OperationResponse> operationResponses = makeRequest(compoundRequest);
+    List<OperationResponse> operationResponses = getResult(compoundRequest);
     
     getResponse(operationResponses.remove(0), PUTFHResponse.class);
     getResponse(operationResponses.remove(0), LOOKUPResponse.class);
@@ -202,7 +218,7 @@ public abstract class BaseClient {
     assertEquals(NFS4_OK, operationResponse.getStatus());
     return clazz.cast(operationResponse);
   }
-  public ImmutableList<Path> listPath(Path path) {
+  public ImmutableList<Path> listPath(Path path) throws NFS4Exception {
     
     FileHandle fileHandle = lookup(path);
     
@@ -229,7 +245,7 @@ public abstract class BaseClient {
 
       
       compoundRequest.setOperations(operations);
-      List<OperationResponse> operationResponses = makeRequest(compoundRequest);
+      List<OperationResponse> operationResponses = getResult(compoundRequest);
       
       getResponse(operationResponses.remove(0), PUTFHResponse.class);
       READDIRResponse readDirResponse = getResponse(operationResponses.remove(0), READDIRResponse.class);
@@ -273,7 +289,7 @@ public abstract class BaseClient {
     return compoundRequest;
   }
 
-  protected void setClientIDIfUnset() {
+  protected void setClientIDIfUnset() throws NFS4Exception {
     if(this.clientID == 0) {
       CompoundRequest compoundRequest = newRequest();
       List<OperationRequest> operations = Lists.newArrayList();
@@ -295,14 +311,14 @@ public abstract class BaseClient {
       operations.add(setClientIDRequest);
 
       compoundRequest.setOperations(operations);
-      List<OperationResponse> operationResponses = makeRequest(compoundRequest);
+      List<OperationResponse> operationResponses = getResult(compoundRequest);
       SETCLIENTIDResponse setClientIDResponse = getResponse(operationResponses.remove(0), SETCLIENTIDResponse.class);
       doConfirmClientID(setClientIDResponse.getClientID(), setClientIDResponse.getVerifer());
       this.clientID = setClientIDResponse.getClientID();
       this.clientVerifer = setClientIDResponse.getVerifer();      
     }
   }
-  protected void doConfirmClientID(long clientID, OpaqueData8 verifer) {
+  protected void doConfirmClientID(long clientID, OpaqueData8 verifer) throws NFS4Exception {
     CompoundRequest compoundRequest = newRequest();
     List<OperationRequest> operations = Lists.newArrayList();
     SETCLIENTIDCONFIRMRequest confirmRequest = new SETCLIENTIDCONFIRMRequest();
@@ -310,11 +326,11 @@ public abstract class BaseClient {
     confirmRequest.setVerifer(verifer);    
     operations.add(confirmRequest);
     compoundRequest.setOperations(operations);
-    List<OperationResponse> operationResponses = makeRequest(compoundRequest);
+    List<OperationResponse> operationResponses = getResult(compoundRequest);
     getResponse(operationResponses.remove(0), SETCLIENTIDCONFIRMResponse.class);
   }
   protected StateID doOpen(FileHandle parentFileHandle, String name, 
-      int access, int openType) {
+      int access, int openType) throws NFS4Exception {
     CompoundRequest compoundRequest = newRequest();
     List<OperationRequest> operations = Lists.newArrayList();
     PUTFHRequest putFhRequest = new PUTFHRequest();
@@ -334,7 +350,7 @@ public abstract class BaseClient {
     operations.add(openRequest);
     operations.add(new GETFHRequest());
     compoundRequest.setOperations(operations);    
-    List<OperationResponse> operationResponses = makeRequest(compoundRequest);
+    List<OperationResponse> operationResponses = getResult(compoundRequest);
     getResponse(operationResponses.remove(0), PUTFHResponse.class);
     OPENResponse openResponse = getResponse(operationResponses.remove(0), OPENResponse.class);
     GETFHResponse getFhHandle = getResponse(operationResponses.remove(0), GETFHResponse.class);
@@ -349,7 +365,7 @@ public abstract class BaseClient {
     return stateID;
      
   }
-  protected StateID doOpenConfirm(FileHandle fileHandle, StateID stateID) {
+  protected StateID doOpenConfirm(FileHandle fileHandle, StateID stateID) throws NFS4Exception {
     CompoundRequest compoundRequest = newRequest();
     List<OperationRequest> operations = Lists.newArrayList();
     PUTFHRequest putFhRequest = new PUTFHRequest();
@@ -360,7 +376,7 @@ public abstract class BaseClient {
     openConfirmRequest.setSeqID(stateID.getSeqID() + 1);
     operations.add(openConfirmRequest);
     compoundRequest.setOperations(operations);
-    List<OperationResponse> operationResponses = makeRequest(compoundRequest);
+    List<OperationResponse> operationResponses = getResult(compoundRequest);
     getResponse(operationResponses.remove(0), PUTFHResponse.class);
     OPENCONFIRMResponse openConfirmresponse = getResponse(operationResponses.remove(0), OPENCONFIRMResponse.class);
     return openConfirmresponse.getStateID();
@@ -395,7 +411,12 @@ public abstract class BaseClient {
         operations.add(writeRequest);
         
         compoundRequest.setOperations(operations);
-        List<OperationResponse> operationResponses = makeRequest(compoundRequest);
+        List<OperationResponse> operationResponses;
+        try {
+          operationResponses = getResult(compoundRequest);
+        } catch (NFS4Exception e) {
+          throw new RuntimeException(e);
+        }
         getResponse(operationResponses.remove(0), PUTFHResponse.class);
         
         WRITEResponse writeResponse = getResponse(operationResponses.remove(0), WRITEResponse.class);
@@ -413,15 +434,27 @@ public abstract class BaseClient {
         PUTFHRequest putFhRequest = new PUTFHRequest();
         putFhRequest.setFileHandle(fileHandle);    
         operations.add(putFhRequest);
-
+        
+        COMMITRequest commitRequest = new COMMITRequest();
+        commitRequest.setCount(0);
+        commitRequest.setOffset(0);
+        operations.add(commitRequest);
+        
         CLOSERequest closeRequest = new CLOSERequest();
         closeRequest.setSeqID(stateID.getSeqID() + 1);
         closeRequest.setStateID(stateID);
         operations.add(closeRequest);
         
         compoundRequest.setOperations(operations);
-        List<OperationResponse> operationResponses = makeRequest(compoundRequest);
+        List<OperationResponse> operationResponses;
+        try {
+          operationResponses = getResult(compoundRequest);
+        } catch (NFS4Exception e) {
+          throw new RuntimeException(e);
+        }
         getResponse(operationResponses.remove(0), PUTFHResponse.class);
+        
+        getResponse(operationResponses.remove(0), COMMITResponse.class);
 
         CLOSEResponse closeResponse = getResponse(operationResponses.remove(0), CLOSEResponse.class);
 
@@ -469,7 +502,12 @@ public abstract class BaseClient {
         operations.add(readRequest);
         
         compoundRequest.setOperations(operations);
-        List<OperationResponse> operationResponses = makeRequest(compoundRequest);
+        List<OperationResponse> operationResponses;
+        try {
+          operationResponses = getResult(compoundRequest);
+        } catch (NFS4Exception e) {
+          throw new RuntimeException(e);
+        }
         getResponse(operationResponses.remove(0), PUTFHResponse.class);
         
         READResponse readResponse = getResponse(operationResponses.remove(0), READResponse.class);
@@ -499,7 +537,12 @@ public abstract class BaseClient {
         operations.add(closeRequest);
         
         compoundRequest.setOperations(operations);
-        List<OperationResponse> operationResponses = makeRequest(compoundRequest);
+        List<OperationResponse> operationResponses;
+        try {
+          operationResponses = getResult(compoundRequest);
+        } catch (NFS4Exception e) {
+          throw new RuntimeException(e);
+        }
         getResponse(operationResponses.remove(0), PUTFHResponse.class);
 
         CLOSEResponse closeResponse = getResponse(operationResponses.remove(0), CLOSEResponse.class);
@@ -511,7 +554,7 @@ public abstract class BaseClient {
     };
   }
 
-  protected ImmutableMap<Integer, Attribute> getAttrs(Path path) {
+  protected ImmutableMap<Integer, Attribute> getAttrs(Path path) throws NFS4Exception {
     FileHandle fileHandle = lookup(path);
     
     if(mFileHandleAttributeMap.containsKey(fileHandle)) {
@@ -526,7 +569,7 @@ public abstract class BaseClient {
     operations.add(newGETATTRRequest());
     
     compoundRequest.setOperations(operations);
-    List<OperationResponse> operationResponses = makeRequest(compoundRequest);
+    List<OperationResponse> operationResponses = getResult(compoundRequest);
     
     getResponse(operationResponses.remove(0), PUTFHResponse.class);
     mPathFileHandleMap.put(path, fileHandle);
@@ -535,7 +578,7 @@ public abstract class BaseClient {
     mFileHandleAttributeMap.put(fileHandle, getAttrResponse.getAttrValues());
     return getAttrs(path);
   }
-  public FileStatus getFileStatus(Path path) {
+  public FileStatus getFileStatus(Path path) throws NFS4Exception {
     return new FileStatus(path, getAttrs(path));
   }
 }

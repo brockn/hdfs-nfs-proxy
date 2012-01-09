@@ -21,8 +21,6 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
-import java.util.Set;
-
 import com.cloudera.hadoop.hdfs.nfs.nfs4.handlers.ACCESSHandler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.handlers.CLOSEHandler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.handlers.COMMITHandler;
@@ -96,7 +94,8 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.google.common.collect.ImmutableMap;
 
 public class OperationFactory {
-  protected static class Holder {
+  
+  static class Holder {
     Class<? extends OperationRequest> requestClazz;
     Class<? extends OperationResponse> responseClazz;
     OperationRequestHandler<? extends OperationRequest, ? extends OperationResponse> handler;
@@ -109,7 +108,7 @@ public class OperationFactory {
       this.handler = handler;
     }
   }
-  protected static ImmutableMap<Integer, Holder> operations = ImmutableMap.<Integer, Holder>builder()
+  static ImmutableMap<Integer, Holder> operations = ImmutableMap.<Integer, Holder>builder()
       .put(NFS4_OP_ACCESS, new Holder(ACCESSRequest.class, ACCESSResponse.class, new ACCESSHandler()))
       .put(NFS4_OP_CLOSE, new Holder(CLOSERequest.class, CLOSEResponse.class, new CLOSEHandler()))
       .put(NFS4_OP_CREATE, new Holder(CREATERequest.class, CREATEResponse.class, new CREATEHandler()))
@@ -134,28 +133,6 @@ public class OperationFactory {
       .put(NFS4_OP_WRITE, new Holder(WRITERequest.class, WRITEResponse.class, new WRITEHandler()))
       .build();
   
-  // ensure the id's are setup correctly
-  static {
-    Set<Integer> ids = operations.keySet();
-    if(ids.isEmpty()) {
-      throw new RuntimeException("No operations");
-    }
-    for(Integer id : ids) {
-      Holder holder = operations.get(id);
-      try {
-        Identifiable request = holder.requestClazz.newInstance();
-        if(request.getID() != id) {
-          throw new RuntimeException(request.getClass().getName() + " has id " + request.getID() + " and not " + id);  
-        }
-        Identifiable response = holder.responseClazz.newInstance();
-        if(response.getID() != id) {
-          throw new RuntimeException(response.getClass().getName() + " has id " + response.getID() + " and not " + id);  
-        }
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-    }
-  }
       
     /**
      * To be used only for testing, push request into the backing map.

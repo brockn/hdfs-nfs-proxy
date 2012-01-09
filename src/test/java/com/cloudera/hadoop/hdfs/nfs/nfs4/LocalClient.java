@@ -21,19 +21,19 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CompoundResponse;
-import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
+import com.cloudera.hadoop.hdfs.nfs.rpc.RPCTestUtil;
 
 public class LocalClient extends BaseClient {
 
   protected NFS4Handler mServer = new NFS4Handler();
   
-  public LocalClient() {
+  public LocalClient() throws NFS4Exception {
     initialize();
   }
   
   @Override
   protected CompoundResponse doMakeRequest(CompoundRequest request) {
-    CompoundResponse response = mServer.process(new RPCRequest(), request, "localhost.localdomain", "test");
+    CompoundResponse response = mServer.process(RPCTestUtil.createRequest(), request, "localhost.localdomain", "test");
     return response;
   }
 

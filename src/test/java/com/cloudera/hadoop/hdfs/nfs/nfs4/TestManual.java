@@ -24,10 +24,14 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import static org.junit.Assert.*;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
+import com.cloudera.hadoop.hdfs.nfs.LogUtils;
 import com.cloudera.hadoop.hdfs.nfs.TestUtils;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Bitmap;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Callback;
@@ -56,12 +60,14 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.GETFHResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.OperationResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.PUTROOTFHResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.SETCLIENTIDResponse;
+import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 public class TestManual {
+  protected static final Logger LOGGER = LoggerFactory.getLogger(TestManual.class);
 
   @Test
   public void testCallback() {
@@ -217,21 +223,61 @@ public class TestManual {
     operations.add(new PUTROOTFHRequest());
     operations.add(new GETFHRequest());
     GETATTRRequest getAttrRequest = new GETATTRRequest();
-    Bitmap requestAttrs = new Bitmap();
+    Bitmap requestAttrs = new Bitmap();    
+    
+    requestAttrs.set(NFS4_FATTR4_SUPPORTED_ATTRS);
     requestAttrs.set(NFS4_FATTR4_TYPE);
+    requestAttrs.set(NFS4_FATTR4_FH_EXPIRE_TYPE);
     requestAttrs.set(NFS4_FATTR4_CHANGE);
     requestAttrs.set(NFS4_FATTR4_SIZE);
+    requestAttrs.set(NFS4_FATTR4_LINK_SUPPORT);
+    requestAttrs.set(NFS4_FATTR4_SYMLINK_SUPPORT);
+    requestAttrs.set(NFS4_FATTR4_NAMED_ATTR);
     requestAttrs.set(NFS4_FATTR4_FSID);
+    requestAttrs.set(NFS4_FATTR4_UNIQUE_HANDLES);
+    requestAttrs.set(NFS4_FATTR4_LEASE_TIME);
+    requestAttrs.set(NFS4_FATTR4_RDATTR_ERROR);
+    requestAttrs.set(NFS4_FATTR4_ACL_SUPPORT);
+    requestAttrs.set(NFS4_FATTR4_FILEHANDLE);
+    requestAttrs.set(NFS4_FATTR4_CASE_INSENSITIVE);
+    requestAttrs.set(NFS4_FATTR4_CASE_PRESERVING);
+    requestAttrs.set(NFS4_FATTR4_CHOWN_RESTRICTED);
     requestAttrs.set(NFS4_FATTR4_FILEID);
+    requestAttrs.set(NFS4_FATTR4_FILES_AVAIL);
+    requestAttrs.set(NFS4_FATTR4_FILES_FREE);
+    requestAttrs.set(NFS4_FATTR4_FILES_TOTAL);
+    requestAttrs.set(NFS4_FATTR4_FS_LOCATIONS);
+    requestAttrs.set(NFS4_FATTR4_HIDDEN);
+    requestAttrs.set(NFS4_FATTR4_HOMOGENEOUS);
+    requestAttrs.set(NFS4_FATTR4_MAXFILESIZE);
+    requestAttrs.set(NFS4_FATTR4_MAXLINK);
+    requestAttrs.set(NFS4_FATTR4_MAXNAME);
+    requestAttrs.set(NFS4_FATTR4_MAXREAD);
+    requestAttrs.set(NFS4_FATTR4_MAXWRITE);
+    requestAttrs.set(NFS4_FATTR4_MIMETYPE);
     requestAttrs.set(NFS4_FATTR4_MODE);
+    requestAttrs.set(NFS4_FATTR4_NO_TRUNC);
     requestAttrs.set(NFS4_FATTR4_NUMLINKS);
     requestAttrs.set(NFS4_FATTR4_OWNER);
     requestAttrs.set(NFS4_FATTR4_OWNER_GROUP);
+    requestAttrs.set(NFS4_FATTR4_QUOTA_AVAIL_HARD);
+    requestAttrs.set(NFS4_FATTR4_QUOTA_AVAIL_SOFT);
+    requestAttrs.set(NFS4_FATTR4_QUOTA_USED);
     requestAttrs.set(NFS4_FATTR4_RAWDEV);
+    requestAttrs.set(NFS4_FATTR4_SPACE_AVAIL);
+    requestAttrs.set(NFS4_FATTR4_SPACE_FREE);
+    requestAttrs.set(NFS4_FATTR4_SPACE_TOTAL);
     requestAttrs.set(NFS4_FATTR4_SPACE_USED);
+    requestAttrs.set(NFS4_FATTR4_SYSTEM);
     requestAttrs.set(NFS4_FATTR4_TIME_ACCESS);
+    requestAttrs.set(NFS4_FATTR4_TIME_BACKUP);
+    requestAttrs.set(NFS4_FATTR4_TIME_CREATE);
+    requestAttrs.set(NFS4_FATTR4_TIME_DELTA);
     requestAttrs.set(NFS4_FATTR4_TIME_METADATA);
     requestAttrs.set(NFS4_FATTR4_TIME_MODIFY);
+    requestAttrs.set(NFS4_FATTR4_MOUNTED_ON_FILEID);
+
+    
     getAttrRequest.setAttrs(requestAttrs);
     operations.add(getAttrRequest);
     compoundRequest.setOperations(operations);
@@ -251,17 +297,41 @@ public class TestManual {
     assertEquals(NFS4_OK, operationResponse.getStatus());
     GETATTRResponse attrResponse = (GETATTRResponse)operationResponses.get(2);
     assertEquals(NFS4_OK, attrResponse.getStatus());
-    ImmutableMap<Integer, Attribute> attrs = attrResponse.getAttrValues();
-    FileID fileId = (FileID)attrs.get(NFS4_FATTR4_FILEID);
-    Mode mode = (Mode)attrs.get(NFS4_FATTR4_MODE);
-    Type type = (Type)attrs.get(NFS4_FATTR4_TYPE);
+    Map<Integer, Attribute> attrMap = Maps.newHashMap();
+    for(Attribute attr : attrResponse.getAttrValues().values()) {
+      attrMap.put(attr.getID(), serde(attr));
+    }
+    FileID fileId = (FileID)attrMap.get(NFS4_FATTR4_FILEID);
+    Mode mode = (Mode)attrMap.get(NFS4_FATTR4_MODE);
+    Type type = (Type)attrMap.get(NFS4_FATTR4_TYPE);
     assertEquals(NFS4_DIR, type.getType());
     assertTrue(fileId.getFileID() != 0);
     assertTrue(mode.getMode() != 0);
-    assertNotNull(attrs.get(NFS4_FATTR4_SIZE));
-    assertTrue(attrs.get(NFS4_FATTR4_SIZE) instanceof Size);
-    assertNotNull(attrs.get(NFS4_FATTR4_OWNER));
-    assertNotNull(attrs.get(NFS4_FATTR4_OWNER_GROUP));
-    assertNotNull(attrs.get(NFS4_FATTR4_TIME_MODIFY));
+    assertNotNull(attrMap.get(NFS4_FATTR4_SIZE));
+    assertTrue(attrMap.get(NFS4_FATTR4_SIZE) instanceof Size);
+    assertNotNull(attrMap.get(NFS4_FATTR4_OWNER));
+    assertNotNull(attrMap.get(NFS4_FATTR4_OWNER_GROUP));
+    assertNotNull(attrMap.get(NFS4_FATTR4_TIME_MODIFY));
+  }
+  
+  /**
+   * Copies the message to byes and reads it back in again. 
+   * Should execute both serialization and deserialization
+   * code.
+   * 
+   * @param message
+   * @return message
+   */
+  protected <T extends MessageBase> T serde(T message) {
+    RPCBuffer buffer = new RPCBuffer();
+    message.write(buffer);
+    buffer.flip();
+    try {
+      message.read(buffer);
+    } catch(RuntimeException x) {
+      LOGGER.warn("Error reading buffer: " + LogUtils.dump(message), x);
+      throw x;
+    }
+    return message;
   }
 }

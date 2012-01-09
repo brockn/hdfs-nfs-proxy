@@ -40,16 +40,37 @@ public class TestWithClient {
   
   
   @Test
-  public void testReadDirLocal() throws IOException, InterruptedException {
+  public void testNOENTLocal() throws IOException, InterruptedException, NFS4Exception {
+    testNOENT(new LocalClient());
+  }
+
+  @Test
+  public void testNOENTNetwork() throws IOException, InterruptedException, NFS4Exception {
+    testNOENT(new NetworkClient());
+  }
+
+  public void testNOENT(BaseClient client) throws IOException, InterruptedException, NFS4Exception {
+    try {
+      client.listPath(new Path("/" + UUID.randomUUID().toString()));      
+      fail("Expected no such file or directory");
+    } catch (NFS4Exception e) {
+      assertEquals(NFS4ERR_NOENT, e.getError());
+    } finally {
+      client.shutdown();
+    }
+  }
+  
+  @Test
+  public void testReadDirLocal() throws IOException, InterruptedException, NFS4Exception {
     doReadDir(new LocalClient());
   }
 
   @Test
-  public void testReadDirNetwork() throws IOException, InterruptedException {
+  public void testReadDirNetwork() throws IOException, InterruptedException, NFS4Exception {
     doReadDir(new NetworkClient());
   }
 
-  public void doReadDir(BaseClient client) throws IOException, InterruptedException {
+  public void doReadDir(BaseClient client) throws IOException, InterruptedException, NFS4Exception {
     /*
      * traverse through a directory that does not change often
      * and ensure it checks out the same as through the native api
@@ -64,6 +85,7 @@ public class TestWithClient {
       compareFileStatusFile(client.getFileStatus(path));
     }
     
+    client.shutdown();
   }
   
   @Test
@@ -88,6 +110,7 @@ public class TestWithClient {
       }
     }  
     reader.close();
+    client.shutdown();
     assertTrue(foundRoot);
   }
   
@@ -113,6 +136,7 @@ public class TestWithClient {
       }
     }  
     reader.close();
+    client.shutdown();
     assertTrue(foundRoot);
   }
 
@@ -137,6 +161,7 @@ public class TestWithClient {
       }
     }  
     reader.close();
+    client.shutdown();
     assertTrue(foundRoot);
   }
   
@@ -168,6 +193,7 @@ public class TestWithClient {
       in.close();
     } finally {
       file.delete();
+      client.shutdown();
     }
   }
   

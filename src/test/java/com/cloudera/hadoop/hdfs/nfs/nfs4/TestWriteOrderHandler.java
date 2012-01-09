@@ -24,12 +24,15 @@ import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.hadoop.fs.FSDataOutputStream;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -38,10 +41,27 @@ import com.google.common.collect.Lists;
 
 public class TestWriteOrderHandler {
 
+  FSDataOutputStream mOutputStream;
+  WriteOrderHandler mWriteOrderHandler;
+  final AtomicInteger xid = new AtomicInteger(0);
+  final byte[] buffer = new byte[1000];
+
+  @Before
+  public void setup() throws IOException {
+    mOutputStream = mock(FSDataOutputStream.class);
+    mWriteOrderHandler = new WriteOrderHandler(mOutputStream);
+    mWriteOrderHandler.setDaemon(true);
+    mWriteOrderHandler.setName("WriteOrderHandler");
+    mWriteOrderHandler.start();
+  }
+  
+  @After
+  public void teardown() throws IOException, NFS4Exception {
+    mWriteOrderHandler.close();
+  }
   
   @Test
   public void testSimple() throws Exception {
-    FSDataOutputStream out = mock(FSDataOutputStream.class);
     final AtomicLong count = new AtomicLong(0);
     doAnswer(new Answer<Object>() {
       @Override
@@ -51,22 +71,16 @@ public class TestWriteOrderHandler {
         count.addAndGet((Integer)args[2]);
         return null;
       }      
-    }).when(out).write((byte[]) any(), anyInt(), anyInt());
-    when(out.getPos()).thenAnswer(new Answer<Long>() {
-
+    }).when(mOutputStream).write((byte[]) any(), anyInt(), anyInt());
+    when(mOutputStream.getPos()).thenAnswer(new Answer<Long>() {
       @Override
       public Long answer(InvocationOnMock invocation) {
         return count.get();
       }
     });
-    final WriteOrderHandler writeOrderHandler = new WriteOrderHandler(out);
-    writeOrderHandler.setDaemon(true);
-    writeOrderHandler.setName("WriteOrderHandler");
-    writeOrderHandler.start();
+    final WriteOrderHandler writeOrderHandler = mWriteOrderHandler;
     final List<Object> errors = Collections.synchronizedList(Lists.newArrayList());
     int numThreads = 50;
-    final AtomicInteger xid = new AtomicInteger(0);
-    final byte[] buffer = new byte[1000];
     for (int i = numThreads; i > 0; i--) {
       final long offset = (i-1) * buffer.length;
       new Thread() {
@@ -85,7 +99,7 @@ public class TestWriteOrderHandler {
     {
       long start = System.currentTimeMillis();
       long expectedPos = buffer.length * numThreads;
-      while(expectedPos != out.getPos()) {
+      while(expectedPos != mOutputStream.getPos()) {
         Thread.sleep(1);
         if(!errors.isEmpty()) {
           String msg = "";
@@ -97,11 +111,50 @@ public class TestWriteOrderHandler {
           fail(msg);
         }
         if(System.currentTimeMillis() - start > 20000) {
-          fail("Timed out waiting for writes: expectedPos = " + expectedPos + ", pos = " + out.getPos());
+          fail("Timed out waiting for writes: expectedPos = " + expectedPos + ", pos = " + mOutputStream.getPos());
         }
       }    
+    }
   }
-    
-    writeOrderHandler.close();
+  
+  @Test(expected=IOException.class)
+  public void testCannotWriteToWhenClosed() throws IOException, NFS4Exception {
+    mWriteOrderHandler.close();
+    mWriteOrderHandler.write("a file", xid.incrementAndGet(), 0, false, buffer, 0, buffer.length);
+  }
+  
+  @Test(expected=NFS4Exception.class)
+  public void testCannotWriteToWhileDead() throws IOException, NFS4Exception, InterruptedException {
+    mWriteOrderHandler.close();
+    while(mWriteOrderHandler.isAlive()) {
+      Thread.sleep(1);
+    }
+    mWriteOrderHandler.write("a file", xid.incrementAndGet(), 0, false, buffer, 0, buffer.length);
+  }
+  
+  @Test(expected=IOException.class)
+  public void testErrorOnWriteAfterError() throws IOException, NFS4Exception, InterruptedException {
+    doThrow(new IOException()).when(mOutputStream).write(any(byte[].class), anyInt(), anyInt());
+    mWriteOrderHandler.write("a file", xid.incrementAndGet(), 0, false, buffer, 0, buffer.length);
+    Thread.sleep(10);
+    mWriteOrderHandler.write("a file", xid.incrementAndGet(), 0, false, buffer, 0, buffer.length);
+  }
+
+  @Test
+  public void testSyncIsCalledForSyncWrite() throws IOException, NFS4Exception {
+    mWriteOrderHandler.write("a file", xid.incrementAndGet(), 0, true, buffer, 0, buffer.length);
+    verify(mOutputStream, atLeastOnce()).sync();
+  }
+  
+  @Test(expected=NFS4Exception.class)
+  public void testRandomWrite() throws IOException, NFS4Exception {
+    when(mOutputStream.getPos()).thenReturn(1L);    
+    mWriteOrderHandler.write("a file", xid.incrementAndGet(), 0, true, buffer, 0, buffer.length);
+  }
+  @Test
+  public void testRetransmit() throws IOException, NFS4Exception {
+    int id = xid.incrementAndGet();
+    int length = mWriteOrderHandler.write("a file", id, 0, true, buffer, 0, buffer.length);
+    assertEquals(length, mWriteOrderHandler.write("a file", id, 0, true, buffer, 0, buffer.length));
   }
 }

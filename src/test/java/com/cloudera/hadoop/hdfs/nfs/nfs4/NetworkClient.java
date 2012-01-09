@@ -46,7 +46,7 @@ public class NetworkClient extends BaseClient {
   protected InputStream mInputStream;
   protected OutputStream mOutputStream;
   protected int mPort;
-  public NetworkClient() throws IOException {    
+  public NetworkClient() throws IOException, NFS4Exception {    
     Configuration conf = new Configuration();
     mNFS4Server = new NFS4Server();
     mNFS4Server.setConf(conf);
@@ -89,6 +89,9 @@ public class NetworkClient extends BaseClient {
   @Override
   public void shutdown() {
     mNFS4Server.shutdown();
+    try {
+      mClient.close();
+    } catch(Exception ex) {}
   }
 
 }
