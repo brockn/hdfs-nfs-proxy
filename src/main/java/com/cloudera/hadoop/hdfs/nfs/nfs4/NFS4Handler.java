@@ -24,19 +24,10 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import static com.google.common.base.Preconditions.*;
 
 import java.io.Closeable;
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.UndeclaredThrowableException;
-import java.nio.channels.FileChannel;
 import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +41,6 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,15 +78,13 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   protected Map<String, AtomicLong> mMetrics = Maps.newTreeMap();
   protected Map<FSDataOutputStream, WriteOrderHandler> mWriteOrderHandlerMap = Maps
       .newConcurrentMap();
-  protected DataOutputStream mFileHandleStore;
-  protected FileChannel mFileHandleStoreChannel;
 
+  protected FileHandleStore mFileHandleStore;
+  
   /**
    * Create a handler object with a default configuration object
-   * 
-   * @throws IOException
    */
-  public NFS4Handler() throws IOException {
+  public NFS4Handler() {
     this(new Configuration());
   }
 
@@ -104,128 +92,28 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
    * Create a handler with the configuration passed into the constructor
    * 
    * @param configuration
-   * @throws IOException
    */
-  public NFS4Handler(Configuration configuration) throws IOException {
+  public NFS4Handler(Configuration configuration) {
     mConfiguration = configuration;
     mMetricsPrinter = new MetricsPrinter(mMetrics);
     mMetricsPrinter.setName("MetricsPrinter");
     mMetricsPrinter.setDaemon(true);
     mMetricsPrinter.start();
-
-    boolean fileHandleStoreIsBad = false;
     
-    File fileHandleStore = new File(configuration.get(
-        NFS_FILEHANDLE_STORE_FILE, DEFAULT_NFS_FILEHANDLE_STORE_FILE));
-    if (fileHandleStore.isFile()) {
-      LOGGER.info("Reading FileHandleStore " + fileHandleStore);
-      try {
-        DataInputStream is = new DataInputStream(new FileInputStream(fileHandleStore));
-        try {
-          boolean moreEntries = false;
-          try {
-            moreEntries = is.readBoolean();
-          } catch (EOFException e) {
-            LOGGER.warn("FileHandleStore was not finished (process probably died/killed)");
-            fileHandleStoreIsBad = true;
-            moreEntries = false;
-          }
-          while (moreEntries) {
-            FileHandleStoreEntry entry = new FileHandleStoreEntry();
-            entry.readFields(is);
-            FileHandle fileHandle = new FileHandle(entry.fileHandle);
-            FileHolder holder = new FileHolder(fileHandle, entry.path, entry.fileID);
-            putFileHandle(fileHandle, entry.path, holder);
-            LOGGER.info("Read filehandle " + entry.path + " " + holder.getFileID());
-            try {
-              moreEntries = is.readBoolean();
-            } catch (EOFException e) {
-              LOGGER.warn("FileHandleStore was not finished (process probably died/killed)");
-              fileHandleStoreIsBad = true;
-              moreEntries = false;
-            }
-          }
-        } finally {
-          is.close();
-        }
-      } catch(IOException ex) {
-        throw new IOException("Unable to read filehandle store file: " + fileHandleStore, ex);
-      }
-    }
-    try {
-      if(fileHandleStoreIsBad) {
-        fileHandleStore.delete();
-        FileOutputStream fos = new FileOutputStream(fileHandleStore);
-        mFileHandleStoreChannel = fos.getChannel();
-        mFileHandleStore = new DataOutputStream(fos);
-        for(FileHandle fileHandle : mFileHandleMap.keySet()) {
-          FileHolder holder = mFileHandleMap.get(fileHandle);
-          String path = holder.getPath();
-          FileHandleStoreEntry entry = new FileHandleStoreEntry(fileHandle.getBytes(), path, holder.getFileID());
-          writeFileHandle(entry);
-        }
-        LOGGER.info("FileHandleStore fixed");
-      } else {
-        FileOutputStream fos = new FileOutputStream(fileHandleStore, true);
-        mFileHandleStoreChannel = fos.getChannel();
-        mFileHandleStore = new DataOutputStream(fos);      
-      }
-    } catch(IOException ex) {
-      throw new IOException("Unable to create filehandle store file: " + fileHandleStore, ex);
+    mFileHandleStore = FileHandleStore.get(mConfiguration);
+    
+    for(FileHandleStoreEntry entry : mFileHandleStore.getAll()) {
+      FileHandle fileHandle = new FileHandle(entry.fileHandle);
+      FileHolder holder = new FileHolder(fileHandle, entry.path, entry.fileID);
+      putFileHandle(fileHandle, entry.path, holder);      
     }
   }
 
-  protected void writeFileHandle(FileHandleStoreEntry entry) throws IOException {
-    mFileHandleStore.writeBoolean(true);
-    entry.write(mFileHandleStore);
-    mFileHandleStore.flush();
-    mFileHandleStoreChannel.force(true);
-    LOGGER.info("Wrote filehandle " + entry.path + "  " + entry.fileID);
-  }
   
   public void shutdown() throws IOException {
-   synchronized (this) {
-     mFileHandleStore.writeBoolean(false);
-     mFileHandleStore.flush();
-     mFileHandleStoreChannel.force(true);
-     mFileHandleStore.close();
-     mFileHandleStoreChannel.close();
-   } 
+    mFileHandleStore.close();
   }
   
-  protected static class FileHandleStoreEntry implements Writable {
-    protected byte[] fileHandle;
-    protected String path;
-    protected long fileID;
-    
-    public FileHandleStoreEntry() {
-      this(null, null, -1);
-    }
-
-    public FileHandleStoreEntry(byte[] fileHandle, String path, long fileID) {
-      this.fileHandle = fileHandle;
-      this.path = path;
-      this.fileID = fileID;
-    }
-
-    @Override
-    public void write(DataOutput out) throws IOException {
-      out.writeInt(fileHandle.length);
-      out.write(fileHandle);
-      out.writeUTF(path);
-      out.writeLong(fileID);
-    }
-
-    @Override
-    public void readFields(DataInput in) throws IOException {
-      int length = in.readInt();
-      fileHandle = new byte[length];
-      in.readFully(fileHandle);
-      path = in.readUTF();
-      fileID = in.readLong();
-    }
-  }
-
   /**
    * Process a CompoundRequest and return a CompoundResponse.
    */
@@ -351,7 +239,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     FileHandle fileHandle = new FileHandle(bytes);    
     FileHolder holder = new FileHolder(fileHandle, realPath);
     FileHandleStoreEntry storeEntry = new FileHandleStoreEntry(bytes, realPath, holder.getFileID());
-    writeFileHandle(storeEntry);
+    mFileHandleStore.storeFileHandle(storeEntry);
     putFileHandle(fileHandle, realPath, holder);
     return fileHandle;
   }

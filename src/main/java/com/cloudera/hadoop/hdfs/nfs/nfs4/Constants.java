@@ -324,6 +324,7 @@ public class Constants {
   public static final String USER_ID_MAPPER_CLASS = "hdfs.nfs.useridmapper";
   public static final String NFS_OWNER_DOMAIN = "hdfs.nfs.nfs4.owner.domain";
   
+  public static final String NFS_FILEHANDLE_STORE_CLASS = "hdfs.nfs.nfs4.filehandle.store.class";
   public static final String NFS_FILEHANDLE_STORE_FILE = "hdfs.nfs.nfs4.filehandle.store.file";
   public static final String DEFAULT_NFS_FILEHANDLE_STORE_FILE = "hdfs.nfs.nfs4.filehandle.store.file";
   
