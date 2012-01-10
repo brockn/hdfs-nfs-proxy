@@ -90,19 +90,16 @@ public class WritableFileFileHandleStore extends FileHandleStore {
       }
     }
     try {
+      fileHandleStore.delete();
+      FileOutputStream fos = new FileOutputStream(fileHandleStore);
+      mFileHandleStoreChannel = fos.getChannel();
+      mFileHandleStore = new DataOutputStream(fos);
+      Collections.sort(mEntryList);
+      for(FileHandleStoreEntry entry : mEntryList) {
+        storeFileHandle(entry);
+      }
       if(fileHandleStoreIsBad) {
-        fileHandleStore.delete();
-        FileOutputStream fos = new FileOutputStream(fileHandleStore);
-        mFileHandleStoreChannel = fos.getChannel();
-        mFileHandleStore = new DataOutputStream(fos);
-        for(FileHandleStoreEntry entry : mEntryList) {
-          storeFileHandle(entry);
-        }
         LOGGER.info("FileHandleStore fixed");
-      } else {
-        FileOutputStream fos = new FileOutputStream(fileHandleStore, true);
-        mFileHandleStoreChannel = fos.getChannel();
-        mFileHandleStore = new DataOutputStream(fos);      
       }
     } catch(IOException ex) {
       throw new IOException("Unable to create filehandle store file: " + fileHandleStore, ex);

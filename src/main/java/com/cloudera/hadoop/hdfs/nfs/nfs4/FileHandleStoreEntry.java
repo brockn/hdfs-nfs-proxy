@@ -22,10 +22,11 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 
-import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 
-class FileHandleStoreEntry implements Writable {
+class FileHandleStoreEntry implements WritableComparable<FileHandleStoreEntry> {
   protected byte[] fileHandle;
   protected String path;
   protected long fileID;
@@ -56,4 +57,41 @@ class FileHandleStoreEntry implements Writable {
     path = in.readUTF();
     fileID = in.readLong();
   }
+
+  @Override
+  public int compareTo(FileHandleStoreEntry o) {
+    return path.compareTo(o.path);
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + Arrays.hashCode(fileHandle);
+    result = prime * result + (int) (fileID ^ (fileID >>> 32));
+    result = prime * result + ((path == null) ? 0 : path.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
+    FileHandleStoreEntry other = (FileHandleStoreEntry) obj;
+    if (!Arrays.equals(fileHandle, other.fileHandle))
+      return false;
+    if (fileID != other.fileID)
+      return false;
+    if (path == null) {
+      if (other.path != null)
+        return false;
+    } else if (!path.equals(other.path))
+      return false;
+    return true;
+  }
+  
 }
