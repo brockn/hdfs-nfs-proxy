@@ -61,7 +61,7 @@ public class FSInfo {
   
   protected static Object getObject(Object obj, String name) {
     try {
-      Method method = DFSClient.class.getMethod(name, (Class[])null);
+      Method method = obj.getClass().getMethod(name, (Class[])null);
       return method.invoke(obj, (Object[])null);
     } catch (Exception e) {
       throw new RuntimeException(e);
