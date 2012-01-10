@@ -12,7 +12,7 @@
 
 1. Add this entry to /etc/fstab
 
-        localhost:/   /mnt/hdfs   nfs4       rw,intr,timeo=600,proto=tcp      0 0
+        <hostname of server running the proxy>:/   /mnt/hdfs   nfs4       rw,intr,timeo=600      0 0
 
 1. Build the package which includes dependencies. You need choose the appropiate hadoop version when
 building the package. Examples below:
