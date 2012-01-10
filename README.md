@@ -2,9 +2,9 @@
 
 1. Requirements:
 
-        - HDFS Instance with CDH3 or Apache Hadoop 0.23
-        - Note that this has only been tested on RHEL (or equivalent) 
-          with 5.7 or 6.X as NFS Clients
+        - HDFS Instance with CDH, Apache Hadoop 0.23+, or Apache Hadoop 1.0+
+        - Note that this has only been tested extensive on RHEL 
+          (or equivalent) with 5.7 and 6.X as NFS Clients with CDH3u2.
 
 1. Create the mount location
 
@@ -25,6 +25,7 @@
 
         mvn package -Dhadoop.version=0.23.0-SNAPSHOT
 
+    Apache Hadoop 1.0 cab be used by replacing 0.20.2-cdh3* in the pom.xml with 1.0.0 or the current 1.0 release.
 
 1. Mount hdfs
 

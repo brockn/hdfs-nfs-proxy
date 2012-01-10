@@ -35,7 +35,7 @@ public class SpaceFreeHandler extends AttributeHandler<SpaceFree> {
   public SpaceFree get(NFS4Handler server, Session session,
       FileSystem fs, FileStatus fileStatus) throws NFS4Exception, IOException {
     SpaceFree space = new SpaceFree();
-    space.set(fs.getStatus().getRemaining());
+    space.set(FSInfo.getRemaining(session));
     return space;
   }
 

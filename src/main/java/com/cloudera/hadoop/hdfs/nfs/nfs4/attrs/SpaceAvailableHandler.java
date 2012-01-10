@@ -35,7 +35,7 @@ public class SpaceAvailableHandler extends AttributeHandler<SpaceAvailable> {
   public SpaceAvailable get(NFS4Handler server, Session session,
       FileSystem fs, FileStatus fileStatus) throws NFS4Exception, IOException {
     SpaceAvailable space = new SpaceAvailable();
-    space.set(fs.getStatus().getRemaining());
+    space.set(FSInfo.getRemaining(session));
     return space;
   }
 

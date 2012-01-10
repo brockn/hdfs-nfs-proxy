@@ -35,7 +35,7 @@ public class SpaceUsedHandler extends AttributeHandler<SpaceUsed> {
   public SpaceUsed get(NFS4Handler server, Session session,
       FileSystem fs, FileStatus fileStatus) throws NFS4Exception, IOException {
     SpaceUsed space = new SpaceUsed();
-    space.set(fs.getStatus().getUsed());
+    space.set(FSInfo.getUsed(session));
     return space;
   }
 

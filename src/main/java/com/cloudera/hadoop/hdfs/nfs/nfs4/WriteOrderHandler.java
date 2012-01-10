@@ -34,7 +34,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.io.WritableComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -254,9 +253,16 @@ public class WriteOrderHandler extends Thread {
       final int prime = 31;
       int result = 1;
       result = prime * result + (int) (offset ^ (offset >>> 32));
-      result = prime * result + WritableComparator.hashBytes(data, start, length);
+      result = prime * result + hashBytes(data, start, length);
       return result;
     }
+    protected static int hashBytes(byte[] bytes, int offset, int length) {
+      int hash = 1;
+      for (int i = offset; i < offset + length; i++)
+        hash = (31 * hash) + (int)bytes[i];
+      return hash;
+    }
+    
     @Override
     public boolean equals(Object obj) {
       if (this == obj)

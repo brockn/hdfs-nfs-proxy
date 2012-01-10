@@ -35,7 +35,7 @@ public class SpaceTotalHandler extends AttributeHandler<SpaceTotal> {
   public SpaceTotal get(NFS4Handler server, Session session,
       FileSystem fs, FileStatus fileStatus) throws NFS4Exception, IOException {
     SpaceTotal space = new SpaceTotal();
-    space.set(fs.getStatus().getCapacity());
+    space.set(FSInfo.getCapacity(session));
     return space;
   }
 
