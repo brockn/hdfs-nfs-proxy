@@ -23,7 +23,7 @@ building the package. Examples below:
          CDH3u2:
           $ mvn package -Phadoop-0.20 -Dhadoop.version=0.20.2-cdh3u2
          Apache Hadoop 1.0.0 (Renaming of 0.20):
-         $ mvn package -Phadoop-0.20 -Dhadoop.version=1.0.0
+          $ mvn package -Phadoop-0.20 -Dhadoop.version=1.0.0
 
         0.23 Branch:
          $ mvn package -Phadoop-0.23 -Dhadoop.version=0.23.1-SNAPSHOT
