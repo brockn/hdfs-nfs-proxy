@@ -8,7 +8,7 @@
 
 1. Create the mount location
 
-        mkdir /mnt/hdfs
+        $ sudo mkdir /mnt/hdfs
 
 1. Add this entry to /etc/fstab
 
@@ -16,20 +16,25 @@
 
 1. Ensure you have maven installed and hadoop command configured with *-site.xml pointing at the namenode.
 
-1. Build the package with dependencies and start
+1. Build the package which includes dependencies. You need choose the appropiate hadoop version when
+building the package. Examples below:
 
-        mvn package && ./start-nfs-server.sh
+        0.20 Branch:
+         CDH3u2:
+          $ mvn package -Phadoop-0.20 -Dhadoop.version=0.20.2-cdh3u2
+         Apache Hadoop 1.0.0 (Renaming of 0.20):
+         $ mvn package -Phadoop-0.20 -Dhadoop.version=1.0.0
 
-    Which will build, test, and then startup the HDFS NFS Proxy using CDH. You can use Apache Hadoop 0.23 or
-    greater with the following command:
+        0.23 Branch:
+         $ mvn package -Phadoop-0.23 -Dhadoop.version=0.23.1-SNAPSHOT
 
-        mvn package -Dhadoop.version=0.23.0-SNAPSHOT
+1. Start the server:
 
-    Apache Hadoop 1.0 can be used by replacing 0.20.2-cdh3* in the pom.xml with 1.0.0 or the current 1.0 release.
+        $ ./start-nfs-server.sh
 
 1. Mount hdfs
 
-        sudo mount /mnt/hdfs
+        $ sudo mount /mnt/hdfs
 
 1. You should now be able to access HDFS. Note: The script ./start-nfs-client-tests.sh runs basic tests.
 

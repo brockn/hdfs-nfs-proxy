@@ -217,26 +217,16 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
  <profiles>
     <profile>
       <id>hadoop-0.20</id>
-      <activation>
-        <property>
-          <name>!hadoop.version</name>
-        </property>
-      </activation>
       <dependencies>
         <dependency>
           <groupId>org.apache.hadoop</groupId>
           <artifactId>hadoop-core</artifactId>
-          <version>0.20.2-cdh3u2</version>
+          <version>${hadoop.version}</version>
         </dependency>
       </dependencies>
     </profile>
     <profile>
       <id>hadoop-0.23</id>
-      <activation>
-        <property>
-          <name>hadoop.version</name>
-        </property>
-      </activation>
       <dependencies>
         <dependency>
           <groupId>org.apache.hadoop</groupId>
