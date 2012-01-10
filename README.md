@@ -14,8 +14,6 @@
 
         localhost:/   /mnt/hdfs   nfs4       rw,intr,timeo=600,proto=tcp      0 0
 
-1. Ensure you have maven installed and hadoop command configured with *-site.xml pointing at the namenode.
-
 1. Build the package which includes dependencies. You need choose the appropiate hadoop version when
 building the package. Examples below:
 
@@ -30,7 +28,9 @@ building the package. Examples below:
 
 1. Start the server:
 
-        $ ./start-nfs-server.sh
+        Below, /usr/lib/hadoop/conf, is the path to my *-site.xml files.
+
+        $ ./start-nfs-server.sh /usr/lib/hadoop/conf
 
 1. Mount hdfs
 
