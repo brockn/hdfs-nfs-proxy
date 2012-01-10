@@ -170,7 +170,6 @@ public abstract class Attribute implements MessageBase, Identifiable {
         if(isSupported(bitIndex)) {
           responseAttrs.set(bitIndex);
           AttributeHandler<Attribute> handler = getHandler(bitIndex);
-          LOGGER.info("" + bitIndex);
           attrValues.add(handler.get(server, session, fs, fileStatus));          
         } else {
           LOGGER.info("getAttr Dropping attribute " + bitIndex);
