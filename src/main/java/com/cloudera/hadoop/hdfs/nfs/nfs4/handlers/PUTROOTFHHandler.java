@@ -21,6 +21,8 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
+import java.io.IOException;
+
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +38,7 @@ public class PUTROOTFHHandler extends OperationRequestHandler<PUTROOTFHRequest, 
 
   @Override
   protected PUTROOTFHResponse doHandle(NFS4Handler server, Session session,
-      PUTROOTFHRequest request) throws NFS4Exception {
+      PUTROOTFHRequest request) throws NFS4Exception, IOException {
     session.setCurrentFileHandle(server.createFileHandle(new Path("/")));
     PUTROOTFHResponse response = createResponse();
     response.setStatus(NFS4_OK);

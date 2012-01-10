@@ -23,6 +23,7 @@ import static com.cloudera.hadoop.hdfs.nfs.TestUtils.*;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -33,14 +34,6 @@ import org.slf4j.LoggerFactory;
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
 import com.cloudera.hadoop.hdfs.nfs.LogUtils;
 import com.cloudera.hadoop.hdfs.nfs.TestUtils;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.Bitmap;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.Callback;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.Client;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.ClientFactory;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.ClientID;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData8;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Attribute;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.FileID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Mode;
@@ -136,8 +129,8 @@ public class TestManual {
     assertNotSame(client1, client2);
   }
   @Test
-  public void testSETCLIENTID() {
-    NFS4Handler server = new NFS4Handler();
+  public void testSETCLIENTID() throws IOException {
+    NFS4Handler server = new NFS4Handler(TestUtils.setupConf());
     CompoundRequest request = new CompoundRequest();
     request.setCredentials(TestUtils.newCredentials());
     SETCLIENTIDRequest setClientIDRequest = new SETCLIENTIDRequest();
@@ -164,9 +157,10 @@ public class TestManual {
     assertNotNull(setClientIDResponse.getVerifer());
   }
   
+  
   @Test
-  public void testBasicPUTROOTFH() {
-    NFS4Handler server = new NFS4Handler();
+  public void testBasicPUTROOTFH() throws IOException {
+    NFS4Handler server = new NFS4Handler(TestUtils.setupConf());
     CompoundRequest request = new CompoundRequest();
     request.setCredentials(TestUtils.newCredentials());
     List<OperationRequest> operations = Lists.newArrayList();
@@ -180,8 +174,8 @@ public class TestManual {
   }
   
   @Test
-  public void testACCESS() {
-    NFS4Handler server = new NFS4Handler();
+  public void testACCESS() throws IOException {
+    NFS4Handler server = new NFS4Handler(TestUtils.setupConf());
     CompoundRequest request = new CompoundRequest();
     request.setCredentials(TestUtils.newCredentials());
     List<OperationRequest> operations = Lists.newArrayList();
@@ -215,8 +209,8 @@ public class TestManual {
   }
   
   @Test
-  public void testEndToEnd() {
-    NFS4Handler server = new NFS4Handler();
+  public void testEndToEnd() throws IOException {
+    NFS4Handler server = new NFS4Handler(TestUtils.setupConf());
     CompoundRequest compoundRequest = new CompoundRequest();
     compoundRequest.setCredentials(TestUtils.newCredentials());
     List<OperationRequest> operations = Lists.newArrayList();

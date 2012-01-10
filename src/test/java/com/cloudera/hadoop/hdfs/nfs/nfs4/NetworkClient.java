@@ -89,7 +89,9 @@ public class NetworkClient extends BaseClient {
   
   @Override
   public void shutdown() {
-    mNFS4Server.shutdown();
+    try {
+      mNFS4Server.shutdown();
+    } catch(Exception ex) {}
     try {
       mClient.close();
     } catch(Exception ex) {}

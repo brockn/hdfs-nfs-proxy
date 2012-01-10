@@ -71,9 +71,10 @@ public class NFS4Server extends Configured implements Tool {
   public boolean isAlive() {
     return mRPCServer.isAlive();
   }
-  public void shutdown() {
+  public void shutdown() throws IOException {
     mRPCServer.interrupt();
     mRPCServer.shutdown();
+    mNFSServer.shutdown();
   }
   public int getPort() {
     return mRPCServer.getPort();

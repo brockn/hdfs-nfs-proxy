@@ -19,13 +19,17 @@
  */
 package com.cloudera.hadoop.hdfs.nfs;
 
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +41,14 @@ import com.cloudera.hadoop.hdfs.nfs.security.CredentialsSystem;
 
 public class TestUtils {
   protected static final Logger LOGGER = LoggerFactory.getLogger(TestUtils.class);
+
+  public static Configuration setupConf() throws IOException {
+    return setupConf(new Configuration());
+  }
+  public static Configuration setupConf(Configuration conf) throws IOException {
+    conf.set(NFS_FILEHANDLE_STORE_FILE, "/tmp/" + UUID.randomUUID().toString());
+    return conf;
+  }
 
   public static AuthenticatedCredentials newCredentials() {
     CredentialsSystem creds = new CredentialsSystem();

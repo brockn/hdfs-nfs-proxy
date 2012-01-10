@@ -20,6 +20,7 @@
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,13 +28,12 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-import static org.junit.Assert.*;
-
 import org.apache.hadoop.conf.Configuration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.cloudera.hadoop.hdfs.nfs.TestUtils;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCResponse;
@@ -46,7 +46,7 @@ public class TestNFS4Server {
   
   @Before
   public void setup() throws Exception {
-    Configuration conf = new Configuration();
+    Configuration conf = TestUtils.setupConf();
     mNFS4Server = new NFS4Server();
     mNFS4Server.setConf(conf);
     mNFS4Server.start(0);
@@ -56,7 +56,9 @@ public class TestNFS4Server {
   @After
   public void cleanup() {
     if(mNFS4Server != null) {
-      mNFS4Server.shutdown();
+      try {
+        mNFS4Server.shutdown();
+      } catch(Exception ex) {}
     }
   }
   @Test
