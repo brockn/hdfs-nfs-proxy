@@ -40,6 +40,7 @@ import java.nio.channels.FileChannel;
 import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -81,6 +82,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   protected final Configuration mConfiguration;
   protected final ClientFactory mClientFactory = new ClientFactory();
   protected static final AtomicLong FILEID = new AtomicLong(0L);
+  protected static final Random RANDOM = new Random();
   protected long mStartTime = System.currentTimeMillis();
   protected MetricsPrinter mMetricsPrinter;
   protected Map<String, AtomicLong> mMetrics = Maps.newTreeMap();
@@ -111,32 +113,35 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     mMetricsPrinter.setDaemon(true);
     mMetricsPrinter.start();
 
-    boolean fileHandleFileIsBad = false;
+    boolean fileHandleStoreIsBad = false;
     
     File fileHandleStore = new File(configuration.get(
         NFS_FILEHANDLE_STORE_FILE, DEFAULT_NFS_FILEHANDLE_STORE_FILE));
     if (fileHandleStore.isFile()) {
+      LOGGER.info("Reading FileHandleStore " + fileHandleStore);
       try {
-      DataInputStream is = new DataInputStream(new FileInputStream(
-          fileHandleStore));
+        DataInputStream is = new DataInputStream(new FileInputStream(fileHandleStore));
         try {
           boolean moreEntries = false;
           try {
             moreEntries = is.readBoolean();
           } catch (EOFException e) {
             LOGGER.warn("FileHandleStore was not finished (process probably died/killed)");
-            fileHandleFileIsBad = true;
+            fileHandleStoreIsBad = true;
             moreEntries = false;
           }
           while (moreEntries) {
             FileHandleStoreEntry entry = new FileHandleStoreEntry();
             entry.readFields(is);
-            putFileHandle(new FileHandle(entry.fileHandle), entry.path);
+            FileHandle fileHandle = new FileHandle(entry.fileHandle);
+            FileHolder holder = new FileHolder(fileHandle, entry.path, entry.fileID);
+            putFileHandle(fileHandle, entry.path, holder);
+            LOGGER.info("Read filehandle " + entry.path + " " + holder.getFileID());
             try {
               moreEntries = is.readBoolean();
             } catch (EOFException e) {
               LOGGER.warn("FileHandleStore was not finished (process probably died/killed)");
-              fileHandleFileIsBad = true;
+              fileHandleStoreIsBad = true;
               moreEntries = false;
             }
           }
@@ -148,14 +153,15 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       }
     }
     try {
-      if(fileHandleFileIsBad) {
+      if(fileHandleStoreIsBad) {
         fileHandleStore.delete();
         FileOutputStream fos = new FileOutputStream(fileHandleStore);
         mFileHandleStoreChannel = fos.getChannel();
         mFileHandleStore = new DataOutputStream(fos);
         for(FileHandle fileHandle : mFileHandleMap.keySet()) {
-          String path = mFileHandleMap.get(fileHandle).getPath();
-          FileHandleStoreEntry entry = new FileHandleStoreEntry(fileHandle.getBytes(), path);
+          FileHolder holder = mFileHandleMap.get(fileHandle);
+          String path = holder.getPath();
+          FileHandleStoreEntry entry = new FileHandleStoreEntry(fileHandle.getBytes(), path, holder.getFileID());
           writeFileHandle(entry);
         }
         LOGGER.info("FileHandleStore fixed");
@@ -174,6 +180,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     entry.write(mFileHandleStore);
     mFileHandleStore.flush();
     mFileHandleStoreChannel.force(true);
+    LOGGER.info("Wrote filehandle " + entry.path + "  " + entry.fileID);
   }
   
   public void shutdown() throws IOException {
@@ -189,14 +196,16 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   protected static class FileHandleStoreEntry implements Writable {
     protected byte[] fileHandle;
     protected String path;
-
+    protected long fileID;
+    
     public FileHandleStoreEntry() {
-      this(null, null);
+      this(null, null, -1);
     }
 
-    public FileHandleStoreEntry(byte[] fileHandle, String path) {
+    public FileHandleStoreEntry(byte[] fileHandle, String path, long fileID) {
       this.fileHandle = fileHandle;
       this.path = path;
+      this.fileID = fileID;
     }
 
     @Override
@@ -204,6 +213,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       out.writeInt(fileHandle.length);
       out.write(fileHandle);
       out.writeUTF(path);
+      out.writeLong(fileID);
     }
 
     @Override
@@ -212,6 +222,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       fileHandle = new byte[length];
       in.readFully(fileHandle);
       path = in.readUTF();
+      fileID = in.readLong();
     }
   }
 
@@ -338,16 +349,14 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     String s = UUID.randomUUID().toString().replace("-", "");
     byte[] bytes = s.getBytes();
     FileHandle fileHandle = new FileHandle(bytes);    
-    FileHandleStoreEntry storeEntry = new FileHandleStoreEntry(bytes, realPath);
+    FileHolder holder = new FileHolder(fileHandle, realPath);
+    FileHandleStoreEntry storeEntry = new FileHandleStoreEntry(bytes, realPath, holder.getFileID());
     writeFileHandle(storeEntry);
-    putFileHandle(fileHandle, realPath);
+    putFileHandle(fileHandle, realPath, holder);
     return fileHandle;
   }
 
-  protected synchronized void putFileHandle(FileHandle fileHandle, String path) {
-    FileHolder holder = new FileHolder();
-    holder.setFileHandle(fileHandle);
-    holder.setPath(path);
+  protected synchronized void putFileHandle(FileHandle fileHandle, String path, FileHolder holder) {
     mPathMap.put(path, holder);
     mFileHandleMap.put(fileHandle, holder);
     this.incrementMetric("FILE_HANDLES_CREATED", 1);
@@ -788,8 +797,23 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     protected Map<StateID, OpenFile<FSDataInputStream>> mInputStreams = Maps
         .newHashMap();
     protected Pair<StateID, OpenFile<FSDataOutputStream>> mOutputStream;
-    protected long mFileID = FILEID.addAndGet(10L);
+    protected long mFileID;
 
+    public FileHolder(FileHandle fileHandle, String path, long fileID) {
+      this.mFileHandle = fileHandle;
+      this.mPath = path;
+      if(fileID < 0) {
+        synchronized (RANDOM) {
+          fileID = FILEID.addAndGet(RANDOM.nextInt(20) + 1);
+        }
+      }
+      this.mFileID = fileID;
+    }
+    
+    public FileHolder(FileHandle fileHandle, String path) {
+      this(fileHandle, path, -1);
+    }
+    
     public String getPath() {
       return mPath;
     }
@@ -860,6 +884,9 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
           stateID, fsDataOutputStream));
     }
 
+    public void setFileID(long fileID) {
+      mFileID = fileID;
+    }
     public long getFileID() {
       return mFileID;
     }

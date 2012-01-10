@@ -47,7 +47,7 @@ public class NetworkClient extends BaseClient {
   protected OutputStream mOutputStream;
   protected int mPort;
   public NetworkClient() throws IOException, NFS4Exception {    
-    Configuration conf = new Configuration();
+    Configuration conf = TestUtils.setupConf();
     mNFS4Server = new NFS4Server();
     mNFS4Server.setConf(conf);
     mNFS4Server.start(0);
