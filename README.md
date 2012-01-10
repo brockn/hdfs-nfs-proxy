@@ -25,7 +25,7 @@
 
         mvn package -Dhadoop.version=0.23.0-SNAPSHOT
 
-    Apache Hadoop 1.0 cab be used by replacing 0.20.2-cdh3* in the pom.xml with 1.0.0 or the current 1.0 release.
+    Apache Hadoop 1.0 can be used by replacing 0.20.2-cdh3* in the pom.xml with 1.0.0 or the current 1.0 release.
 
 1. Mount hdfs
 
