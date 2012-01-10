@@ -49,8 +49,6 @@ make sense to be consistent.
          49 timebackup, 55 mounted on fileid
          - Kerberos
          - File appends
-         - ClientIDs and not persisted and at present if the server restarts, clients
-           may need to be restarted.
 
 * Read Ordering: 
 We recieve a fair number of threads blocked on reads of a single input stream.
