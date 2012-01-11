@@ -29,7 +29,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -37,28 +36,56 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.cloudera.hadoop.hdfs.nfs.Pair;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 public class WritableFileFileHandleStore extends FileHandleStore {
   protected static final Logger LOGGER = LoggerFactory
       .getLogger(WritableFileFileHandleStore.class);
 
-  protected List<FileHandleStoreEntry> mEntryList = 
-      Collections.synchronizedList(new ArrayList<FileHandleStoreEntry>());
+  File mFileHandleStoreFile;
+  
   protected DataOutputStream mFileHandleStore;
   protected FileChannel mFileHandleStoreChannel;
   
   @Override
   protected synchronized void initialize() throws IOException {
     
-    boolean fileHandleStoreIsBad = false;
     Configuration configuration = getConf();
-    File fileHandleStore = new File(configuration.get(
+    
+    mFileHandleStoreFile= new File(configuration.get(
         NFS_FILEHANDLE_STORE_FILE, DEFAULT_NFS_FILEHANDLE_STORE_FILE));
-    if (fileHandleStore.isFile()) {
-      LOGGER.info("Reading FileHandleStore " + fileHandleStore);
+    
+    Pair<List<FileHandleStoreEntry>, Boolean> pair = readFile();
+    boolean fileHandleStoreIsBad = pair.getSecond();
+    
+    try {
+      mFileHandleStoreFile.delete();
+      FileOutputStream fos = new FileOutputStream(mFileHandleStoreFile);
+      mFileHandleStoreChannel = fos.getChannel();
+      mFileHandleStore = new DataOutputStream(fos);
+      List<FileHandleStoreEntry> entryList = pair.getFirst();
+      Collections.sort(entryList);
+      for(FileHandleStoreEntry entry : entryList) {
+        storeFileHandle(entry);
+      }
+      if(fileHandleStoreIsBad) {
+        LOGGER.info("FileHandleStore fixed");
+      }
+    } catch(IOException ex) {
+      throw new IOException("Unable to create filehandle store file: " + mFileHandleStoreFile, ex);
+    }
+
+  }
+  
+  protected Pair<List<FileHandleStoreEntry>, Boolean> readFile() throws IOException {
+    List<FileHandleStoreEntry> entryList = Lists.newArrayList();
+    boolean fileHandleStoreIsBad = false;
+    if (mFileHandleStoreFile.isFile()) {
+      LOGGER.info("Reading FileHandleStore " + mFileHandleStoreFile);
       try {
-        FileInputStream fis = new FileInputStream(fileHandleStore);
+        FileInputStream fis = new FileInputStream(mFileHandleStoreFile);
         DataInputStream is = new DataInputStream(fis);
         try {
           boolean moreEntries = false;
@@ -72,7 +99,7 @@ public class WritableFileFileHandleStore extends FileHandleStore {
           while (moreEntries) {
             FileHandleStoreEntry entry = new FileHandleStoreEntry();
             entry.readFields(is);
-            mEntryList.add(entry);            
+            entryList.add(entry);            
             LOGGER.info("Read filehandle " + entry.path + " " + entry.fileID);
             try {
               moreEntries = is.readBoolean();
@@ -86,30 +113,20 @@ public class WritableFileFileHandleStore extends FileHandleStore {
           is.close();
         }
       } catch(IOException ex) {
-        throw new IOException("Unable to read filehandle store file: " + fileHandleStore, ex);
+        throw new IOException("Unable to read filehandle store file: " + mFileHandleStoreFile, ex);
       }
     }
-    try {
-      fileHandleStore.delete();
-      FileOutputStream fos = new FileOutputStream(fileHandleStore);
-      mFileHandleStoreChannel = fos.getChannel();
-      mFileHandleStore = new DataOutputStream(fos);
-      Collections.sort(mEntryList);
-      for(FileHandleStoreEntry entry : mEntryList) {
-        storeFileHandle(entry);
-      }
-      if(fileHandleStoreIsBad) {
-        LOGGER.info("FileHandleStore fixed");
-      }
-    } catch(IOException ex) {
-      throw new IOException("Unable to create filehandle store file: " + fileHandleStore, ex);
-    }
-
+    return Pair.of(entryList, fileHandleStoreIsBad);
   }
   
   @Override
   public synchronized ImmutableList<FileHandleStoreEntry> getAll() {
-    return ImmutableList.copyOf(mEntryList);
+    try {
+      return ImmutableList.copyOf(readFile().getFirst());
+    } catch (IOException e) {
+      LOGGER.warn("Exception reading filehandle store file: " + mFileHandleStoreFile, e);
+    }
+    return ImmutableList.<FileHandleStoreEntry>of();
   }
   
   @Override
