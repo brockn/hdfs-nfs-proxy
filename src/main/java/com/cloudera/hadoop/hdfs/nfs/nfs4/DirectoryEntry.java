@@ -30,7 +30,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
-public class DirectoryEntry implements WireSize {
+public class DirectoryEntry implements MessageBase {
   protected long mCookie;
   protected String mName;
   protected Bitmap mAttrs;
@@ -87,15 +87,4 @@ public class DirectoryEntry implements WireSize {
   public void setName(String name) {
     this.mName = name;
   }
-
-  @Override
-  public int getWireSize() {
-    // TODO this is really bad but can be fixed later.
-    RPCBuffer buffer = new RPCBuffer();
-    write(buffer);
-    buffer.flip();
-    return buffer.length();
-  }
-  
-  
 }

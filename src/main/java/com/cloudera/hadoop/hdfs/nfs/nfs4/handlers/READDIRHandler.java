@@ -43,6 +43,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Attribute;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.READDIRRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.READDIRResponse;
+import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -108,7 +109,11 @@ public class READDIRHandler extends OperationRequestHandler<READDIRRequest, READ
       // If this entry is more than we can send
       // break out and the rest will be handled
       // in a future call
-      int entryLength = entry.getWireSize();
+      
+      // below is ugly as hell but this code is not hot
+      RPCBuffer buffer = new RPCBuffer();
+      entry.write(buffer);
+      int entryLength = buffer.length();
       if(messageSize + entryLength >= maxMessageSize) {
         break;
       }
