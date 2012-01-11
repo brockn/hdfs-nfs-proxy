@@ -68,10 +68,6 @@ read requests from the response cache.
 We buffer writes until we find the prereq, this memory consumption is not bounded.
 * Metrics:
 A simple metrics system is used. We should use Hadoops Metric System. 
-* Damn Ugly:
- 
-         - DirectoryEntry.getWireSize is sick and wrong
-         - Bitmap
 
 # FAQ
 

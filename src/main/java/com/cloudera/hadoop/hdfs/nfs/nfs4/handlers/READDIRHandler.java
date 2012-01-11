@@ -113,6 +113,7 @@ public class READDIRHandler extends OperationRequestHandler<READDIRRequest, READ
       // below is ugly as hell but this code is not hot
       RPCBuffer buffer = new RPCBuffer();
       entry.write(buffer);
+      buffer.flip();
       int entryLength = buffer.length();
       if(messageSize + entryLength >= maxMessageSize) {
         break;
