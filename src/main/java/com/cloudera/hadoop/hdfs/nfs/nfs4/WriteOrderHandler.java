@@ -219,11 +219,11 @@ public class WriteOrderHandler extends Thread {
           }
         }
         mWriteQueue.put(new Write(name, xid, offset, sync, data, start, length));
-        if(sync) {
-          sync(offset);
-        }
-        return length;
       }
+      if(sync) {
+        sync(offset); // blocks
+      }
+      return length;
     } catch (InterruptedException e) {
       throw new IOException("Interrupted While Putting Write", e);
     }
