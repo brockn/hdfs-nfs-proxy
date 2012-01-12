@@ -34,14 +34,18 @@ public class COMMITResponse extends OperationResponse implements Status {
   @Override
   public void read(RPCBuffer buffer) {
     mStatus = buffer.readUint32();
-    mVerifer = new OpaqueData8();
-    mVerifer.read(buffer);
+    if(mStatus == NFS4_OK) {
+      mVerifer = new OpaqueData8();
+      mVerifer.read(buffer);
+    }
   }
 
   @Override
   public void write(RPCBuffer buffer) {
     buffer.writeUint32(mStatus);
-    mVerifer.write(buffer);
+    if(mStatus == NFS4_OK) {
+      mVerifer.write(buffer);
+    }
   }
   @Override
   public int getStatus() {

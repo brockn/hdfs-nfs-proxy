@@ -6,7 +6,7 @@ UUID=$(uuidgen)
 BASE=/mnt/hdfs/user/$USER/nfs-test-$UUID
 mkdir $BASE
 echo "Create test passed"
-java -cp target/hadoop-nfs-proxy-1.0-SNAPSHOT-with-deps.jar com.cloudera.hadoop.hdfs.nfs.tests.BasicTest $BASE
+java -cp target/hadoop-nfs-proxy-*-SNAPSHOT-with-deps.jar com.cloudera.hadoop.hdfs.nfs.tests.BasicTest $BASE
 ls -al $BASE >/dev/null
 echo "ls -la test passed."
 dd if=/dev/zero of=/tmp/$USER-$UUID count=1000 2>/dev/null 1>/dev/null
