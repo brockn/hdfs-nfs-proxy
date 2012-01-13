@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.net.InetAddress;
 import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.util.Map;
@@ -118,7 +119,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
    * Process a CompoundRequest and return a CompoundResponse.
    */
   public CompoundResponse process(final RPCRequest rpcRequest,
-      final CompoundRequest compoundRequest, final String clientHostPort,
+      final CompoundRequest compoundRequest, final InetAddress clientAddress,
       final String sessionID) {
     Credentials creds = (Credentials) compoundRequest.getCredentials();
     // FIXME below is a hack regarding CredentialsUnix
@@ -138,7 +139,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       }
       final NFS4Handler server = this;
       final Session session = new Session(rpcRequest.getXid(), compoundRequest,
-          mConfiguration, clientHostPort, sessionID);
+          mConfiguration, clientAddress, sessionID);
       return sudoUgi.doAs(new PrivilegedExceptionAction<CompoundResponse>() {
         public CompoundResponse run() throws Exception {
           String username = UserGroupInformation.getCurrentUser()
@@ -193,7 +194,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       } else if (ex instanceof UnsupportedOperationException) {
         response.setStatus(NFS4ERR_NOTSUPP);
       } else {
-        LOGGER.warn(sessionID + " Setting SERVERFAULT for " + clientHostPort
+        LOGGER.warn(sessionID + " Setting SERVERFAULT for " + clientAddress
             + " for " + compoundRequest.getOperations());
         response.setStatus(NFS4ERR_SERVERFAULT);
       }

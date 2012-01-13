@@ -25,6 +25,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Map;
 import java.util.Set;
@@ -66,7 +67,6 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
   protected int mMaxPendingRequestWaits;
   protected Socket mClient;
   protected String mClientName;
-  protected String mClientHost;
   protected RPCServer<REQUEST, RESPONSE> mRPCServer;
   protected OutputStreamHandler mOutputHandler;
   protected BlockingQueue<RPCBuffer> mOutputBufferQueue;
@@ -84,11 +84,11 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
     mRPCServer = server;
     mHandler = handler;
     mClient = client;
-    mClientHost = mClient.getInetAddress().getCanonicalHostName();
-    mClientName = mClientHost + ":" + mClient.getPort();
+    String clientHost = mClient.getInetAddress().getCanonicalHostName();
+    mClientName = clientHost + ":" + mClient.getPort();
     mSessionID = "0x" + Integer.toHexString(SESSIONID.addAndGet(-5));
     setName("RPCServer-" + mClientName);
-    mOutputBufferQueue = mRPCServer.getOutputQueue(mClientHost);
+    mOutputBufferQueue = mRPCServer.getOutputQueue(clientHost);
     
     mMaxPendingRequests = mConfiguration.getInt(RPC_MAX_PENDING_REQUESTS, 20);
     mRestransmitPenaltyThreshold = mConfiguration.getInt(RPC_RETRANSMIT_PENALTY_THRESHOLD, 3);
@@ -177,7 +177,7 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
             } else {
               mRetransmits--;
               requestsInProgress.add(request.getXid());
-              ClientTask<REQUEST, RESPONSE> task = new ClientTask<REQUEST, RESPONSE>(mClientName, mSessionID, this, mHandler,  request, requestBuffer);
+              ClientTask<REQUEST, RESPONSE> task = new ClientTask<REQUEST, RESPONSE>(mClient.getInetAddress(), mSessionID, this, mHandler,  request, requestBuffer);
               this.schedule(task);
               if(LOGGER.isDebugEnabled()) {
                 LOGGER.debug(mSessionID + " scheduling request " + request.getXid());
@@ -272,14 +272,14 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
    */
   protected static class ClientTask<REQUEST extends MessageBase, RESPONSE extends MessageBase> implements Runnable {
     protected static final Logger LOGGER = LoggerFactory.getLogger(ClientTask.class);
-    protected String mClientName;
+    protected InetAddress mClientName;
     protected String mSessionID;
     protected RPCHandler<REQUEST, RESPONSE> mHandler;
     protected ClientWorker<REQUEST, RESPONSE> mClientWorker;
     protected RPCRequest mRequest;
     protected RPCBuffer mBuffer;
     
-    public ClientTask(String clientName, String sessionID, 
+    public ClientTask(InetAddress clientName, String sessionID, 
         ClientWorker<REQUEST, RESPONSE> clientWorker, RPCHandler<REQUEST, RESPONSE> handler, 
         RPCRequest request, RPCBuffer buffer) {
       mClientName = clientName;

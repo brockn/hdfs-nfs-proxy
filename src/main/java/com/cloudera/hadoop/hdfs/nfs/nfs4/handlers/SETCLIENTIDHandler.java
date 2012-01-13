@@ -53,11 +53,12 @@ public class SETCLIENTIDHandler extends OperationRequestHandler<SETCLIENTIDReque
     Callback callback = checkNotNull(request.getCallback(), "callback");
     ClientFactory clientFactory = server.getClientFactory();
     Client client = clientFactory.createIfNotExist(clientID);
+    String clientHost = session.getClientAddress().getCanonicalHostName();
     if(client == null) {
       client = checkNotNull(clientFactory.get(clientID.getOpaqueID()), "client should exist");
-      if(!session.getClientHost().equals(client.getClientHost())) {
+      if(!clientHost.equals(client.getClientHost())) {
         throw new NFS4Exception(NFS4ERR_CLID_INUSE, 
-            "Session is '" + session.getClientHost() + "' and client is '" + client.getClientHost() + "'");
+            "Session is '" + clientHost + "' and client is '" + client.getClientHost() + "'");
       }
       // update callback info below and client verifer here
       client.getClientID().setVerifer(clientID.getVerifer());
@@ -67,8 +68,7 @@ public class SETCLIENTIDHandler extends OperationRequestHandler<SETCLIENTIDReque
     verifer.setData(Bytes.toBytes(VERIFER.addAndGet(10)));
     client.setCallback(callback);
     client.setVerifer(verifer);
-    client.setClientHostPort(session.getClientHostPort());
-    client.setClientHost(session.getClientHost());
+    client.setClientHost(clientHost);
     SETCLIENTIDResponse response = createResponse();
     response.setClientID(client.getShorthandID());
     response.setVerifer(verifer);

@@ -35,7 +35,7 @@ public class OwnerGroupHandler extends AttributeHandler<OwnerGroup> {
   public OwnerGroup get(NFS4Handler server, Session session, FileSystem fs,
       FileStatus fileStatus) {
     OwnerGroup ownerGroup = new OwnerGroup();
-    String domain = OwnerHandler.getDomain(session.getConfiguration(), session.getClientHost());
+    String domain = OwnerHandler.getDomain(session.getConfiguration(), session.getClientAddress());
     ownerGroup.setOwnerGroup(fileStatus.getGroup() + "@" + domain);
     return ownerGroup;
   }

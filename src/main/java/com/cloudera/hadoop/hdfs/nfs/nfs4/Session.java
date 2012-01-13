@@ -21,6 +21,7 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
 
 import java.io.IOException;
+import java.net.InetAddress;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -38,22 +39,16 @@ public class Session {
   protected final Configuration mConfiguration;
   protected final CompoundRequest mCompoundRequest;
   protected final FileSystem mFileSystem;
-  protected final String mClientHostPort, mClientHost;
+  protected final InetAddress mClientAddress;
   protected final String mSessionID;
   protected final int mXID;
-  public Session(int xid, CompoundRequest compoundRequest, Configuration configuration, String clientHostPort, String sessionID) 
+  public Session(int xid, CompoundRequest compoundRequest, Configuration configuration, InetAddress clientAddress, String sessionID) 
       throws IOException {
     mXID = xid;
     mCompoundRequest = compoundRequest;
     mConfiguration = configuration;
     mFileSystem = FileSystem.get(mConfiguration);
-    mClientHostPort = clientHostPort;
-    int pos;
-    if((pos = mClientHostPort.indexOf(":")) > 0) {
-      mClientHost = mClientHostPort.substring(0, pos);
-    } else {
-      mClientHost = mClientHostPort;
-    }
+    mClientAddress = clientAddress;
     mSessionID = sessionID;
   }
   public int getXID() {
@@ -83,11 +78,8 @@ public class Session {
   public FileSystem getFileSystem() {
     return mFileSystem;
   }
-  public String getClientHost() {
-    return mClientHost;
-  }
-  public String getClientHostPort() {
-    return mClientHostPort;
+  public InetAddress getClientAddress() {
+    return mClientAddress;
   }
   public String getSessionID() {
     return mSessionID;

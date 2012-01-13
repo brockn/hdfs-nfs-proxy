@@ -77,7 +77,7 @@ public abstract class OperationRequestHandler<IN extends OperationRequest, OUT e
         response.setStatus(NFS4ERR_SERVERFAULT);
       }
       String msg = session.getSessionID() + " Error for client " + 
-          session.getClientHostPort() + " and " + response.getClass().getSimpleName();
+          session.getClientAddress() + " and " + response.getClass().getSimpleName();
       if(log || LOGGER.isDebugEnabled()) {
         LOGGER.warn(msg, ex);
       } else {

@@ -276,7 +276,5 @@ public class WriteOrderHandler extends Thread {
         return false;
       return Bytes.compareTo(data, start, length, other.data, other.start, other.length) == 0;
     }
-    
-    
   }
 }

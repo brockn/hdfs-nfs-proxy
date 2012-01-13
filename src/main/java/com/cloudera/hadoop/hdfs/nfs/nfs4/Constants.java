@@ -19,6 +19,9 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 
 public class Constants {
 
@@ -309,6 +312,16 @@ public class Constants {
   public static final int    NFS4_FH4_VOLATILE_ANY        = 0x00000002;
   public static final int    NFS4_FH4_VOL_MIGRATION       = 0x00000004;
   public static final int    NFS4_FH4_VOL_RENAME          = 0x00000008;
+  
+  public static final InetAddress LOCALHOST;
+  
+  static {
+    try {
+      LOCALHOST = InetAddress.getLocalHost();
+    } catch (UnknownHostException e) {
+      throw new RuntimeException("Cannot resolve localhost", e);
+    }
+  }
   
   public static final long NFS4_COOKIE_OFFSET = Integer.MAX_VALUE;
 

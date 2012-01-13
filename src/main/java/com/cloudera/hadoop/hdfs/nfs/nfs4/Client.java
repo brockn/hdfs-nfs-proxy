@@ -32,7 +32,6 @@ public class Client {
   protected long mShorthandID;
   protected OpaqueData8 mVerifer;
   protected String mClientHost;
-  protected String mClientHostPort;
   protected boolean mConfirmed;
   protected long mRenew = System.currentTimeMillis();
   
@@ -85,12 +84,6 @@ public class Client {
   }
   public String getClientHost() {
     return mClientHost;
-  }
-  public void setClientHostPort(String hostPort) {
-    this.mClientHostPort = hostPort;
-  }
-  public String getClientHostPort() {
-    return mClientHostPort;
   }
   public OpaqueData8 getVerifer() {
     return mVerifer;

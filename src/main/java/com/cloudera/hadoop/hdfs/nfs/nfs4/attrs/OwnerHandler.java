@@ -23,6 +23,7 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4.attrs;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.io.IOException;
+import java.net.InetAddress;
 
 
 import org.apache.hadoop.conf.Configuration;
@@ -39,7 +40,7 @@ public class OwnerHandler extends AttributeHandler<Owner> {
   public Owner get(NFS4Handler server, Session session, FileSystem fs,
       FileStatus fileStatus) {
     Owner owner = new Owner();
-    String domain = getDomain(session.getConfiguration(), session.getClientHost());
+    String domain = getDomain(session.getConfiguration(), session.getClientAddress());
     owner.setOwner(fileStatus.getOwner() + "@" + domain);
     return owner;
   }
@@ -62,10 +63,16 @@ public class OwnerHandler extends AttributeHandler<Owner> {
     }
     return user;
   }
-  public static String getDomain(Configuration conf, String host) {
+  public static String getDomain(Configuration conf, InetAddress address) {
     String override = conf.get(NFS_OWNER_DOMAIN);
     if(override != null) {
       return override;
+    }
+    String host = address.getCanonicalHostName();
+    if(address.isLoopbackAddress() && 
+        address.getHostAddress().equals(address.getHostName())) {
+      // loopback does not resolve
+      return "localhost";
     }
     int pos;
     if((pos = host.indexOf('.')) > 0 && pos < host.length()) {

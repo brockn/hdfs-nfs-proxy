@@ -19,6 +19,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
@@ -40,7 +41,7 @@ public class LocalClient extends BaseClient {
   
   @Override
   protected CompoundResponse doMakeRequest(CompoundRequest request) {
-    CompoundResponse response = mServer.process(RPCTestUtil.createRequest(), request, "localhost.localdomain", "test");
+    CompoundResponse response = mServer.process(RPCTestUtil.createRequest(), request, LOCALHOST, "test");
     return response;
   }
   

@@ -19,12 +19,14 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.rpc;
 
+import java.net.InetAddress;
+
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 
 
 public abstract class RPCHandler<REQUEST extends MessageBase, RESPONSE extends MessageBase> {
 
-  public abstract RESPONSE process(final RPCRequest rpcRequest, final REQUEST request, final String clientHostPort, final String sessionID);
+  public abstract RESPONSE process(final RPCRequest rpcRequest, final REQUEST request, final InetAddress clientAddress, final String sessionID);
   
   public abstract RESPONSE createResponse();
   
