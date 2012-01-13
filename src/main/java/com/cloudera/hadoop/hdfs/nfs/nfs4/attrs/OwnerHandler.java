@@ -72,7 +72,7 @@ public class OwnerHandler extends AttributeHandler<Owner> {
     if(address.isLoopbackAddress() && 
         address.getHostAddress().equals(address.getHostName())) {
       // loopback does not resolve
-      return "localhost";
+      return "localdomain";
     }
     int pos;
     if((pos = host.indexOf('.')) > 0 && pos < host.length()) {
