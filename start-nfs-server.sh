@@ -34,6 +34,6 @@ then
   fi
 fi
 nohup java -Xms1024m -Xmx1024m -cp $JAR:$CONFIG \
-  com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Server 2049 1>nfsserver.out 2>nfsserver.err </dev/null &
+  com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Server 2051 1>nfsserver.out 2>nfsserver.err </dev/null &
 pid="$!"
 echo $pid > nfsserver.pid

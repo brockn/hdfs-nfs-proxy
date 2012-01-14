@@ -16,7 +16,7 @@
 
 1. Choose binary:
 
-    You can either build a binary are choose one of the pre-built snapshots. The snapshots are in snapshots/
+    You can either build a binary are choose one of the pre-built snapshots. The snapshots are in the snapshots/ directory.
 
     Should you choose to build your own binary, You need choose the appropiate hadoop version when building the package. Examples below:
 
