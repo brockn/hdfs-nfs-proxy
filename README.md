@@ -1,3 +1,5 @@
+Questions? email brock at cloudera dot com
+
 # How to use
 
 1. Requirements:
