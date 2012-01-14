@@ -7,7 +7,7 @@ BUILDS=(
   "hadoop-0.20  1.0.0"
   "hadoop-0.23  0.23.1-SNAPSHOT"
 )
-TIME=$(date +%Y%M%d%H%M%S)
+TIME=$(date +%Y%m%d%H%M%S)
 for build in "${BUILDS[@]}"
 do
   set -- $build
