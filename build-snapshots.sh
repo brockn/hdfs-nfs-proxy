@@ -14,10 +14,13 @@ do
   profile=$1
   version=$2
   echo $version
-  mvn clean package -P$profile -Dhadoop.version=$version 1>target/build.log 2>&1 
+  test -d target/ || mkdir target/ 
+  test -d snapshots/ || mkdir snapshots/
+  mvn package -P$profile -Dhadoop.version=$version 1>target/build.log 2>&1 
   FILE=target/hadoop-nfs-proxy-*-SNAPSHOT.jar
   VERSION=$(echo $FILE | awk -F- '{print $4}')
-  for name in "" "-with-deps"
+  # "" would publish non-dep jars
+  for name in "-with-deps"
   do
     OLD=target/hadoop-nfs-proxy-$VERSION-SNAPSHOT${name}.jar
     NEW=snapshots/hadoop-nfs-proxy-$VERSION-SNAPSHOT-${version}${name}-$TIME.jar
