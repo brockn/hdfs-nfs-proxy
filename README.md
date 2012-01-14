@@ -19,9 +19,9 @@
 
 1. Choose binary:
 
-    You can either build a binary are choose one of the pre-built snapshots. The snapshots are in the snapshots/ directory.
+    Either build a binary or choose one of the pre-built snapshots. The snapshots are in the snapshots/ directory.
 
-    Should you choose to build your own binary, You need choose the appropiate hadoop version when building the package. Examples below:
+    Should you choose to build your own binary, you need choose the appropiate hadoop version when building the package. Examples below:
 
         0.20 Branch:
          CDH3u2:
@@ -31,6 +31,8 @@
 
         0.23 Branch:
          $ mvn package -Phadoop-0.23 -Dhadoop.version=0.23.1-SNAPSHOT
+
+    The output jar will be target/ you likely want the -with-deps jar.
 
 1. Start the server:
 
