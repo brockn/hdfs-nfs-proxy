@@ -54,37 +54,6 @@ Questions? email brock at cloudera dot com
 
 1. You should now be able to access HDFS. Note: The script ./start-nfs-client-tests.sh runs basic tests.
 
-# What needs improvement (in no order)
-
-* Locking:
-NFS4Handler has coarse grained locking and is heavily used
-* User Mapping: 
-NFS4 User identities are user@domain. However, the RPC protocol uses UID/GID.
-Currently we map the UID on the incoming request via the system the daemon executes on.
-I think there is something in Hadoop which does user mapping as well. If so, it might
-make sense to be consistent.
-* RFC 3530 (NFS4):
-
-         - Client ID logic is complex and not completely followed.
-         - Many reccomended attributes are not implemented such as 14 archive, 25 hidden,
-         49 timebackup, 55 mounted on fileid
-         - Kerberos
-         - File appends
-
-* Read Ordering: 
-We recieve a fair number of threads blocked on reads of a single input stream.
-I think we could get better performance if we ordered these like writes because we
-know they will arrive out of order. As such the current impl is doing more seeks
-than required. We also might considering pooling input streams.
-* Garbage Collection:
-Heavy read loads use a fair amount of old gen likely due to our response cache
-and the size of read responses. If this becomes an issue we could easily exclude 
-read requests from the response cache.
-* Write Ordering:
-We buffer writes until we find the prereq, this memory consumption is not bounded.
-* Metrics:
-A simple metrics system is used. We should use Hadoops Metric System. 
-
 # FAQ
 
 * I am running an NFS Server on port 2049, how can I configure this to use another port?
@@ -133,3 +102,34 @@ Say I have the proxy running as noland and I copy a file as root into
 
 The easiest option is to start the daemon as hadoop, hdfs or whatever user
 is running your namenode.
+
+# What needs improvement (in no order)
+
+* Locking:
+NFS4Handler has coarse grained locking and is heavily used
+* User Mapping: 
+NFS4 User identities are user@domain. However, the RPC protocol uses UID/GID.
+Currently we map the UID on the incoming request via the system the daemon executes on.
+I think there is something in Hadoop which does user mapping as well. If so, it might
+make sense to be consistent.
+* RFC 3530 (NFS4):
+
+         - Client ID logic is complex and not completely followed.
+         - Many reccomended attributes are not implemented such as 14 archive, 25 hidden,
+         49 timebackup, 55 mounted on fileid
+         - Kerberos
+         - File appends
+
+* Read Ordering: 
+We recieve a fair number of threads blocked on reads of a single input stream.
+I think we could get better performance if we ordered these like writes because we
+know they will arrive out of order. As such the current impl is doing more seeks
+than required. We also might considering pooling input streams.
+* Garbage Collection:
+Heavy read loads use a fair amount of old gen likely due to our response cache
+and the size of read responses. If this becomes an issue we could easily exclude 
+read requests from the response cache.
+* Write Ordering:
+We buffer writes until we find the prereq, this memory consumption is not bounded.
+* Metrics:
+A simple metrics system is used. We should use Hadoops Metric System. 
