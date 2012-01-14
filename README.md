@@ -7,7 +7,7 @@
           (or equivalent) with 5.7 and 6.X as NFS Clients with CDH3u2.
 1. Download
 
-Either clone via git or download a zip: https://github.com/brockn/hdfs-nfs-proxy/zipball/master
+     Either clone via git or download a zip: https://github.com/brockn/hdfs-nfs-proxy/zipball/master
 
 1. Create the mount location
 
