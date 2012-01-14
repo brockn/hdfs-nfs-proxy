@@ -69,7 +69,7 @@ public class TestNFS4Server {
     RPCBuffer buffer = new RPCBuffer();
     request.write(buffer);
     
-    Socket socket = new Socket("localhost", mPort);
+    Socket socket = new Socket(LOCALHOST, mPort);
     try {
       OutputStream out = socket.getOutputStream();
       InputStream in = socket.getInputStream();
@@ -115,7 +115,7 @@ public class TestNFS4Server {
     RPCBuffer buffer = new RPCBuffer();
     request.write(buffer);
     
-    Socket socket = new Socket("localhost", mPort);
+    Socket socket = new Socket(LOCALHOST, mPort);
     socket.setTcpNoDelay(true);
     socket.setPerformancePreferences(0, 1, 0);
     socket.setSoTimeout(2000);
@@ -129,7 +129,7 @@ public class TestNFS4Server {
       out.close();
       socket.close();
       
-      socket = new Socket("localhost", mPort);
+      socket = new Socket(LOCALHOST, mPort);
       socket.setTcpNoDelay(true);
       socket.setPerformancePreferences(0, 1, 0);
       socket.setSoTimeout(2000);
