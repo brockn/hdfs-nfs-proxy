@@ -50,10 +50,10 @@ public class NetworkClient extends BaseClient {
     Configuration conf = TestUtils.setupConf();
     mNFS4Server = new NFS4Server();
     mNFS4Server.setConf(conf);
-    mNFS4Server.start(0);
+    mNFS4Server.start(LOCALHOST, 0);
     mPort = mNFS4Server.getPort();
     
-    mClient = new Socket("localhost", mPort);
+    mClient = new Socket(LOCALHOST, mPort);
     
     mInputStream = mClient.getInputStream();
     mOutputStream = mClient.getOutputStream();

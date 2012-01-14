@@ -20,6 +20,7 @@
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
 import java.io.IOException;
+import java.net.InetAddress;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -40,14 +41,14 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCServer;
 public class NFS4Server extends Configured implements Tool {
   NFS4Handler mNFSServer;
   RPCServer<CompoundRequest, CompoundResponse> mRPCServer;
-
+  
   public static void main(String[] args) throws Exception {
     System.exit(ToolRunner.run(new Configuration(), new NFS4Server(), args));
   }
   
-  public void start(int port) throws IOException {
+  public void start(InetAddress address, int port) throws IOException {
     mNFSServer = new NFS4Handler(getConf());
-    mRPCServer = new RPCServer<CompoundRequest, CompoundResponse>(mNFSServer, getConf(), port);
+    mRPCServer = new RPCServer<CompoundRequest, CompoundResponse>(mNFSServer, getConf(), address, port);
     mRPCServer.start();    
   }
 
@@ -61,7 +62,7 @@ public class NFS4Server extends Configured implements Tool {
       GenericOptionsParser.printGenericCommandUsage(System.err);
       return 1;
     }
-    start(port);
+    start(null, port);
     while(mRPCServer.isAlive()) {
       Thread.sleep(10000L);
     }
