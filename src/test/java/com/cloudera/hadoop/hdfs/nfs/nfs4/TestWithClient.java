@@ -30,10 +30,12 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.UUID;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.Shell;
 import org.junit.Test;
 
+import com.cloudera.hadoop.hdfs.nfs.NFSUtils;
 import com.google.common.collect.ImmutableList;
 
 public class TestWithClient {
@@ -207,8 +209,9 @@ public class TestWithClient {
   }
   protected void doCompareFileStatusFile(FileStatus fileStatus) throws IOException {
     File file = new File(fileStatus.path.toString());
-    //assertEquals(getOwner(file) + "@localdomain", fileStatus.getOwner());
-    //assertEquals(getOwnerGroup(file) + "@localdomain", fileStatus.getOwnerGroup());
+    String domain = NFSUtils.getDomain(new Configuration(), LOCALHOST);
+    assertEquals(getOwner(file) + "@" + domain, fileStatus.getOwner());
+    assertEquals(getOwnerGroup(file) + "@" + domain, fileStatus.getOwnerGroup());
     assertEquals(file.length(), fileStatus.getSize());
     assertEquals(file.lastModified(), fileStatus.getMTime());      
     assertEquals(file.isDirectory(), fileStatus.isDir());

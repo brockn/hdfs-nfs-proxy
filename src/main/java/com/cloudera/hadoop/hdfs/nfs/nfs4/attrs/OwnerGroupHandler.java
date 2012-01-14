@@ -25,6 +25,7 @@ import java.io.IOException;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 
+import com.cloudera.hadoop.hdfs.nfs.NFSUtils;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
@@ -35,7 +36,7 @@ public class OwnerGroupHandler extends AttributeHandler<OwnerGroup> {
   public OwnerGroup get(NFS4Handler server, Session session, FileSystem fs,
       FileStatus fileStatus) {
     OwnerGroup ownerGroup = new OwnerGroup();
-    String domain = OwnerHandler.getDomain(session.getConfiguration(), session.getClientAddress());
+    String domain = NFSUtils.getDomain(session.getConfiguration(), session.getClientAddress());
     ownerGroup.setOwnerGroup(fileStatus.getGroup() + "@" + domain);
     return ownerGroup;
   }
