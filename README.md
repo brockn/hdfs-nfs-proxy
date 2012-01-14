@@ -14,8 +14,11 @@
 
         <hostname of server running the proxy>:/   /mnt/hdfs   nfs4       rw,intr,timeo=600      0 0
 
-1. Build the package which includes dependencies. You need choose the appropiate hadoop version when
-building the package. Examples below:
+1. Choose binary:
+
+You can either build a binary are choose one of the pre-built snapshots. The snapshots are in snapshots/
+
+Should you choose to build your own binary, You need choose the appropiate hadoop version when building the package. Examples below:
 
         0.20 Branch:
          CDH3u2:
@@ -30,7 +33,13 @@ building the package. Examples below:
 
         Below, /usr/lib/hadoop/conf, is the path to my *-site.xml files.
 
-        $ ./start-nfs-server.sh /usr/lib/hadoop/conf
+        CHD3u2:
+
+        $ ./start-nfs-server.sh /usr/lib/hadoop/conf snapshots/hadoop-nfs-proxy-0.8-SNAPSHOT-0.20.2-cdh3u2-with-deps-*.jar
+
+        Apache Hadoop 1.0.0:
+
+        $ ./start-nfs-server.sh /usr/lib/hadoop/conf snapshots/hadoop-nfs-proxy-0.8-SNAPSHOT-1.0.0-with-deps-*.jar
 
 1. Mount hdfs
 
