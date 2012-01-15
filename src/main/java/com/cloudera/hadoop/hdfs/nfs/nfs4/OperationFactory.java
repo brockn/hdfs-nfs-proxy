@@ -133,18 +133,6 @@ public class OperationFactory {
       .put(NFS4_OP_WRITE, new Holder(WRITERequest.class, WRITEResponse.class, new WRITEHandler()))
       .build();
   
-      
-    /**
-     * To be used only for testing, push request into the backing map.
-     * @param id of new identifier
-     * @param clazz represents new request type
-     */
-    public static void register(int id, Class<? extends OperationRequest> clazz) {
-      operations = ImmutableMap.<Integer, Holder>builder()
-      .putAll(operations)
-      .put(id, new Holder(clazz, null, null))
-      .build();
-    }
     /**
      * @param id
      * @return true if id is a supported operation
