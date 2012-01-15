@@ -215,8 +215,8 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
    */
   public synchronized boolean fileExists(FileSystem fs, Path path)
       throws IOException {
-    FileHolder fileWrapper = mPathMap.get(realPath(path));
-    if (fileWrapper != null && fileWrapper.isOpenForWrite()) {
+    FileHolder fileHolder = mPathMap.get(realPath(path));
+    if (fileHolder != null && fileHolder.isOpenForWrite()) {
       return true;
     }
     return fs.exists(path);
@@ -286,20 +286,20 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
    */
   public StateID close(String sessionID, StateID stateID, int seqID,
       FileHandle fileHandle) throws NFS4Exception, IOException {
-    FileHolder fileWrapper = null;
+    FileHolder fileHolder = null;
     WriteOrderHandler writeOrderHandler = null;
     OpenFile<?> file = null;
     synchronized (this) {
-      fileWrapper = mFileHandleMap.get(fileHandle);
-      if (fileWrapper != null) {
-        if (fileWrapper.isOpenForWrite()) {
-          LOGGER.info(sessionID + " Closing " + fileWrapper.getPath()
+      fileHolder = mFileHandleMap.get(fileHandle);
+      if (fileHolder != null) {
+        if (fileHolder.isOpenForWrite()) {
+          LOGGER.info(sessionID + " Closing " + fileHolder.getPath()
               + " for write");
-          file = fileWrapper.getFSDataOutputStream();
+          file = fileHolder.getFSDataOutputStream();
         } else {
-          LOGGER.info(sessionID + " Closing " + fileWrapper.getPath()
+          LOGGER.info(sessionID + " Closing " + fileHolder.getPath()
               + " for read");
-          file = fileWrapper.getFSDataInputStream(stateID);
+          file = fileHolder.getFSDataInputStream(stateID);
         }
         if (file == null) {
           throw new NFS4Exception(NFS4ERR_OLD_STATEID);
@@ -318,7 +318,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     if (writeOrderHandler != null) {
       writeOrderHandler.close(); // blocks
       LOGGER.info(sessionID + " Closed WriteOrderHandler for "
-          + fileWrapper.getPath());
+          + fileHolder.getPath());
     }
     synchronized (this) {
       file.close();
@@ -339,13 +339,13 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
    */
   public synchronized StateID confirm(StateID stateID, int seqID,
       FileHandle fileHandle) throws NFS4Exception {
-    FileHolder fileWrapper = mFileHandleMap.get(fileHandle);
+    FileHolder fileHolder = mFileHandleMap.get(fileHandle);
     OpenFile<?> file = null;
-    if (fileWrapper != null) {
-      if (fileWrapper.isOpenForWrite()) {
-        file = fileWrapper.getFSDataOutputStream();
+    if (fileHolder != null) {
+      if (fileHolder.isOpenForWrite()) {
+        file = fileHolder.getFSDataOutputStream();
       } else {
-        file = fileWrapper.getFSDataInputStream(stateID);
+        file = fileHolder.getFSDataInputStream(stateID);
       }
       if (file == null) {
         throw new NFS4Exception(NFS4ERR_OLD_STATEID);
@@ -368,9 +368,9 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
    * @return true if the file is open for read or write
    */
   public synchronized boolean isFileOpen(Path path) {
-    FileHolder fileWrapper = mPathMap.get(realPath(path));
-    if (fileWrapper != null) {
-      return fileWrapper.isOpen();
+    FileHolder fileHolder = mPathMap.get(realPath(path));
+    if (fileHolder != null) {
+      return fileHolder.isOpen();
     }
     return false;
   }
@@ -390,14 +390,14 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
    */
   public synchronized FSDataInputStream forRead(StateID stateID, FileSystem fs,
       FileHandle fileHandle) throws NFS4Exception, IOException {
-    FileHolder fileWrapper = mFileHandleMap.get(fileHandle);
-    if (fileWrapper != null) {
-      if (fileWrapper.isOpenForWrite()) {
+    FileHolder fileHolder = mFileHandleMap.get(fileHandle);
+    if (fileHolder != null) {
+      if (fileHolder.isOpenForWrite()) {
         throw new NFS4Exception(NFS4ERR_FILE_OPEN); // TODO lock unavailable
                                                     // should be _LOCK?
       }
-      Path path = new Path(fileWrapper.getPath());
-      OpenFile<FSDataInputStream> file = fileWrapper
+      Path path = new Path(fileHolder.getPath());
+      OpenFile<FSDataInputStream> file = fileHolder
           .getFSDataInputStream(stateID);
       if (file != null) {
         if (!file.isConfirmed()) {
@@ -411,7 +411,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       }
       FSDataInputStream in = fs.open(path);
       this.incrementMetric("FILES_OPENED_READ", 1);
-      fileWrapper.putFSDataInputStream(stateID, in);
+      fileHolder.putFSDataInputStream(stateID, in);
       return in;
     }
     throw new NFS4Exception(NFS4ERR_STALE);
@@ -454,9 +454,9 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
    */
   public synchronized WriteOrderHandler forCommit(FileSystem fs,
       FileHandle fileHandle) throws NFS4Exception {
-    FileHolder fileWrapper = mFileHandleMap.get(fileHandle);
-    if (fileWrapper != null) {
-      OpenFile<FSDataOutputStream> file = fileWrapper.getFSDataOutputStream();
+    FileHolder fileHolder = mFileHandleMap.get(fileHandle);
+    if (fileHolder != null) {
+      OpenFile<FSDataOutputStream> file = fileHolder.getFSDataOutputStream();
       if (file != null) {
         synchronized (mWriteOrderHandlerMap) {
           if (mWriteOrderHandlerMap.containsKey(file.get())) {
@@ -481,16 +481,16 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   public synchronized FSDataOutputStream forWrite(StateID stateID,
       FileSystem fs, FileHandle fileHandle, boolean overwrite)
       throws NFS4Exception, IOException {
-    FileHolder fileWrapper = mFileHandleMap.get(fileHandle);
-    if (fileWrapper != null) {
-      OpenFile<FSDataOutputStream> file = fileWrapper.getFSDataOutputStream();
+    FileHolder fileHolder = mFileHandleMap.get(fileHandle);
+    if (fileHolder != null) {
+      OpenFile<FSDataOutputStream> file = fileHolder.getFSDataOutputStream();
       if (file != null) {
         if (file.isOwnedBy(stateID)) {
           return file.get();
         }
         throw new NFS4Exception(NFS4ERR_FILE_OPEN);
       }
-      Path path = new Path(fileWrapper.getPath());
+      Path path = new Path(fileHolder.getPath());
       boolean exists = fs.exists(path);
       // If overwrite = false, fs.create throws IOException which
       // is useless. In case of IOE do we always return EXIST?
@@ -516,7 +516,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       }
       FSDataOutputStream out = fs.create(path, overwrite);
       this.incrementMetric("FILES_OPENED_WRITE", 1);
-      fileWrapper.setFSDataOutputStream(stateID, out);
+      fileHolder.setFSDataOutputStream(stateID, out);
       return out;
     }
     throw new NFS4Exception(NFS4ERR_STALE);
@@ -586,9 +586,9 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
    *           if the getPos() call of the output stream throws IOException
    */
   public long getFileSize(FileStatus status) throws NFS4Exception {
-    FileHolder fileWrapper = mPathMap.get(realPath(status.getPath()));
-    if (fileWrapper != null) {
-      OpenFile<FSDataOutputStream> file = fileWrapper.getFSDataOutputStream();
+    FileHolder fileHolder = mPathMap.get(realPath(status.getPath()));
+    if (fileHolder != null) {
+      OpenFile<FSDataOutputStream> file = fileHolder.getFSDataOutputStream();
       if (file != null) {
         try {
           FSDataOutputStream out = file.get();
@@ -617,10 +617,10 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     protected T mResource;
     protected long mTimestamp;
     protected StateID mStateID;
-    protected FileHolder mFileWrapper;
+    protected FileHolder mFileHolder;
 
-    protected OpenFile(FileHolder fileWrapper, StateID stateID, T resource) {
-      this.mFileWrapper = fileWrapper;
+    protected OpenFile(FileHolder fileHolder, StateID stateID, T resource) {
+      this.mFileHolder = fileHolder;
       this.mStateID = stateID;
       this.mResource = resource;
       mTimestamp = System.currentTimeMillis();
@@ -642,9 +642,9 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     public void close() throws IOException {
       if (mResource != null) {
         if (mResource instanceof InputStream) {
-          mFileWrapper.removeInputStream(mStateID);
+          mFileHolder.removeInputStream(mStateID);
         } else if (mResource instanceof OutputStream) {
-          mFileWrapper.removeOutputStream(mStateID);
+          mFileHolder.removeOutputStream(mStateID);
         }
         synchronized (mResource) {
           mResource.close();
@@ -673,7 +673,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     }
 
     public FileHolder getFileHolder() {
-      return mFileWrapper;
+      return mFileHolder;
     }
   }
 
