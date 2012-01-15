@@ -641,11 +641,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     @Override
     public void close() throws IOException {
       if (mResource != null) {
-        if (mResource instanceof InputStream) {
-          mFileHolder.removeInputStream(mStateID);
-        } else if (mResource instanceof OutputStream) {
-          mFileHolder.removeOutputStream(mStateID);
-        }
+        mFileHolder.removeResource(mResource, mStateID);
         synchronized (mResource) {
           mResource.close();
         }
@@ -754,19 +750,18 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       }
       return null;
     }
-
-    public OpenFile<FSDataInputStream> removeInputStream(StateID stateID) {
-      return mInputStreams.remove(stateID);
-    }
-
-    public void removeOutputStream(StateID stateID) {
-      if (mOutputStream != null) {
-        checkState(stateID.equals(mOutputStream.getFirst()), "stateID "
-            + stateID + " does not own file");
+    
+    public void removeResource(Object resource, StateID stateID) {
+      if (resource instanceof InputStream) {
+        mInputStreams.remove(stateID);
+      } else if (resource instanceof OutputStream) {
+        if (mOutputStream != null) {
+          checkState(stateID.equals(mOutputStream.getFirst()), "stateID "
+              + stateID + " does not own file");
+        }
+        mOutputStream = null;
       }
-      mOutputStream = null;
     }
-
     public void setFSDataOutputStream(StateID stateID,
         FSDataOutputStream fsDataOutputStream) {
       mOutputStream = Pair.of(stateID, new OpenFile<FSDataOutputStream>(this,
