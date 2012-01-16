@@ -21,6 +21,17 @@ public class FSInfo {
     } catch (NoSuchMethodException e) {
       useDFSClient = true;
     }
+    try {
+      if(useDFSClient) {
+        DFSClient.class.getMethod("totalRawCapacity", (Class[])null);
+        DFSClient.class.getMethod("totalRawUsed", (Class[])null);
+      } else {
+        Class.forName("org.apache.hadoop.fs.FsStatus").getMethod("getCapacity", (Class[])null);
+        Class.forName("org.apache.hadoop.fs.FsStatus").getMethod("getUsed", (Class[])null);
+      }
+    } catch(Exception ex) {
+      throw new RuntimeException("The version of hadoop you have is not supported", ex);
+    }
   }
   public static long getCapacity(Session session) throws IOException {
     if(session.getFileSystem() instanceof LocalFileSystem) {
