@@ -43,13 +43,14 @@ Questions? email brock at cloudera dot com
 
 1. Start the server:
 
-        Below, /usr/lib/hadoop/conf, is the path to my *-site.xml files.
+        Below, /usr/lib/hadoop/conf, is the path to my *-site.xml files. Note that
+        the daemon should be started as the user running hdfs, typically hadoop or hdfs.
 
-        CHD3u2:
+        CHD3u2 (as user hdfs or hadoop):
 
         $ ./start-nfs-server.sh /usr/lib/hadoop/conf snapshots/hadoop-nfs-proxy-0.8-SNAPSHOT-0.20.2-cdh3u2-with-deps-*.jar
 
-        Apache Hadoop 1.0.0:
+        Apache Hadoop 1.0.0 (as user hadoop):
 
         $ ./start-nfs-server.sh /usr/lib/hadoop/conf snapshots/hadoop-nfs-proxy-0.8-SNAPSHOT-1.0.0-with-deps-*.jar
 
