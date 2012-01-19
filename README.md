@@ -6,7 +6,12 @@ Questions? email brock at cloudera dot com
 
         - HDFS Instance with CDH, Apache Hadoop 0.23+, or Apache Hadoop 1.0+
         - Note that this has only been tested extensive on RHEL 
-          (or equivalent) with 5.7 and 6.X as NFS Clients with CDH3u2.
+          (or equivalent) with 5.7 and 6.X as NFS Clients with CDH3u2
+        - NFS Packages (nfs-utils on RHEL, CentOS and nfs-common on Ubuntu)
+          must be installed on any clients wishing to mount HDFS
+        - A native NFS Server cannot be running hte hosts unless you change
+          the port of HDFS NFS Proxy, instructions in the FAQ
+        
 1. Download
 
      Either clone via git or download a zip: https://github.com/brockn/hdfs-nfs-proxy/zipball/master
@@ -38,13 +43,14 @@ Questions? email brock at cloudera dot com
 
 1. Start the server:
 
-        Below, /usr/lib/hadoop/conf, is the path to my *-site.xml files.
+        Below, /usr/lib/hadoop/conf, is the path to my *-site.xml files. Note that
+        the daemon should be started as the user running hdfs, typically hadoop or hdfs.
 
-        CHD3u2:
+        CHD3u2 (as user hdfs or hadoop):
 
         $ ./start-nfs-server.sh /usr/lib/hadoop/conf snapshots/hadoop-nfs-proxy-0.8-SNAPSHOT-0.20.2-cdh3u2-with-deps-*.jar
 
-        Apache Hadoop 1.0.0:
+        Apache Hadoop 1.0.0 (as user hadoop):
 
         $ ./start-nfs-server.sh /usr/lib/hadoop/conf snapshots/hadoop-nfs-proxy-0.8-SNAPSHOT-1.0.0-with-deps-*.jar
 
