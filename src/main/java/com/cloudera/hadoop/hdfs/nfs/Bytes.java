@@ -28,12 +28,10 @@ import java.nio.ByteBuffer;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-
 import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.io.WritableUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
 // copied from HBase. Didn't want to include all the deps for one class.
 
@@ -44,7 +42,7 @@ import org.slf4j.LoggerFactory;
  */
 public class Bytes {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(Bytes.class);
+    private static final Logger LOGGER = Logger.getLogger(Bytes.class);
 
   /**
    * Size of boolean in bytes
