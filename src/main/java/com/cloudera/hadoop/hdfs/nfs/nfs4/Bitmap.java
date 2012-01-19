@@ -19,21 +19,17 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-
-
 import java.util.BitSet;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
+import org.apache.log4j.Logger;
 
 /*
  * TODO fix this. I know this can be done cleaner.
  */
 
 public class Bitmap implements MessageBase {
-  protected static final Logger LOGGER = LoggerFactory.getLogger(Bitmap.class);
+  protected static final Logger LOGGER = Logger.getLogger(Bitmap.class);
 
   protected static final int DEFAULT_NUM_BITS = 64;
   protected BitSet mMask = new BitSet(DEFAULT_NUM_BITS);

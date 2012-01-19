@@ -29,8 +29,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.hadoop.conf.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
@@ -40,10 +38,11 @@ import com.cloudera.hadoop.hdfs.nfs.security.CredentialsSystem;
 import java.io.*;
 import java.util.Date;
 import java.util.Random;
+import org.apache.log4j.Logger;
 
 public class TestUtils {
 
-    protected static final Logger LOGGER = LoggerFactory.getLogger(TestUtils.class);
+    protected static final Logger LOGGER = Logger.getLogger(TestUtils.class);
     final static public String tmpDirPath;
     final static public String tmpDirPathForTest;
 
