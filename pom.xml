@@ -12,8 +12,8 @@
 
     <properties>
         <compileSource>1.6</compileSource>
-        <junit.version>4.8.1</junit.version>
-        <commons-logging.version>1.1.1</commons-logging.version>
+        <junit.version>4.10</junit.version>
+<!--        <commons-logging.version>1.1.1</commons-logging.version>-->
     </properties>
 
     <dependencies>
@@ -24,16 +24,16 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
+<!--        <dependency>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
             <version>${commons-logging.version}</version>
-        </dependency>
+        </dependency>-->
 
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
-            <version>1.2.15</version>
+            <version>1.2.16</version>
             <exclusions>
                 <exclusion>
                     <groupId>javax.mail</groupId>
@@ -54,23 +54,25 @@
             </exclusions>
         </dependency>
 
-        <dependency>
+<!--        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.6.1</version>
-        </dependency>
+        </dependency>-->
 
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>
-            <version>1.8.5</version>
+            <version>1.9.0</version>
         </dependency>
 
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>r09</version>
+            <!-- consider upgrading vesion -->
         </dependency>
+        
     </dependencies>
 
 
