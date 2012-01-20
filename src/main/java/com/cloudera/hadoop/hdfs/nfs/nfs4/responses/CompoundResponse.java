@@ -76,4 +76,9 @@ public class CompoundResponse implements MessageBase, Status {
   public void setStatus(int status) {
     mStatus = status;
   }
+  
+  @Override
+  public String toString() {
+    return this.getClass().getName() + " = " + mOperations.toString();
+  }
 }

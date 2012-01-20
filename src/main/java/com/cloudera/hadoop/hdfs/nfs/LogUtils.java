@@ -31,7 +31,7 @@ public class LogUtils {
   public static String dump(Object parent) {
     StringBuilder buffer = new StringBuilder();
     Field[] fields = parent.getClass().getDeclaredFields();
-    buffer.append("START").append(parent.getClass().getName()).append(" = '").append(parent).append("' = ");
+    buffer.append("START ").append(parent.getClass().getName()).append(" = '").append(parent).append("' = ");
     buffer.append(fields.length).append("\n");
     for(Field field : fields) {
       field.setAccessible(true);

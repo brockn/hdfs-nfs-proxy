@@ -42,8 +42,8 @@ public class TestRPC {
     assertEquals(base.getProgram(), copy.getProgram());
     assertEquals(base.getProgramVersion(), copy.getProgramVersion());
     assertEquals(base.getProcedure(), copy.getProcedure());
-    assertEquals(base.getCredentials().getCredentialsFlavor(), 
-        copy.getCredentials().getCredentialsFlavor());
+    assertEquals(base.getCredentials().getFlavor(), 
+        copy.getCredentials().getFlavor());
     deepEquals(base, copy);
   }
   
@@ -51,7 +51,7 @@ public class TestRPC {
   public void testUnknownCreds() throws Exception {
     RPCRequest request = RPCTestUtil.createRequest();
     Credentials creds = mock(Credentials.class);
-    when(creds.getCredentialsFlavor()).thenReturn(-1);
+    when(creds.getFlavor()).thenReturn(Integer.MAX_VALUE);
     request.setCredentials(creds);
     copy(request, new RPCRequest());
   }

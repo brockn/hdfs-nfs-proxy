@@ -25,6 +25,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.cloudera.hadoop.hdfs.nfs.Bytes;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.UserIDMapper;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
@@ -43,8 +44,6 @@ public class CredentialsSystem extends Credentials implements AuthenticatedCrede
   public CredentialsSystem() {
     super();
     this.mCredentialsLength = 0;
-    this.mVerifierFlavor = RPC_VERIFIER_NULL;
-    this.mVeriferLength = 0;
     this.mHostName = HOSTNAME;
   }
 
@@ -63,16 +62,6 @@ public class CredentialsSystem extends Credentials implements AuthenticatedCrede
     for (int i = 0; i < length; i++) {
       mAuxGIDs[i] = buffer.readUint32();
     }
-    
-    mVerifierFlavor = buffer.readInt();
-    if(mVerifierFlavor != RPC_VERIFIER_NULL) {
-      throw new RuntimeException("Verifer not accepted " + mVerifierFlavor);
-    }
-    mVeriferLength = buffer.readInt();
-    if(mVeriferLength > RPC_OPAQUE_AUTH_MAX) {
-      throw new RuntimeException("veriferLength too large " + mVeriferLength);
-    }
-    buffer.skip(mVeriferLength);
   }
 
   @Override
@@ -95,24 +84,17 @@ public class CredentialsSystem extends Credentials implements AuthenticatedCrede
       }
     }
     
-    mCredentialsLength = buffer.position() - offset;
+    mCredentialsLength = buffer.position() - offset - Bytes.SIZEOF_INT;  // do not include length
 
     buffer.putInt(offset, mCredentialsLength);
-    
-    if(mVerifierFlavor != RPC_VERIFIER_NULL) {
-      throw new RuntimeException("Verifer not accepted " + mVerifierFlavor);
-    }
-    buffer.writeInt(mVerifierFlavor);
-    buffer.writeInt(mVeriferLength);
   }
 
   @Override
-  public int getCredentialsFlavor() {
+  public int getFlavor() {
     return RPC_AUTH_UNIX;
   }
   
-  
-
+  @Override
   public String getUsername(Configuration conf) throws Exception{
     UserIDMapper mapper = UserIDMapper.get(conf);
     String user = mapper.getUserForUID(mUID, null);

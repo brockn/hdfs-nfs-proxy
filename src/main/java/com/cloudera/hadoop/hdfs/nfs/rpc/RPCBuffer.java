@@ -122,6 +122,9 @@ public class RPCBuffer  {
   public RPCBuffer() {
     this(DEFAULT_BUFFER_SIZE);
   }
+  public RPCBuffer(byte[] buffer) {
+    this(buffer, buffer.length);
+  }
   /**
    * Create a buffer, likely for reading with the specified 
    * byte array and length
@@ -237,14 +240,15 @@ public class RPCBuffer  {
     }
   }
   /**
-   * Write the lenght of the buffer and then the buffer
+   * Write the length of the buffer and then the buffer
    * itself to the outputstream.
    * 
    * @param out
-   * @throws IOException if the outputstream thows an IOException
+   * @throws IOException if the outputstream throws an IOException
    * during the write
    */
   public void write(OutputStream out) throws IOException {
+    LOGGER.info("bytes " + (length() - 4));
     putInt(0, RPC_LAST_FRAGEMANT | length() - 4);
     out.write(mBuffer.array(), 0, length());
   }
@@ -287,5 +291,11 @@ public class RPCBuffer  {
       throw new NumberFormatException("Unsigned rolled over "+ l + ", binary = " + Long.toBinaryString(l));
     }
     writeLong(l);
+  }
+  public void writeRPCBUffer(RPCBuffer buffer) {
+    int length = buffer.length();
+    LOGGER.info("Reading/Writing " + length + " bytes");
+    byte[] bytes = buffer.readBytes(length);
+    writeBytes(bytes);
   }
 }

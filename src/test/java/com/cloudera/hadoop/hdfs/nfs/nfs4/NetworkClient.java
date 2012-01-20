@@ -65,12 +65,13 @@ public class NetworkClient extends BaseClient {
   @Override
   protected CompoundResponse doMakeRequest(CompoundRequest request) throws IOException {
     
+    LOGGER.info("request = " + request);
     RPCBuffer buffer = new RPCBuffer();
     RPCRequest rpcRequest = RPCTestUtil.createRequest();
     rpcRequest.setCredentials((Credentials)TestUtils.newCredentials());
     rpcRequest.write(buffer);
     request.write(buffer);
-    
+    buffer.flip();
     buffer.write(mOutputStream);
     mOutputStream.flush();
     
