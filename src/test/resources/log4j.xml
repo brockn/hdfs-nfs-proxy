@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+    
+    <appender name="appender-stdout" class="org.apache.log4j.ConsoleAppender">
+        <param name="Target" value="System.out"/>
+        <param name="Threshold" value="DEGUG"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" 
+                   value="%7p %d{yyyy-MM-dd@kk:mm:ss:SSS} - %C{1}.%M:%L %m%n" />
+<!--              value="%d{HH:mm:ss,SSS} %5p [%-20c{1}] %m%n"/>-->
+
+        </layout>
+    </appender>
+    
+    <logger name="com.cloudera.hadoop.hdfs.nfs" additivity="false">
+        <priority value="DEBUG" />
+        <appender-ref ref="appender-stdout" />
+    </logger>
+
+
+    <!-- default priority is info and all messages are logged to root -->
+    <root>
+        <priority value="FATAL"/>
+        <appender-ref ref="appender-stdout"/>
+    </root>
+
+</log4j:configuration>

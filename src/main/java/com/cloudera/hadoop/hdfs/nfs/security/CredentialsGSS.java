@@ -22,19 +22,17 @@ package com.cloudera.hadoop.hdfs.nfs.security;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import org.apache.hadoop.conf.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
-
+import org.apache.log4j.Logger;
 /**
  * Implementation of RPC AUTH_GSS
  */
 public class CredentialsGSS extends Credentials implements AuthenticatedCredentials {
 
-  protected static final Logger LOGGER = LoggerFactory.getLogger(CredentialsGSS.class);  
+  protected static final Logger LOGGER = Logger.getLogger(CredentialsGSS.class);  
   
   protected int mVersion;
   protected int mProcedure;

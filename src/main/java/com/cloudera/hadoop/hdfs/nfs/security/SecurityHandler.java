@@ -2,24 +2,21 @@ package com.cloudera.hadoop.hdfs.nfs.security;
 
 import org.apache.hadoop.conf.Configuration;
 import org.ietf.jgss.GSSException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.cloudera.hadoop.hdfs.nfs.Pair;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
-
+import org.apache.log4j.Logger;
 public class SecurityHandler {
-  protected static final Logger LOGGER = LoggerFactory.getLogger(SecurityHandler.class);
+  protected static final Logger LOGGER = Logger.getLogger(SecurityHandler.class);
   public static SecurityHandler getInstance(Configuration conf) {
     try {
-      return new GSSSecurityHandler();
-//      if("kerberos".equals(conf.get("hadoop.security.authentication"))) {
-//        return new GSSSecurityHandler();
-//      }
-//      return new SecurityHandler();
+      if("kerberos".equals(conf.get("hadoop.security.authentication"))) {
+        return new GSSSecurityHandler();
+      }
+      return new SecurityHandler();
     } catch (GSSException e) {
       throw new RuntimeException(e);
     }

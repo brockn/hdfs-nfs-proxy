@@ -9,8 +9,7 @@ import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.MessageProp;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
 import com.cloudera.hadoop.hdfs.nfs.Pair;
@@ -20,7 +19,7 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
 
 public class GSSSecurityHandler extends SecurityHandler {
-  protected static final Logger LOGGER = LoggerFactory.getLogger(GSSSecurityHandler.class);
+  protected static final Logger LOGGER = Logger.getLogger(GSSSecurityHandler.class);
   protected GSSManager mManager = GSSManager.getInstance();
   protected GSSContext mContext;
   protected byte[] mToken;

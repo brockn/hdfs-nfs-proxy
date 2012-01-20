@@ -26,16 +26,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.hadoop.util.Shell;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
 /**
  * Implements UID -&gt; User and User -&gt; UID mapping for Linux.
  */
 public class UserIDMapperSystem extends UserIDMapper {
-  private static final Logger LOGGER = LoggerFactory.getLogger(UserIDMapperSystem.class);
+  private static final Logger LOGGER = Logger.getLogger(UserIDMapperSystem.class);
 
   public UserIDMapperSystem() {
     this(DEFAULT_NEGATIVE_CACHE, DEFAULT_POSITIVE_CACHE);
