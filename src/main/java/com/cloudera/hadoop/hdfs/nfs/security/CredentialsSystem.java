@@ -1,40 +1,39 @@
 /**
  * Copyright 2011 The Apache Software Foundation
  *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 package com.cloudera.hadoop.hdfs.nfs.security;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import org.apache.hadoop.conf.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.UserIDMapper;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
+import org.apache.log4j.Logger;
 
 /**
  * Implementation of RPC AUTH_SYS
  */
 public class CredentialsSystem extends Credentials implements AuthenticatedCredentials {
 
-  protected static final Logger LOGGER = LoggerFactory.getLogger(CredentialsSystem.class);  
+  protected static final Logger LOGGER = Logger.getLogger(CredentialsSystem.class);
+ 
   
   protected int mUID, mGID;
   protected int[] mAuxGIDs;
@@ -93,41 +92,38 @@ public class CredentialsSystem extends Credentials implements AuthenticatedCrede
   public int getFlavor() {
     return RPC_AUTH_UNIX;
   }
-  
-  @Override
-  public String getUsername(Configuration conf) throws Exception{
-    UserIDMapper mapper = UserIDMapper.get(conf);
-    String user = mapper.getUserForUID(mUID, null);
-    if(user == null) {
-      throw new Exception("Could not map " + mUID + " to user");
+    public String getUsername(Configuration conf) throws Exception {
+        UserIDMapper mapper = UserIDMapper.get(conf);
+        String user = mapper.getUserForUID(mUID, null);
+        if (user == null) {
+            throw new Exception("Could not map " + mUID + " to user");
+        }
+        return user;
     }
-    return user;
-  }
 
-  @Override
-  public int getUID() {
-    return mUID;
-  }
+    @Override
+    public int getUID() {
+        return mUID;
+    }
 
-  public void setUID(int uid) {
-    this.mUID = uid;
-  }
+    public void setUID(int uid) {
+        this.mUID = uid;
+    }
 
-  @Override
-  public int getGID() {
-    return mGID;
-  }
+    @Override
+    public int getGID() {
+        return mGID;
+    }
 
-  public void setGID(int gid) {
-    this.mGID = gid;
-  }
+    public void setGID(int gid) {
+        this.mGID = gid;
+    }
 
-  public int[] getAuxGIDs() {
-    return mAuxGIDs;
-  }
+    public int[] getAuxGIDs() {
+        return mAuxGIDs;
+    }
 
-  public void setAuxGIDs(int[] auxGIDs) {
-    this.mAuxGIDs = auxGIDs;
-  }
-
+    public void setAuxGIDs(int[] auxGIDs) {
+        this.mAuxGIDs = auxGIDs;
+    }
 }
