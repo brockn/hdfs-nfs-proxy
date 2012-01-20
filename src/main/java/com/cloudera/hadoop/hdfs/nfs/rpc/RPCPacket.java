@@ -19,17 +19,14 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.rpc;
 
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
+import org.apache.log4j.Logger;
 
 /**
  * Represents fields common to both RPCResponse and RPCRequest
  */
 public abstract class RPCPacket implements MessageBase {
-  protected static final Logger LOGGER = LoggerFactory.getLogger(RPCPacket.class);
+  protected static final Logger LOGGER = Logger.getLogger(RPCPacket.class);
   
   protected int mXid, mMessageType, mRpcVersion, mProgram, mProgramVersion, mProcedure;
   
