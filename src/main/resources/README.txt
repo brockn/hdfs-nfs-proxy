@@ -32,12 +32,12 @@ Questions? email brock at cloudera dot com
 
         0.20 Branch:
          CDH3u2:
-          $ mvn package -Phadoop-0.20 -Dhadoop.version=0.20.2-cdh3u2
+          $ mvn package -Pcdh3
          Apache Hadoop 1.0.0 (Renamed 0.20):
-          $ mvn package -Phadoop-0.20 -Dhadoop.version=1.0.0
+          $ mvn package -Phadoop-1.0.x
 
         0.23 Branch:
-         $ mvn package -Phadoop-0.23 -Dhadoop.version=0.23.1-SNAPSHOT
+         $ mvn package -Phadoop-0.23
 
     The output jar will be target/ you likely want the -with-deps jar.
 
