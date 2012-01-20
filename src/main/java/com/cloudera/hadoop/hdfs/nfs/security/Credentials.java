@@ -20,6 +20,8 @@
 package com.cloudera.hadoop.hdfs.nfs.security;
 
 
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -28,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
+import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
 /**
  * Base class all credentials must extend. 
@@ -39,9 +42,7 @@ public abstract class Credentials implements MessageBase {
   }
   protected static final Logger LOGGER = LoggerFactory.getLogger(Credentials.class);
   protected static final String HOSTNAME;
-  protected int mVerifierFlavor, mVeriferLength;
   protected int mCredentialsLength;
-
   
   static {
     try {
@@ -54,10 +55,25 @@ public abstract class Credentials implements MessageBase {
       LOGGER.error("Error setting HOSTNAME", e);
       throw new RuntimeException(e);
     }
-  }
-  public abstract int getCredentialsFlavor();
+  }  
+  
+  public abstract int getFlavor();
   
   
   public abstract String getUsername(Configuration conf)  throws Exception;
   
+  public static Credentials readCredentials(int flavor, RPCBuffer buffer) {
+    Credentials credentials;
+    if(flavor == RPC_AUTH_NULL) {
+      credentials = new CredentialsNone(); 
+    } else if(flavor == RPC_AUTH_UNIX) {
+      credentials = new CredentialsSystem(); 
+    } else if(flavor == RPC_AUTH_GSS) {
+      credentials = new CredentialsGSS(); 
+    } else {
+      throw new UnsupportedOperationException("Unsupported Credentials Flavor " + flavor);
+    }    
+    credentials.read(buffer);
+    return credentials;
+  }
 }

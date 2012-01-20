@@ -38,8 +38,11 @@ public class Constants {
 
   public static final int RPC_AUTH_NULL = 0;
   public static final int RPC_AUTH_UNIX = 1;
+  public static final int RPC_AUTH_GSS = 6;
 
   public static final int RPC_VERIFIER_NULL = 0;
+  
+  public static final int RPC_VERIFIER_GSS = 6;
 
 
   /*
@@ -83,6 +86,25 @@ public class Constants {
   
 
   public final static int FHSIZE = 32;
+  
+  
+  
+  public final static int RPCSEC_GSS_VERSION = 1;
+  
+  public final static int RPCSEC_GSS_DATA = 0;
+  public final static int RPCSEC_GSS_INIT = 1;
+  public final static int RPCSEC_GSS_CONTINUE_INIT = 2;
+  public final static int RPCSEC_GSS_DESTROY = 3;
+  
+  
+  public final static int RPCSEC_GSS_SERVICE_NONE = 1;
+  public final static int RPCSEC_GSS_SERVICE_INTEGRITY = 2;
+  public final static int RPCSEC_GSS_SERVICE_PRIVACY = 3;
+  
+  
+  
+  
+  
   
   public static final int NFS_PROG = 100003;
   public static final int NFS_VERSION = 4;

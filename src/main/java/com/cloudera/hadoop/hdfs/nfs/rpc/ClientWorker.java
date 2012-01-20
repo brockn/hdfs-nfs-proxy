@@ -40,9 +40,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cloudera.hadoop.hdfs.nfs.LogUtils;
+import com.cloudera.hadoop.hdfs.nfs.Pair;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.RequiresCredentials;
 import com.cloudera.hadoop.hdfs.nfs.security.AuthenticatedCredentials;
+import com.cloudera.hadoop.hdfs.nfs.security.CredentialsGSS;
+import com.cloudera.hadoop.hdfs.nfs.security.SecurityHandler;
+import com.cloudera.hadoop.hdfs.nfs.security.Verifier;
+import com.cloudera.hadoop.hdfs.nfs.security.VerifierNone;
 
 /**
  * ClientWorker handles a socket connection to the server and terminates when the
@@ -71,12 +77,15 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
   protected OutputStreamHandler mOutputHandler;
   protected BlockingQueue<RPCBuffer> mOutputBufferQueue;
   protected RPCHandler<REQUEST, RESPONSE> mHandler;
+  protected SecurityHandler mSecurityHandler;
+  
   /**
    * Number of retransmits received
    */
   protected long mRetransmits = 0L;
   protected String mSessionID;
-  protected Configuration mConfiguration;   
+  protected Configuration mConfiguration;
+  
   protected static final AtomicInteger SESSIONID = new AtomicInteger(Integer.MAX_VALUE);
   
   public ClientWorker(Configuration conf, RPCServer<REQUEST, RESPONSE> server, RPCHandler<REQUEST, RESPONSE> handler, Socket client) {
@@ -84,6 +93,8 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
     mRPCServer = server;
     mHandler = handler;
     mClient = client;
+    mSecurityHandler = SecurityHandler.getInstance(mConfiguration);
+    LOGGER.info("Got SecurityHandler of type " + mSecurityHandler.getClass().getName());
     String clientHost = mClient.getInetAddress().getCanonicalHostName();
     mClientName = clientHost + ":" + mClient.getPort();
     mSessionID = "0x" + Integer.toHexString(SESSIONID.addAndGet(-5));
@@ -135,14 +146,20 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
         }
         
         RPCBuffer requestBuffer = RPCBuffer.from(in);
+        LOGGER.info(mSessionID + " got request");
         mHandler.incrementMetric("CLIENT_BYTES_READ", requestBuffer.length());
         request = new RPCRequest();
-        request.read(requestBuffer);
+        try {
+          request.read(requestBuffer);
+        } finally {
+          LOGGER.info("RPCRequest " + LogUtils.dump(request));
+        }
         if(request.getRpcVersion() != RPC_VERSION) {
           LOGGER.info(mSessionID + " Denying client due to bad RPC version " + request.getRpcVersion() + " for " + mClientName);
           RPCResponse response = new RPCResponse(request.getXid(), RPC_VERSION);
           response.setReplyState(RPC_REPLY_STATE_DENIED);
           response.setAcceptState(RPC_REJECT_MISMATCH);
+          response.setVerifier(new VerifierNone());
           writeRPCResponse(response);
         } else if(request.getCredentials() == null){
           LOGGER.info(mSessionID + " Denying client due to null credentials for " + mClientName);
@@ -150,24 +167,54 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
           response.setReplyState(RPC_REPLY_STATE_DENIED);
           response.setAcceptState(RPC_REJECT_AUTH_ERROR);
           response.setAuthState(RPC_AUTH_STATUS_TOOWEAK);
+          response.setVerifier(new VerifierNone());
           writeRPCResponse(response);
-        } else if(request.getProcedure() == NFS_PROC_NULL){
-          LOGGER.info(mSessionID + " Handling NFS NULL Procedure for " + mClientName);
-          RPCResponse response = new RPCResponse(request.getXid(), RPC_VERSION);
-          response.setReplyState(RPC_REPLY_STATE_ACCEPT);
-          response.setAcceptState(RPC_ACCEPT_SUCCESS);
-          writeRPCResponse(response);
+        } else if(request.getProcedure() == NFS_PROC_NULL) {
+          // RPCGSS uses the NULL proc to setup
+          if(request.getCredentials() instanceof CredentialsGSS) {
+            Pair<? extends Verifier, RPCBuffer> security = mSecurityHandler.initializeContext(request, requestBuffer);
+            LOGGER.info(mSessionID + " Handling NFS NULL for GSS Procedure for " + mClientName);
+            RPCResponse response = new RPCResponse(request.getXid(), RPC_VERSION);
+            response.setReplyState(RPC_REPLY_STATE_ACCEPT);
+            response.setAcceptState(RPC_ACCEPT_SUCCESS);
+            response.setVerifier(security.getFirst());
+            writeRPCResponse(response, security.getSecond());
+          } else {
+            LOGGER.info(mSessionID + " Handling NFS NULL Procedure for " + mClientName);
+            RPCResponse response = new RPCResponse(request.getXid(), RPC_VERSION);
+            response.setReplyState(RPC_REPLY_STATE_ACCEPT);
+            response.setAcceptState(RPC_ACCEPT_SUCCESS);
+            response.setVerifier(new VerifierNone());
+            writeRPCResponse(response);
+          }
         } else if(!(request.getCredentials() instanceof AuthenticatedCredentials)) {
           LOGGER.info(mSessionID + " Denying client due to non-authenticated credentials for " + mClientName);
           RPCResponse response = new RPCResponse(request.getXid(), RPC_VERSION);
           response.setReplyState(RPC_REPLY_STATE_DENIED);
           response.setAcceptState(RPC_REJECT_AUTH_ERROR);
           response.setAuthState(RPC_AUTH_STATUS_TOOWEAK);
+          response.setVerifier(new VerifierNone());
           writeRPCResponse(response);
-        } else if(request.getProcedure() == NFS_PROC_COMPOUND){  
+        } else if(!mSecurityHandler.hasAcceptableSecurity(request)) {
+          LOGGER.info(mSessionID + " Denying client due to unacceptable credentials for " + mClientName);
+          RPCResponse response = new RPCResponse(request.getXid(), RPC_VERSION);
+          response.setReplyState(RPC_REPLY_STATE_DENIED);
+          response.setAcceptState(RPC_REJECT_AUTH_ERROR);
+          response.setAuthState(RPC_AUTH_STATUS_TOOWEAK);
+          response.setVerifier(new VerifierNone());
+          writeRPCResponse(response);
+        } else if(request.getProcedure() == NFS_PROC_COMPOUND) {
+          
           if(LOGGER.isDebugEnabled()) {
             LOGGER.debug(mSessionID + " Handling NFS Compound for " + mClientName);
           }
+          
+          if(mSecurityHandler.isUnwrapRequired()) {
+            byte[] encryptedData = requestBuffer.readBytes();
+            byte[] plainData = mSecurityHandler.unwrap(encryptedData);
+            requestBuffer = new RPCBuffer(plainData);
+          }
+          
           Set<Integer> requestsInProgress = getRequestsInProgress();
           synchronized (requestsInProgress) {
             if(requestsInProgress.contains(request.getXid())) {
@@ -211,29 +258,48 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
       clients.remove(mClient);
     }
   }
+  
   public void shutdown() {
     this.interrupt();
   }
-  protected void writeApplicationResponse(int xid, MessageBase applicationResponse) throws IOException, InterruptedException {
+  protected void writeApplicationResponse(RPCRequest request, MessageBase applicationResponse) throws IOException, InterruptedException, NFS4Exception {
     if(LOGGER.isDebugEnabled()) {
       LOGGER.debug(mSessionID + " Writing " + applicationResponse.getClass().getSimpleName() + " to "  + mClientName);
     }
+    LOGGER.info(mSessionID + " Writing " + applicationResponse.getClass().getSimpleName() + " to "  + mClientName);
     RPCBuffer responseBuffer = new RPCBuffer();
-    RPCResponse response = new RPCResponse(xid, RPC_VERSION);
+    RPCResponse response = new RPCResponse(request.getXid(), RPC_VERSION);
     response.setReplyState(RPC_REPLY_STATE_ACCEPT);
     response.setAcceptState(RPC_ACCEPT_SUCCESS);
+    response.setVerifier(mSecurityHandler.getVerifer(request));
     response.write(responseBuffer);
-    applicationResponse.write(responseBuffer);
+    
+    if(mSecurityHandler.isWrapRequired()) {
+      byte[] data = mSecurityHandler.wrap(applicationResponse);
+      responseBuffer.writeUint32(data.length);
+      responseBuffer.writeBytes(data);      
+    } else {
+      applicationResponse.write(responseBuffer);
+    }
     responseBuffer.flip();
     mOutputBufferQueue.put(responseBuffer);
     mHandler.incrementMetric("CLIENT_BYTES_WROTE", responseBuffer.length());
   }
   protected void writeRPCResponse(RPCResponse response) throws IOException, InterruptedException {
+    writeRPCResponse(response, null);
+  }
+  protected void writeRPCResponse(RPCResponse response, RPCBuffer payload) throws IOException, InterruptedException {
     if(LOGGER.isDebugEnabled()) {
       LOGGER.debug(mSessionID + " Writing bare RPC Response to "  + mClientName);
     }
+    LOGGER.info(mSessionID + " Writing bare RPC Response to "  + mClientName);
+
     RPCBuffer responseBuffer = new RPCBuffer();
     response.write(responseBuffer);
+    if(payload != null) {
+      payload.flip();
+      responseBuffer.writeRPCBUffer(payload);
+    }
     responseBuffer.flip();
     mOutputBufferQueue.put(responseBuffer);
     mHandler.incrementMetric("CLIENT_BYTES_WROTE", responseBuffer.length());
@@ -306,6 +372,7 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
         if(applicationResponse == null) {
           REQUEST applicationRequest = mHandler.createRequest();
           applicationRequest.read(mBuffer);
+          LOGGER.info("applicationRequest " + applicationRequest);
           if(applicationRequest instanceof RequiresCredentials) {
             RequiresCredentials requiresCredentials = (RequiresCredentials)applicationRequest;
             // check to ensure it's auth creds is above
@@ -321,7 +388,7 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
           requestsInProgress.remove(mRequest.getXid()); // duplicates will be served out of cache
           removed = true;
         }
-        mClientWorker.writeApplicationResponse(mRequest.getXid(), applicationResponse);
+        mClientWorker.writeApplicationResponse(mRequest, applicationResponse);
       } catch(Exception ex) {
         LOGGER.error(mSessionID + " Error from client " + mClientName + " xid = " +  mRequest.getXid(), ex);
         try {

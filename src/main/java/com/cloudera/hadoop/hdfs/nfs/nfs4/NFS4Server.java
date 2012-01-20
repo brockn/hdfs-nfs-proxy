@@ -43,6 +43,12 @@ public class NFS4Server extends Configured implements Tool {
   RPCServer<CompoundRequest, CompoundResponse> mRPCServer;
   
   public static void main(String[] args) throws Exception {
+    
+    System.setProperty("java.security.krb5.realm", "LOCALDOMAIN");
+    System.setProperty("java.security.krb5.kdc", "localhost");
+    System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");
+    System.setProperty("java.security.auth.login.config", "sec.conf");
+    
     System.exit(ToolRunner.run(new Configuration(), new NFS4Server(), args));
   }
   

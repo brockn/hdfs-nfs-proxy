@@ -55,8 +55,8 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CompoundResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.OperationResponse;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCHandler;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
+import com.cloudera.hadoop.hdfs.nfs.security.AuthenticatedCredentials;
 import com.cloudera.hadoop.hdfs.nfs.security.Credentials;
-import com.cloudera.hadoop.hdfs.nfs.security.CredentialsSystem;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -123,7 +123,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       final String sessionID) {
     Credentials creds = (Credentials) compoundRequest.getCredentials();
     // FIXME below is a hack regarding CredentialsUnix
-    if (creds == null || !(creds instanceof CredentialsSystem)) {
+    if (creds == null || !(creds instanceof AuthenticatedCredentials)) {
       CompoundResponse response = new CompoundResponse();
       response.setStatus(NFS4ERR_WRONGSEC);
       return response;

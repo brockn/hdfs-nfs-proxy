@@ -30,6 +30,10 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
  */
 public class OpaqueData implements MessageBase {
 
+  public OpaqueData(byte[] data) {
+    this(data.length);
+    setData(data);
+  }
   public OpaqueData(int size) {
     mSize = size;
     if(mSize > NFS4_OPAQUE_LIMIT) {

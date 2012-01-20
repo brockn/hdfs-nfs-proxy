@@ -96,7 +96,7 @@ public class CompoundRequest implements MessageBase, RequiresCredentials {
 
   @Override
   public String toString() {
-    return mOperations.toString();
+    return this.getClass().getName() + " = " + mOperations.toString();
   }
 
   public static CompoundRequest from(RPCBuffer buffer) {

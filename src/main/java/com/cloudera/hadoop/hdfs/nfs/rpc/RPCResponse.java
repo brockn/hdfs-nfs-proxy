@@ -23,6 +23,8 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.cloudera.hadoop.hdfs.nfs.security.Verifier;
+
 /**
  * Represents a RPC Response as defined by the RPC RFC.
  */
@@ -30,7 +32,8 @@ public class RPCResponse extends RPCPacket {
   protected static final Logger LOGGER = LoggerFactory.getLogger(RPCResponse.class);
 
   protected int mReplyState, mAcceptState, mAuthState;
-  protected int mVerifierFlavor, mVeriferLength;
+  protected int mVerifierFlavor;
+  protected Verifier mVerifier;
   
   public RPCResponse() {
     
@@ -41,8 +44,6 @@ public class RPCResponse extends RPCPacket {
     
     this.mMessageType = RPC_MESSAGE_TYPE_REPLY;
     this.mReplyState = RPC_REPLY_STATE_ACCEPT;
-    this.mVerifierFlavor = RPC_VERIFIER_NULL;
-    this.mVeriferLength = 0;
     this.mAcceptState = RPC_ACCEPT_STATE_ACCEPT;
   }
   
@@ -50,19 +51,19 @@ public class RPCResponse extends RPCPacket {
   public void write(RPCBuffer buffer) {
     super.write(buffer);
     
-    buffer.writeInt(mReplyState);
+    buffer.writeUint32(mReplyState);
     /*
      * It looks like if reply state is not
      * accept, the next value acceptState
      */
     if(mReplyState == RPC_REPLY_STATE_ACCEPT) {
-      buffer.writeInt(mVerifierFlavor);
-      buffer.writeInt(mVeriferLength);
-      buffer.writeInt(mAcceptState);
+      buffer.writeUint32(mVerifierFlavor);
+      mVerifier.write(buffer);
+      buffer.writeUint32(mAcceptState);
     } else if(mReplyState == RPC_REPLY_STATE_DENIED) {
-      buffer.writeInt(mAcceptState);
+      buffer.writeUint32(mAcceptState);
       if(mAcceptState == RPC_REJECT_AUTH_ERROR) {
-        buffer.writeInt(mAuthState);
+        buffer.writeUint32(mAuthState);
       }
       
     }
@@ -77,22 +78,23 @@ public class RPCResponse extends RPCPacket {
      * accept, the next value acceptState
      */
     if(mReplyState == RPC_REPLY_STATE_ACCEPT) {
-      this.mVerifierFlavor = buffer.readInt();
-      this.mVeriferLength = buffer.readInt();
-      buffer.skip(mVeriferLength);
-      this.mAcceptState = buffer.readInt();    
+      mVerifierFlavor = buffer.readUint32();
+      mVerifier = Verifier.readVerifier(mVerifierFlavor, buffer);
+      this.mAcceptState = buffer.readUint32();    
     } else if(mReplyState == RPC_REPLY_STATE_DENIED) {
-      this.mAcceptState = buffer.readInt();    
+      this.mAcceptState = buffer.readUint32();    
       if(mAcceptState == RPC_REJECT_AUTH_ERROR) {
-        mAuthState = buffer.readInt();
+        mAuthState = buffer.readUint32();
       }
     }
-    /*
-     * Probaly should throw exception if 
-     * accept state is not accepted?
-     */
   }
-  
+  public Verifier getVerifier() {
+    return mVerifier;
+  }
+  public void setVerifier(Verifier verifier) {
+    mVerifier = verifier;
+    mVerifierFlavor = mVerifier.getFlavor();
+  }
   public int getAuthState() {
     return mAuthState;
   }

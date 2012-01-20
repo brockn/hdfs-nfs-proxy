@@ -25,8 +25,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cloudera.hadoop.hdfs.nfs.security.Credentials;
-import com.cloudera.hadoop.hdfs.nfs.security.CredentialsNone;
-import com.cloudera.hadoop.hdfs.nfs.security.CredentialsSystem;
+import com.cloudera.hadoop.hdfs.nfs.security.CredentialsGSS;
+import com.cloudera.hadoop.hdfs.nfs.security.Verifier;
 
 /**
  * Represents an RPC Request as defined by the RPC RFC.
@@ -35,8 +35,10 @@ public class RPCRequest extends RPCPacket {
   
   protected static final Logger LOGGER = LoggerFactory.getLogger(RPCRequest.class);
   
-  protected int mCredentialsFlavor;
+  protected int mCredentialsFlavor, mVerifierFlavor;
   protected Credentials mCredentials; 
+  protected Verifier mVerifier;
+
   
   public RPCRequest(int xid, int rpcVersion) {
     this.mXid = xid;
@@ -57,10 +59,16 @@ public class RPCRequest extends RPCPacket {
     buffer.writeUint32(mProgram);
     buffer.writeUint32(mProgramVersion);
     buffer.writeUint32(mProcedure);
-    
-    buffer.writeInt(mCredentialsFlavor);
+    buffer.writeUint32(mCredentialsFlavor);
     mCredentials.write(buffer);
+    // verifier can be null if we are calculating 
+    // the checksum before sending a packet 
+    if(mVerifier != null) {
+      buffer.writeUint32(mVerifierFlavor);
+      mVerifier.write(buffer);
+    }
   }
+   
   
   @Override
   public void read(RPCBuffer buffer) {
@@ -69,24 +77,26 @@ public class RPCRequest extends RPCPacket {
     mProgram = buffer.readUint32();
     mProgramVersion = buffer.readUint32();
     mProcedure = buffer.readUint32();
-    mCredentialsFlavor = buffer.readInt();
-    if(mCredentialsFlavor == RPC_AUTH_NULL) {
-      mCredentials = new CredentialsNone(); 
-    } else if(mCredentialsFlavor == RPC_AUTH_UNIX) {
-      mCredentials = new CredentialsSystem(); 
-    } else {
-      throw new UnsupportedOperationException("Unsupported Credentials Flavor " + mCredentialsFlavor);
-    }    
-    mCredentials.read(buffer);
+    mCredentialsFlavor = buffer.readUint32();
+    mCredentials = Credentials.readCredentials(mCredentialsFlavor, buffer);
+    if(!(mCredentials instanceof CredentialsGSS && ((CredentialsGSS) mCredentials).getProcedure() == RPCSEC_GSS_DESTROY)) {
+      mVerifierFlavor = buffer.readUint32();
+      mVerifier = Verifier.readVerifier(mVerifierFlavor, buffer);      
+    }
   }
   public Credentials getCredentials() {
     return mCredentials;
   }
   public void setCredentials(Credentials credentials) {
-    this.mCredentials = credentials;
-    if(mCredentials != null) {
-      mCredentialsFlavor = mCredentials.getCredentialsFlavor();
-    }
+    mCredentials = credentials;
+    mCredentialsFlavor = mCredentials.getFlavor();
+  }
+  public Verifier getVerifier() {
+    return mVerifier;
+  }
+  public void setVerifier(Verifier verifier) {
+    mVerifier = verifier;
+    mVerifierFlavor = mVerifier.getFlavor();
   }
   @Override
   public String toString() {

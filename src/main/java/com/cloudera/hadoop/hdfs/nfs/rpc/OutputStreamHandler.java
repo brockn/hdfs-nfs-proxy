@@ -70,6 +70,7 @@ class OutputStreamHandler extends Thread {
       try {
         buffer = mWorkQueue.poll(1L, TimeUnit.SECONDS);
         if(buffer != null) {
+          LOGGER.info("Writing message to " + mClientName);
           buffer.write(mOutputStream);
           mOutputStream.flush();
         }
