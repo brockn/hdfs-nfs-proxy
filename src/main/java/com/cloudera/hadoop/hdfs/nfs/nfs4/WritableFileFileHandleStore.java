@@ -33,15 +33,14 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.cloudera.hadoop.hdfs.nfs.Pair;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import org.apache.log4j.Logger;
 
 public class WritableFileFileHandleStore extends FileHandleStore {
-  protected static final Logger LOGGER = LoggerFactory
+  protected static final Logger LOGGER = Logger
       .getLogger(WritableFileFileHandleStore.class);
 
   File mFileHandleStoreFile;

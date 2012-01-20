@@ -19,9 +19,8 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import java.util.Map;
-
 import com.google.common.collect.Maps;
+import java.util.Map;
 
 /**
  * Class responsible for keeping a global map of shorthand
