@@ -336,13 +336,10 @@ public class Constants {
   public static final int    NFS4_FH4_VOL_RENAME          = 0x00000008;
   
   public static final InetAddress LOCALHOST;
+//  public static final InetAddress THISHOST;
   
   static {
-    try {
-      LOCALHOST = InetAddress.getLocalHost();
-    } catch (UnknownHostException e) {
-      throw new RuntimeException("Cannot resolve localhost", e);
-    }
+    LOCALHOST = InetAddress.getLoopbackAddress();
   }
   
   public static final long NFS4_COOKIE_OFFSET = Integer.MAX_VALUE;

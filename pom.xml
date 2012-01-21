@@ -9,11 +9,14 @@
     <packaging>jar</packaging>
     <version>0.8-SNAPSHOT</version>
     <name>HDFS NFS4 Proxy</name>
+    
+    <prerequisites>
+        <maven>3.0.3</maven>
+    </prerequisites>
 
     <properties>
         <compileSource>1.6</compileSource>
         <junit.version>4.10</junit.version>
-<!--        <commons-logging.version>1.1.1</commons-logging.version>-->
     </properties>
 
     <dependencies>
