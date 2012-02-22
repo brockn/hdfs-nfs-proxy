@@ -94,7 +94,7 @@ public class CredentialsSystem extends Credentials implements AuthenticatedCrede
   }
     public String getUsername(Configuration conf) throws Exception {
         UserIDMapper mapper = UserIDMapper.get(conf);
-        String user = mapper.getUserForUID(mUID, null);
+        String user = mapper.getUserForUID(conf, mUID, null);
         if (user == null) {
             throw new Exception("Could not map " + mUID + " to user");
         }

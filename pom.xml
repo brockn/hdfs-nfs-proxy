@@ -27,12 +27,6 @@
             <scope>test</scope>
         </dependency>
 
-<!--        <dependency>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-            <version>${commons-logging.version}</version>
-        </dependency>-->
-
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>apache-log4j-extras</artifactId>
@@ -62,12 +56,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
-<!--        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>1.6.1</version>
-        </dependency>-->
 
         <dependency>
             <groupId>org.mockito</groupId>
@@ -203,9 +191,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.11</version>
-<!--                <configuration>
+                <configuration>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                </configuration>-->
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -240,7 +228,7 @@
             </dependencies>
         </profile>
         <profile>
-            <id>hadoop-0.20</id>
+            <id>hadoop020</id>
             <properties>
                 <hadoop.version>0.20.205.0</hadoop.version>
             </properties>
@@ -253,7 +241,7 @@
             </dependencies>
         </profile>
         <profile>
-            <id>hadoop-0.23</id>
+            <id>hadoop023</id>
             <properties>
                 <hadoop.version>0.23.1-SNAPSHOT</hadoop.version>
             </properties>
@@ -271,7 +259,7 @@
             </dependencies>
         </profile>
         <profile>
-            <id>hadoop-1.0.x</id>
+            <id>hadoop100</id>
             <properties>
                 <hadoop.version>1.0.0</hadoop.version>
             </properties>

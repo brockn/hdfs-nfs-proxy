@@ -336,12 +336,16 @@ public class Constants {
   public static final int    NFS4_FH4_VOL_RENAME          = 0x00000008;
   
   public static final InetAddress LOCALHOST;
-//  public static final InetAddress THISHOST;
   
   static {
-    LOCALHOST = InetAddress.getLoopbackAddress();
+    try {
+      LOCALHOST = InetAddress.getByName("localhost");
+    } catch (UnknownHostException e) {
+      throw new RuntimeException("Unable to find localhost", e);
+    }
   }
   
+  public static final int ROOT_USER_UID = 0;
   public static final long NFS4_COOKIE_OFFSET = Integer.MAX_VALUE;
 
   public static final int NFS4_COMMIT_UNSTABLE4       = 0;
@@ -358,6 +362,7 @@ public class Constants {
   
   public static final String NFS_FILEHANDLE_STORE_CLASS = "hdfs.nfs.nfs4.filehandle.store.class";
   public static final String NFS_FILEHANDLE_STORE_FILE = "hdfs.nfs.nfs4.filehandle.store.file";
+  
   public static final String DEFAULT_NFS_FILEHANDLE_STORE_FILE = "hdfs.nfs.nfs4.filehandle.store.file";
   
   public static final String RPC_MAX_THREADS = "hdfs.nfs.rpcserver.max.threads";

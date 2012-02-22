@@ -53,11 +53,11 @@ public class ACCESSHandler extends OperationRequestHandler<ACCESSRequest, ACCESS
         try {
 
             UserIDMapper mapper = UserIDMapper.get(session.getConfiguration());
-            String user = mapper.getUserForUID(creds.getUID(), null);
+            String user = mapper.getUserForUID(session.getConfiguration(), creds.getUID(), null);
             if (user == null) {
                 throw new Exception("Could not map " + creds.getUID() + " to user");
             }
-            String group = mapper.getGroupForGID(creds.getGID(), null);
+            String group = mapper.getGroupForGID(session.getConfiguration(), creds.getGID(), null);
             if (group == null) {
                 throw new Exception("Could not map " + creds.getGID() + " to group");
             }

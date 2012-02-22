@@ -34,11 +34,11 @@ import org.apache.hadoop.util.Shell;
  */
 public abstract class UserIDMapper {
   
-  public abstract int getGIDForGroup(String user, int defaultGID) throws Exception;
-  public abstract int getUIDForUser(String user, int defaultUID) throws Exception;
+  public abstract int getGIDForGroup(Configuration conf, String user, int defaultGID) throws Exception;
+  public abstract int getUIDForUser(Configuration conf, String user, int defaultUID) throws Exception;
 
-  public abstract String getGroupForGID(int gid, String defaultGroup) throws Exception;
-  public abstract String getUserForUID(int gid, String defaultUser) throws Exception;
+  public abstract String getGroupForGID(Configuration conf, int gid, String defaultGroup) throws Exception;
+  public abstract String getUserForUID(Configuration conf, int gid, String defaultUser) throws Exception;
   
   protected static Map<Class<?>, UserIDMapper> classUserIdMapperMap = new HashMap<Class<?>, UserIDMapper>();
   
