@@ -19,6 +19,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
@@ -26,6 +27,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.Shell;
 import org.apache.log4j.Logger;
 
@@ -60,24 +63,29 @@ public class UserIDMapperSystem extends UserIDMapper {
 
 
   
-  public String getGroupForGID(int gid, String group) throws Exception {
+  public String getGroupForGID(Configuration conf, int gid, String group) throws Exception {
     return getCachedUserGroup("/etc/group", gid, group, mNegativeGROUPCache, mPositiveGROUPCache);
   }
-  public String getUserForUID(int uid, String user) throws Exception {
+  public String getUserForUID(Configuration conf, int uid, String user) throws Exception {
+    if(uid == ROOT_USER_UID) {
+      String superUser = getCurrentUser();
+      LOGGER.info("Mapping root to '" + superUser + "'");
+      return superUser;
+    }
     return getCachedUserGroup("/etc/passwd", uid, user, mNegativeUSERCache, mPositiveUSERCache);
 
   }
 
 
   @Override
-  public int getGIDForGroup(String group, int defaultGID) throws Exception {
+  public int getGIDForGroup(Configuration conf, String group, int defaultGID) throws Exception {
     int id = getCachedID(getGIDForUserCommand(group), group, defaultGID, mNegativeGIDCache, mPositiveGIDCache);
     LOGGER.info("getGIDForGroup: Looking for " + group + " and got " + id);
     return id;
   }
 
   @Override
-  public int getUIDForUser(String user, int defaultUID) throws Exception {
+  public int getUIDForUser(Configuration conf, String user, int defaultUID) throws Exception {
     int id = getCachedID(getUIDForUserCommand(user), user, defaultUID, mNegativeUIDCache, mPositiveUIDCache);
     LOGGER.info("getUIDForUser: Looking for " + user + " and got " + id);
     return id;
@@ -199,8 +207,8 @@ public class UserIDMapperSystem extends UserIDMapper {
   
   public static void main(String[] args) throws Exception {
     UserIDMapperSystem mapper = new UserIDMapperSystem();
-    System.out.println(mapper.getUserForUID(500, "NOT FOUND"));
-    System.out.println(mapper.getGroupForGID(500, "NOT FOUND"));
+    System.out.println(mapper.getUserForUID(new Configuration(), 500, "NOT FOUND"));
+    System.out.println(mapper.getGroupForGID(new Configuration(), 500, "NOT FOUND"));
 
   }
 }

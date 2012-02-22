@@ -4,9 +4,9 @@ git rm snapshots/* 2>/dev/null || true
 rm snapshots/* 2>/dev/null || true
 PROFILES=(
   "cdh3"
-  "hadoop-0.20"
-  "hadoop-0.23"
-  "hadoop-1.0.x"
+  "hadoop020"
+  "hadoop023"
+  "hadoop100"
 )
 TIME=$(date +%Y%m%d%H%M%S)
 for profile in "${PROFILES[@]}"
