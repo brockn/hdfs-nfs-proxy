@@ -61,7 +61,7 @@ public abstract class UserIDMapper {
    */
   public static String getCurrentUser() {
     String user = System.getenv("USER");
-    if(user != null) {
+    if(user == null) {
       try {
         user = Shell.execCommand("whoami").trim();        
       } catch (Exception e) {
