@@ -29,7 +29,7 @@ import org.apache.hadoop.util.ReflectionUtils;
 import com.google.common.collect.ImmutableList;
 
 public abstract class FileHandleStore extends Configured {
-  
+
   public static FileHandleStore get(Configuration conf) {
     FileHandleStore fileHandleStore;
     fileHandleStore = ReflectionUtils.newInstance(
@@ -42,7 +42,7 @@ public abstract class FileHandleStore extends Configured {
     }
     return fileHandleStore;
   }
-  
+
   protected abstract void initialize() throws Exception;
   /**
    * @return an ImmutableList of all entries in the store
@@ -50,7 +50,7 @@ public abstract class FileHandleStore extends Configured {
   public abstract ImmutableList<FileHandleStoreEntry> getAll();
   /**
    * Persist an entry to store. If this method returns without throwing
-   * an exception, the entry must have been written to a persistent 
+   * an exception, the entry must have been written to a persistent
    * location.
    * 
    * @param entry
@@ -58,7 +58,7 @@ public abstract class FileHandleStore extends Configured {
    */
   public abstract void storeFileHandle(FileHandleStoreEntry entry) throws IOException;
   /**
-   * Close the store. Once called no additional methods on this 
+   * Close the store. Once called no additional methods on this
    * object should be called. This method may legally called more
    * than once.
    * 

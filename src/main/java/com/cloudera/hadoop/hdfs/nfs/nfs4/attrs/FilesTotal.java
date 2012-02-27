@@ -49,5 +49,5 @@ public class FilesTotal extends Attribute {
   public void set(long value) {
     this.mValue = value;
   }
-  
+
 }

@@ -29,8 +29,8 @@ import org.apache.hadoop.fs.FileSystem;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
 
 /**
- * Class represents the state of a request as 
- * we process each individual request in the 
+ * Class represents the state of a request as
+ * we process each individual request in the
  * compound request
  */
 public class Session {
@@ -42,7 +42,7 @@ public class Session {
   protected final InetAddress mClientAddress;
   protected final String mSessionID;
   protected final int mXID;
-  public Session(int xid, CompoundRequest compoundRequest, Configuration configuration, InetAddress clientAddress, String sessionID) 
+  public Session(int xid, CompoundRequest compoundRequest, Configuration configuration, InetAddress clientAddress, String sessionID)
       throws IOException {
     mXID = xid;
     mCompoundRequest = compoundRequest;

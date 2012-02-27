@@ -49,5 +49,5 @@ public class NumLink extends Attribute {
   public void setValue(int value) {
     this.mValue = value;
   }
-  
+
 }

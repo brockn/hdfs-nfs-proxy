@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IOUtils;
+import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.LogUtils;
 import com.cloudera.hadoop.hdfs.nfs.Pair;
@@ -46,7 +47,6 @@ import com.cloudera.hadoop.hdfs.nfs.security.CredentialsGSS;
 import com.cloudera.hadoop.hdfs.nfs.security.SecurityHandler;
 import com.cloudera.hadoop.hdfs.nfs.security.Verifier;
 import com.cloudera.hadoop.hdfs.nfs.security.VerifierNone;
-import org.apache.log4j.Logger;
 
 /**
  * ClientWorker handles a socket connection to the server and terminates when
@@ -76,16 +76,16 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
   protected BlockingQueue<RPCBuffer> mOutputBufferQueue;
   protected RPCHandler<REQUEST, RESPONSE> mHandler;
   protected SecurityHandler mSecurityHandler;
-  
+
   /**
    * Number of retransmits received
    */
   protected long mRetransmits = 0L;
   protected String mSessionID;
   protected Configuration mConfiguration;
-  
+
   protected static final AtomicInteger SESSIONID = new AtomicInteger(Integer.MAX_VALUE);
-  
+
   public ClientWorker(Configuration conf, RPCServer<REQUEST, RESPONSE> server, RPCHandler<REQUEST, RESPONSE> handler, Socket client) {
     mConfiguration = conf;
     mRPCServer = server;
@@ -98,12 +98,13 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
     mSessionID = "0x" + Integer.toHexString(SESSIONID.addAndGet(-5));
     setName("RPCServer-" + mClientName);
     mOutputBufferQueue = mRPCServer.getOutputQueue(clientHost);
-    
+
     mMaxPendingRequests = mConfiguration.getInt(RPC_MAX_PENDING_REQUESTS, 20);
     mRestransmitPenaltyThreshold = mConfiguration.getInt(RPC_RETRANSMIT_PENALTY_THRESHOLD, 3);
     mMaxPendingRequestWaits = 500;
   }
-  
+
+  @Override
   public void run() {
     InputStream in = null;
     OutputStream out = null;
@@ -127,9 +128,9 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
           if(LOGGER.isDebugEnabled()) {
             LOGGER.debug(mSessionID + " Client " + mClientName + " is going in the penalty box (SLOWDOWN)");
           }
-        }        
+        }
         mRetransmits = mRetransmits > 0 ? mRetransmits : 0;
-        
+
         // Some requests will burn a thread while waiting for a
         // condition. For example close waits for writes to finish
         // and rename waits for a few ms for the file to close
@@ -142,7 +143,7 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
           }
           Thread.sleep(TOO_MANY_PENDING_REQUESTS_PAUSE);
         }
-        
+
         RPCBuffer requestBuffer = RPCBuffer.from(in);
         LOGGER.info(mSessionID + " got request");
         mHandler.incrementMetric("CLIENT_BYTES_READ", requestBuffer.length());
@@ -198,17 +199,17 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
           response.setVerifier(new VerifierNone());
           writeRPCResponse(response);
         } else if(request.getProcedure() == NFS_PROC_COMPOUND) {
-          
+
           if(LOGGER.isDebugEnabled()) {
             LOGGER.debug(mSessionID + " Handling NFS Compound for " + mClientName);
           }
-          
+
           if(mSecurityHandler.isUnwrapRequired()) {
             byte[] encryptedData = requestBuffer.readBytes();
             byte[] plainData = mSecurityHandler.unwrap(encryptedData);
             requestBuffer = new RPCBuffer(plainData);
           }
-          
+
           Set<Integer> requestsInProgress = getRequestsInProgress();
           synchronized (requestsInProgress) {
             if(requestsInProgress.contains(request.getXid())) {
@@ -234,25 +235,25 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
     } catch (Exception e) {
       LOGGER.error(mSessionID + " Error from client " + mClientName, e);
       if(request != null) {
-                try {
-                    RPCResponse response = new RPCResponse(request.getXid(), RPC_VERSION);
-                    response.setReplyState(RPC_REPLY_STATE_DENIED);
-                    response.setAcceptState(RPC_ACCEPT_SYSTEM_ERR);
-                    writeRPCResponse(response);
-                } catch (Exception x) {
-                    LOGGER.error(mSessionID + " Error writing failure packet", x);
-                }
-            }
-        } finally {
-            if (mOutputHandler != null) {
-                mOutputHandler.close();
-            }
-            IOUtils.closeSocket(mClient);
-            Map<Socket, ClientWorker<REQUEST, RESPONSE>> clients = mRPCServer.getClients();
-            clients.remove(mClient);
+        try {
+          RPCResponse response = new RPCResponse(request.getXid(), RPC_VERSION);
+          response.setReplyState(RPC_REPLY_STATE_DENIED);
+          response.setAcceptState(RPC_ACCEPT_SYSTEM_ERR);
+          writeRPCResponse(response);
+        } catch (Exception x) {
+          LOGGER.error(mSessionID + " Error writing failure packet", x);
         }
+      }
+    } finally {
+      if (mOutputHandler != null) {
+        mOutputHandler.close();
+      }
+      IOUtils.closeSocket(mClient);
+      Map<Socket, ClientWorker<REQUEST, RESPONSE>> clients = mRPCServer.getClients();
+      clients.remove(mClient);
     }
-  
+  }
+
   public void shutdown() {
     this.interrupt();
   }
@@ -267,11 +268,11 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
     response.setAcceptState(RPC_ACCEPT_SUCCESS);
     response.setVerifier(mSecurityHandler.getVerifer(request));
     response.write(responseBuffer);
-    
+
     if(mSecurityHandler.isWrapRequired()) {
       byte[] data = mSecurityHandler.wrap(applicationResponse);
       responseBuffer.writeUint32(data.length);
-      responseBuffer.writeBytes(data);      
+      responseBuffer.writeBytes(data);
     } else {
       applicationResponse.write(responseBuffer);
     }
@@ -298,112 +299,112 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
     mOutputBufferQueue.put(responseBuffer);
     mHandler.incrementMetric("CLIENT_BYTES_WROTE", responseBuffer.length());
   }
-  
 
-    protected Map<Integer, MessageBase> getResponseCache() {
-        return mRPCServer.getResponseCache();
+
+  protected Map<Integer, MessageBase> getResponseCache() {
+    return mRPCServer.getResponseCache();
+  }
+
+  public Set<Integer> getRequestsInProgress() {
+    return mRPCServer.getRequestsInProgress();
+  }
+
+  /**
+   * Schedule task blocking until successful or interrupted.
+   *
+   * @param task
+   * @throws InterruptedException if interrupted while waiting for room in the
+   * thread pool.
+   */
+  public void schedule(ClientTask<REQUEST, RESPONSE> task) throws InterruptedException {
+    ExecutorService executorServer = mRPCServer.getExecutorService();
+    while (true) {
+      try {
+        executorServer.execute(task);
+        break;
+      } catch (RejectedExecutionException ex) {
+        mHandler.incrementMetric("THREAD_POOL_FULL", 1);
+        LOGGER.warn("Task rejected, thread pool at max capacity: " + task.mClientName + " " + task.mSessionID);
+        Thread.sleep(EXECUTOR_THREAD_POOL_FULL_PAUSE);
+      }
+    }
+  }
+
+  /**
+   * Task submitted to Executor for execution of the client's request.
+   */
+  protected static class ClientTask<REQUEST extends MessageBase, RESPONSE extends MessageBase> implements Runnable {
+
+    protected static final Logger LOGGER = Logger.getLogger(ClientTask.class);
+    protected InetAddress mClientName;
+    protected String mSessionID;
+    protected RPCHandler<REQUEST, RESPONSE> mHandler;
+    protected ClientWorker<REQUEST, RESPONSE> mClientWorker;
+    protected RPCRequest mRequest;
+    protected RPCBuffer mBuffer;
+
+    public ClientTask(InetAddress clientName, String sessionID,
+        ClientWorker<REQUEST, RESPONSE> clientWorker, RPCHandler<REQUEST, RESPONSE> handler,
+        RPCRequest request, RPCBuffer buffer) {
+      mClientName = clientName;
+      mSessionID = sessionID;
+      mClientWorker = clientWorker;
+      mHandler = handler;
+      mRequest = request;
+      mBuffer = buffer;
     }
 
-    public Set<Integer> getRequestsInProgress() {
-        return mRPCServer.getRequestsInProgress();
-    }
-
-    /**
-     * Schedule task blocking until successful or interrupted.
-     *
-     * @param task
-     * @throws InterruptedException if interrupted while waiting for room in the
-     * thread pool.
-     */
-    public void schedule(ClientTask<REQUEST, RESPONSE> task) throws InterruptedException {
-        ExecutorService executorServer = mRPCServer.getExecutorService();
-        while (true) {
-            try {
-                executorServer.execute(task);
-                break;
-            } catch (RejectedExecutionException ex) {
-                mHandler.incrementMetric("THREAD_POOL_FULL", 1);
-                LOGGER.warn("Task rejected, thread pool at max capacity: " + task.mClientName + " " + task.mSessionID);
-                Thread.sleep(EXECUTOR_THREAD_POOL_FULL_PAUSE);
-            }
+    @Override
+    public void run() {
+      Set<Integer> requestsInProgress = mClientWorker.getRequestsInProgress();
+      Map<Integer, MessageBase> responseCache = mClientWorker.getResponseCache();
+      boolean removed = false;
+      try {
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug(mSessionID + " starting xid " + mRequest.getXid());
         }
-    }
-
-    /**
-     * Task submitted to Executor for execution of the client's request.
-     */
-    protected static class ClientTask<REQUEST extends MessageBase, RESPONSE extends MessageBase> implements Runnable {
-
-        protected static final Logger LOGGER = Logger.getLogger(ClientTask.class);
-        protected InetAddress mClientName;
-        protected String mSessionID;
-        protected RPCHandler<REQUEST, RESPONSE> mHandler;
-        protected ClientWorker<REQUEST, RESPONSE> mClientWorker;
-        protected RPCRequest mRequest;
-        protected RPCBuffer mBuffer;
-
-        public ClientTask(InetAddress clientName, String sessionID,
-                ClientWorker<REQUEST, RESPONSE> clientWorker, RPCHandler<REQUEST, RESPONSE> handler,
-                RPCRequest request, RPCBuffer buffer) {
-            mClientName = clientName;
-            mSessionID = sessionID;
-            mClientWorker = clientWorker;
-            mHandler = handler;
-            mRequest = request;
-            mBuffer = buffer;
+        /*
+         * TODO ensure credentials are the same for request/cached
+         * response.
+         */
+        MessageBase applicationResponse = responseCache.get(mRequest.getXid());
+        if (applicationResponse == null) {
+          REQUEST applicationRequest = mHandler.createRequest();
+          applicationRequest.read(mBuffer);
+          if (applicationRequest instanceof RequiresCredentials) {
+            RequiresCredentials requiresCredentials = (RequiresCredentials) applicationRequest;
+            // check to ensure it's auth creds is above
+            requiresCredentials.setCredentials((AuthenticatedCredentials) mRequest.getCredentials());
+          }
+          try {
+            applicationResponse = mHandler.process(mRequest, applicationRequest, mClientName, mSessionID);
+          } catch (RuntimeException x) {
+            LOGGER.warn("Error reading buffer: " + LogUtils.dump(applicationResponse), x);
+            throw x;
+          }
+          responseCache.put(mRequest.getXid(), applicationResponse);
+          requestsInProgress.remove(mRequest.getXid()); // duplicates will be served out of cache
+          removed = true;
         }
-
-        @Override
-        public void run() {
-            Set<Integer> requestsInProgress = mClientWorker.getRequestsInProgress();
-            Map<Integer, MessageBase> responseCache = mClientWorker.getResponseCache();
-            boolean removed = false;
-            try {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(mSessionID + " starting xid " + mRequest.getXid());
-                }
-                /*
-                 * TODO ensure credentials are the same for request/cached
-                 * response.
-                 */
-                MessageBase applicationResponse = responseCache.get(mRequest.getXid());
-                if (applicationResponse == null) {
-                    REQUEST applicationRequest = mHandler.createRequest();
-                    applicationRequest.read(mBuffer);
-                    if (applicationRequest instanceof RequiresCredentials) {
-                        RequiresCredentials requiresCredentials = (RequiresCredentials) applicationRequest;
-                        // check to ensure it's auth creds is above
-                        requiresCredentials.setCredentials((AuthenticatedCredentials) mRequest.getCredentials());
-                    }
-                    try {
-                        applicationResponse = mHandler.process(mRequest, applicationRequest, mClientName, mSessionID);
-                    } catch (RuntimeException x) {
-                        LOGGER.warn("Error reading buffer: " + LogUtils.dump(applicationResponse), x);
-                        throw x;
-                    }
-                    responseCache.put(mRequest.getXid(), applicationResponse);
-                    requestsInProgress.remove(mRequest.getXid()); // duplicates will be served out of cache
-                    removed = true;
-                }
-                mClientWorker.writeApplicationResponse(mRequest, applicationResponse);
-            } catch (Exception ex) {
-                LOGGER.error(mSessionID + " Error from client " + mClientName + " xid = " + mRequest.getXid(), ex);
-                try {
-                    RPCResponse response = new RPCResponse(mRequest.getXid(), RPC_VERSION);
-                    response.setReplyState(RPC_REPLY_STATE_DENIED);
-                    response.setAcceptState(RPC_ACCEPT_SYSTEM_ERR);
-                    mClientWorker.writeRPCResponse(response);
-                } catch (Exception x) {
-                    LOGGER.error(mSessionID + " Error writing failure packet", x);
-                }
-            } finally {
-                if (!removed) {
-                    requestsInProgress.remove(mRequest.getXid());
-                }
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(mSessionID + " finishing xid " + mRequest.getXid());
-                }
-            }
+        mClientWorker.writeApplicationResponse(mRequest, applicationResponse);
+      } catch (Exception ex) {
+        LOGGER.error(mSessionID + " Error from client " + mClientName + " xid = " + mRequest.getXid(), ex);
+        try {
+          RPCResponse response = new RPCResponse(mRequest.getXid(), RPC_VERSION);
+          response.setReplyState(RPC_REPLY_STATE_DENIED);
+          response.setAcceptState(RPC_ACCEPT_SYSTEM_ERR);
+          mClientWorker.writeRPCResponse(response);
+        } catch (Exception x) {
+          LOGGER.error(mSessionID + " Error writing failure packet", x);
         }
+      } finally {
+        if (!removed) {
+          requestsInProgress.remove(mRequest.getXid());
+        }
+        if (LOGGER.isDebugEnabled()) {
+          LOGGER.debug(mSessionID + " finishing xid " + mRequest.getXid());
+        }
+      }
     }
+  }
 }

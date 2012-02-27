@@ -36,12 +36,12 @@ public class REMOVERequest extends OperationRequest {
   public void write(RPCBuffer buffer) {
     buffer.writeString(mName);
   }
-  
+
   @Override
   public int getID() {
     return NFS4_OP_REMOVE;
   }
-  
+
   public String getName() {
     return mName;
   }

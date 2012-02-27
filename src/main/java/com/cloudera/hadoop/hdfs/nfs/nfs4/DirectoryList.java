@@ -62,6 +62,6 @@ public class DirectoryList implements MessageBase {
   public void setEOF(boolean EOF) {
     this.mEOF = EOF;
   }
-  
-  
+
+
 }

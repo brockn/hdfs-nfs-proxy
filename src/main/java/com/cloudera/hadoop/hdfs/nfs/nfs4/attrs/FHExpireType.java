@@ -49,5 +49,5 @@ public class FHExpireType extends Attribute {
   public void setExpireType(int expireType) {
     this.mExpireType = expireType;
   }
-  
+
 }

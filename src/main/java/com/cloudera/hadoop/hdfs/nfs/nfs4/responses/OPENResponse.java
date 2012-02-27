@@ -35,7 +35,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
 public class OPENResponse extends OperationResponse implements Status {
-  
+
   protected int mStatus;
   protected StateID mStateID;
   protected ChangeInfo mChangeInfo;
@@ -43,8 +43,8 @@ public class OPENResponse extends OperationResponse implements Status {
   protected Bitmap mAttrs;
   protected ImmutableList<Attribute> mAttrValues;
   protected int mDelgationType;
-  
-    @Override
+
+  @Override
   public void read(RPCBuffer buffer) {
     mStatus = buffer.readUint32();
     if(mStatus == NFS4_OK) {
@@ -60,17 +60,17 @@ public class OPENResponse extends OperationResponse implements Status {
     }
   }
 
-    public ImmutableMap<Integer, Attribute> getAttrValues() {
-      Map<Integer, Attribute> rtn = Maps.newHashMap();
-      for(Attribute attr : mAttrValues) {
-        rtn.put(attr.getID(), attr);
-      }
-      return ImmutableMap.copyOf(rtn);
+  public ImmutableMap<Integer, Attribute> getAttrValues() {
+    Map<Integer, Attribute> rtn = Maps.newHashMap();
+    for(Attribute attr : mAttrValues) {
+      rtn.put(attr.getID(), attr);
     }
+    return ImmutableMap.copyOf(rtn);
+  }
 
-    public void setAttrValues(ImmutableList<Attribute> attrValues) {
-      this.mAttrValues = attrValues;
-    }
+  public void setAttrValues(ImmutableList<Attribute> attrValues) {
+    this.mAttrValues = attrValues;
+  }
   @Override
   public void write(RPCBuffer buffer) {
     buffer.writeUint32(mStatus);
@@ -84,9 +84,9 @@ public class OPENResponse extends OperationResponse implements Status {
       }
       Attribute.writeAttrs(buffer, mAttrs, mAttrValues);
       buffer.writeUint32(mDelgationType);
-    }    
+    }
   }
-  
+
   public StateID getStateID() {
     return mStateID;
   }

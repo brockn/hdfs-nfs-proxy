@@ -32,7 +32,7 @@ public class CREATEResponse extends OperationResponse implements Status {
   protected int mStatus;
   protected ChangeInfo mChangeInfo;
   protected Bitmap mAttrs;
-  
+
   @Override
   public void read(RPCBuffer buffer) {
     mStatus = buffer.readUint32();
@@ -72,7 +72,7 @@ public class CREATEResponse extends OperationResponse implements Status {
   public void setChangeInfo(ChangeInfo changeInfo) {
     this.mChangeInfo = changeInfo;
   }
-  
+
   public void setAttrs(Bitmap attrs) {
     mAttrs = attrs;
   }

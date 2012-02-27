@@ -36,12 +36,12 @@ public class LOOKUPRequest extends OperationRequest {
   public void write(RPCBuffer buffer) {
     buffer.writeString(mName);
   }
-  
+
   @Override
   public int getID() {
     return NFS4_OP_LOOKUP;
   }
-  
+
   public String getName() {
     return mName;
   }

@@ -31,7 +31,7 @@ public class StateID implements MessageBase {
   protected OpaqueData12 mData;
   protected static final int LOCAL_ID = (new Random()).nextInt();
   protected static final AtomicLong STATEIDs = new AtomicLong(0);
-  
+
   @Override
   public void read(RPCBuffer buffer) {
     mSeqID = buffer.readUint32();
@@ -44,8 +44,8 @@ public class StateID implements MessageBase {
     buffer.writeUint32(mSeqID);
     mData.write(buffer);
   }
-  
-  
+
+
 
   public int getSeqID() {
     return mSeqID;

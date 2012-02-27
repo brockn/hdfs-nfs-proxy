@@ -41,21 +41,21 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCServer;
 public class NFS4Server extends Configured implements Tool {
   NFS4Handler mNFSServer;
   RPCServer<CompoundRequest, CompoundResponse> mRPCServer;
-  
+
   public static void main(String[] args) throws Exception {
-    
+
     System.setProperty("java.security.krb5.realm", "LOCALDOMAIN");
     System.setProperty("java.security.krb5.kdc", "localhost");
     System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");
     System.setProperty("java.security.auth.login.config", "sec.conf");
-    
+
     System.exit(ToolRunner.run(new Configuration(), new NFS4Server(), args));
   }
-  
+
   public void start(InetAddress address, int port) throws IOException {
     mNFSServer = new NFS4Handler(getConf());
     mRPCServer = new RPCServer<CompoundRequest, CompoundResponse>(mNFSServer, getConf(), address, port);
-    mRPCServer.start();    
+    mRPCServer.start();
   }
 
   @Override
@@ -74,7 +74,7 @@ public class NFS4Server extends Configured implements Tool {
     }
     return 0;
   }
-  
+
   public boolean isAlive() {
     return mRPCServer.isAlive();
   }

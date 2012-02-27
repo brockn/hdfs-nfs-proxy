@@ -20,33 +20,34 @@ package com.cloudera.hadoop.hdfs.nfs.rpc;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
+import org.apache.log4j.Logger;
+
 import com.cloudera.hadoop.hdfs.nfs.security.Credentials;
 import com.cloudera.hadoop.hdfs.nfs.security.CredentialsGSS;
 import com.cloudera.hadoop.hdfs.nfs.security.Verifier;
-import org.apache.log4j.Logger;
 
 /**
  * Represents an RPC Request as defined by the RPC RFC.
  */
 public class RPCRequest extends RPCPacket {
 
-    protected static final Logger LOGGER = Logger.getLogger(RPCRequest.class);
-    protected int mCredentialsFlavor;
-    protected Credentials mCredentials;
-    protected int mVerifierFlavor;
-    protected Verifier mVerifier;
+  protected static final Logger LOGGER = Logger.getLogger(RPCRequest.class);
+  protected int mCredentialsFlavor;
+  protected Credentials mCredentials;
+  protected int mVerifierFlavor;
+  protected Verifier mVerifier;
 
-    public RPCRequest(int xid, int rpcVersion) {
-        this.mXid = xid;
+  public RPCRequest(int xid, int rpcVersion) {
+    this.mXid = xid;
 
-        this.mMessageType = RPC_MESSAGE_TYPE_CALL;
-        this.mRpcVersion = rpcVersion;
+    this.mMessageType = RPC_MESSAGE_TYPE_CALL;
+    this.mRpcVersion = rpcVersion;
 
 
-    }
+  }
 
-    public RPCRequest() {
-    }
+  public RPCRequest() {
+  }
 
   @Override
   public void write(RPCBuffer buffer ) {
@@ -57,15 +58,15 @@ public class RPCRequest extends RPCPacket {
     buffer.writeUint32(mProcedure);
     buffer.writeUint32(mCredentialsFlavor);
     mCredentials.write(buffer);
-    // verifier can be null if we are calculating 
-    // the checksum before sending a packet 
+    // verifier can be null if we are calculating
+    // the checksum before sending a packet
     if(mVerifier != null) {
       buffer.writeUint32(mVerifierFlavor);
       mVerifier.write(buffer);
     }
   }
-   
-  
+
+
   @Override
   public void read(RPCBuffer buffer) {
     super.read(buffer);
@@ -77,7 +78,7 @@ public class RPCRequest extends RPCPacket {
     mCredentials = Credentials.readCredentials(mCredentialsFlavor, buffer);
     if(!(mCredentials instanceof CredentialsGSS && ((CredentialsGSS) mCredentials).getProcedure() == RPCSEC_GSS_DESTROY)) {
       mVerifierFlavor = buffer.readUint32();
-      mVerifier = Verifier.readVerifier(mVerifierFlavor, buffer);      
+      mVerifier = Verifier.readVerifier(mVerifierFlavor, buffer);
     }
   }
   public Credentials getCredentials() {

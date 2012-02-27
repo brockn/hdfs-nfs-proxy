@@ -24,6 +24,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.ChangeInfo;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
@@ -31,72 +32,71 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.RENAMERequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.RENAMEResponse;
-import org.apache.log4j.Logger;
 
 public class RENAMEHandler extends OperationRequestHandler<RENAMERequest, RENAMEResponse> {
 
-    protected static final Logger LOGGER = Logger.getLogger(RENAMEHandler.class);
+  protected static final Logger LOGGER = Logger.getLogger(RENAMEHandler.class);
 
-    @Override
-    protected RENAMEResponse doHandle(NFS4Handler server, Session session,
-            RENAMERequest request) throws NFS4Exception, IOException {
-        if (session.getCurrentFileHandle() == null || session.getSavedFileHandle() == null) {
-            throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
-        }
-        if ("".equals(request.getOldName()) || "".equals(request.getNewName())) {
-            throw new NFS4Exception(NFS4ERR_INVAL);
-        }
-        FileSystem fs = session.getFileSystem();
-        Path oldParentPath = server.getPath(session.getSavedFileHandle());
-        Path oldPath = new Path(oldParentPath, request.getOldName());
-        Path newParentPath = server.getPath(session.getCurrentFileHandle());
-        Path newPath = new Path(newParentPath, request.getNewName());
-        if (!(fs.getFileStatus(oldParentPath).isDir() && fs.getFileStatus(newParentPath).isDir())) {
-            throw new NFS4Exception(NFS4ERR_NOTDIR);
-        }
-        if (!server.fileExists(fs, oldPath)) {
-            throw new NFS4Exception(NFS4ERR_NOENT, "Path " + oldPath + " does not exist.");
-        }
-        if (server.fileExists(fs, newPath)) {
-            // TODO according to the RFC we are supposed to check to see if 
-            // the entry which exists is compatible (overwrite file and 
-            // empty directory if the "old" item is a file or dir respectively.
-            throw new NFS4Exception(NFS4ERR_EXIST, "Path " + newPath + " exists.");
-        }
-        // we won't support renaming files which are open
-        // but it happens fairly often that due to tcp/ip
-        // the rename request is received before the close.
-        // Below we delay the rename if the file is open 
-        for (int i = 0; i < 5; i++) {
-            if (!server.isFileOpen(oldPath)) {
-                break;
-            }
-            try {
-                Thread.sleep(100L);
-            } catch (InterruptedException e) {
-                throw new IOException("Interrupted while waiting for file to close", e);
-            }
-        }
-        if (server.isFileOpen(oldPath)) {
-            throw new NFS4Exception(NFS4ERR_FILE_OPEN);
-        }
-        LOGGER.info(session.getSessionID() + " Renaming " + oldPath + " to " + newPath);
-        long beforeSource = fs.getFileStatus(oldParentPath).getModificationTime();
-        long beforeDest = fs.getFileStatus(newParentPath).getModificationTime();
-        if (!fs.rename(oldPath, newPath)) {
-            throw new NFS4Exception(NFS4ERR_IO);
-        }
-        long afterSource = fs.getFileStatus(oldParentPath).getModificationTime();
-        long afterDest = fs.getFileStatus(newParentPath).getModificationTime();
-        RENAMEResponse response = createResponse();
-        response.setChangeInfoSource(ChangeInfo.newChangeInfo(true, beforeSource, afterSource));
-        response.setChangeInfoDest(ChangeInfo.newChangeInfo(true, beforeDest, afterDest));
-        response.setStatus(NFS4_OK);
-        return response;
+  @Override
+  protected RENAMEResponse doHandle(NFS4Handler server, Session session,
+      RENAMERequest request) throws NFS4Exception, IOException {
+    if (session.getCurrentFileHandle() == null || session.getSavedFileHandle() == null) {
+      throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
     }
+    if ("".equals(request.getOldName()) || "".equals(request.getNewName())) {
+      throw new NFS4Exception(NFS4ERR_INVAL);
+    }
+    FileSystem fs = session.getFileSystem();
+    Path oldParentPath = server.getPath(session.getSavedFileHandle());
+    Path oldPath = new Path(oldParentPath, request.getOldName());
+    Path newParentPath = server.getPath(session.getCurrentFileHandle());
+    Path newPath = new Path(newParentPath, request.getNewName());
+    if (!(fs.getFileStatus(oldParentPath).isDir() && fs.getFileStatus(newParentPath).isDir())) {
+      throw new NFS4Exception(NFS4ERR_NOTDIR);
+    }
+    if (!server.fileExists(fs, oldPath)) {
+      throw new NFS4Exception(NFS4ERR_NOENT, "Path " + oldPath + " does not exist.");
+    }
+    if (server.fileExists(fs, newPath)) {
+      // TODO according to the RFC we are supposed to check to see if
+      // the entry which exists is compatible (overwrite file and
+      // empty directory if the "old" item is a file or dir respectively.
+      throw new NFS4Exception(NFS4ERR_EXIST, "Path " + newPath + " exists.");
+    }
+    // we won't support renaming files which are open
+    // but it happens fairly often that due to tcp/ip
+    // the rename request is received before the close.
+    // Below we delay the rename if the file is open
+    for (int i = 0; i < 5; i++) {
+      if (!server.isFileOpen(oldPath)) {
+        break;
+      }
+      try {
+        Thread.sleep(100L);
+      } catch (InterruptedException e) {
+        throw new IOException("Interrupted while waiting for file to close", e);
+      }
+    }
+    if (server.isFileOpen(oldPath)) {
+      throw new NFS4Exception(NFS4ERR_FILE_OPEN);
+    }
+    LOGGER.info(session.getSessionID() + " Renaming " + oldPath + " to " + newPath);
+    long beforeSource = fs.getFileStatus(oldParentPath).getModificationTime();
+    long beforeDest = fs.getFileStatus(newParentPath).getModificationTime();
+    if (!fs.rename(oldPath, newPath)) {
+      throw new NFS4Exception(NFS4ERR_IO);
+    }
+    long afterSource = fs.getFileStatus(oldParentPath).getModificationTime();
+    long afterDest = fs.getFileStatus(newParentPath).getModificationTime();
+    RENAMEResponse response = createResponse();
+    response.setChangeInfoSource(ChangeInfo.newChangeInfo(true, beforeSource, afterSource));
+    response.setChangeInfoDest(ChangeInfo.newChangeInfo(true, beforeDest, afterDest));
+    response.setStatus(NFS4_OK);
+    return response;
+  }
 
-    @Override
-    protected RENAMEResponse createResponse() {
-        return new RENAMEResponse();
-    }
+  @Override
+  protected RENAMEResponse createResponse() {
+    return new RENAMEResponse();
+  }
 }

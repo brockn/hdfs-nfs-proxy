@@ -26,14 +26,14 @@ import java.net.UnknownHostException;
 public class Constants {
 
   public static final String ANONYMOUS_USERNAME = "nobody";
-  
+
 
   public static final int RPC_MESSAGE_TYPE_CALL = 0;
   public static final int RPC_MESSAGE_TYPE_REPLY = 1;
 
-  
+
   public static final int RPC_ACCEPT_STATE_ACCEPT = 0;
-  
+
 
 
   public static final int RPC_AUTH_NULL = 0;
@@ -41,7 +41,7 @@ public class Constants {
   public static final int RPC_AUTH_GSS = 6;
 
   public static final int RPC_VERIFIER_NULL = 0;
-  
+
   public static final int RPC_VERIFIER_GSS = 6;
 
 
@@ -70,7 +70,7 @@ public class Constants {
    */
   public static final int RPC_REJECT_MISMATCH = 0;
   public static final int RPC_REJECT_AUTH_ERROR = 1;
-  
+
   // for future reference
   public static final int RPC_AUTH_STATUS_BADCRED      = 1;  /* bad credentials (seal broken) */
   public static final int RPC_AUTH_STATUS_REJECTEDCRED = 2;  /* client must begin new session */
@@ -80,36 +80,36 @@ public class Constants {
 
 
   public static final int RPC_OPAQUE_AUTH_MAX = 400;
-  
+
   public static final int RPC_VERSION = 2;
-  
-  
+
+
 
   public final static int FHSIZE = 32;
-  
-  
-  
+
+
+
   public final static int RPCSEC_GSS_VERSION = 1;
-  
+
   public final static int RPCSEC_GSS_DATA = 0;
   public final static int RPCSEC_GSS_INIT = 1;
   public final static int RPCSEC_GSS_CONTINUE_INIT = 2;
   public final static int RPCSEC_GSS_DESTROY = 3;
-  
-  
+
+
   public final static int RPCSEC_GSS_SERVICE_NONE = 1;
   public final static int RPCSEC_GSS_SERVICE_INTEGRITY = 2;
   public final static int RPCSEC_GSS_SERVICE_PRIVACY = 3;
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
   public static final int NFS_PROG = 100003;
   public static final int NFS_VERSION = 4;
 
-  
+
   public final static int NFS_PROC_NULL = 0;
   public final static int NFS_PROC_COMPOUND = 1;
 
@@ -133,7 +133,7 @@ public class Constants {
   public static final int NFS4_REG = 1;
   public static final int NFS4_DIR = 2;
 
-  
+
   public static final int NFS4_OK                 = 0;    /* everything is okay      */
   public static final int NFS4ERR_PERM            = 1;    /* caller not privileged   */
   public static final int NFS4ERR_NOENT           = 2;    /* no such file/directory  */
@@ -202,7 +202,7 @@ public class Constants {
   public static final int NFS4ERR_FILE_OPEN       = 10046;/* open file blocks op.    */
   public static final int NFS4ERR_ADMIN_REVOKED   = 10047;/* lockowner state revoked */
   public static final int NFS4ERR_CB_PATH_DOWN    = 10048; /* callback path down      */
-  
+
 
 
   public static final int NFS4_OP_ACCESS               = 3;
@@ -243,7 +243,7 @@ public class Constants {
   public static final int NFS4_OP_WRITE                = 38;
   public static final int NFS4_OP_RELEASE_LOCKOWNER    = 39;
 
-  
+
   public static final int NFS4_FATTR4_SUPPORTED_ATTRS    = 0;
   public static final int NFS4_FATTR4_TYPE               = 1;
   public static final int NFS4_FATTR4_FH_EXPIRE_TYPE     = 2;
@@ -258,7 +258,7 @@ public class Constants {
   public static final int NFS4_FATTR4_RDATTR_ERROR       = 11;
   public static final int NFS4_FATTR4_ACL_SUPPORT         = 13;
   public static final int NFS4_FATTR4_FILEHANDLE         = 19;
-  
+
   public static final int NFS4_FATTR4_CASE_INSENSITIVE   = 16;
   public static final int NFS4_FATTR4_CASE_PRESERVING    = 17;
   public static final int NFS4_FATTR4_CHOWN_RESTRICTED   = 18;
@@ -298,21 +298,21 @@ public class Constants {
   public static final int NFS4_FATTR4_TIME_MODIFY        = 53;
   public static final int NFS4_FATTR4_TIME_MODIFY_SET    = 54;
   public static final int NFS4_FATTR4_MOUNTED_ON_FILEID  = 55;
-  
-  
+
+
   public static final int NFS4_OPEN4_NOCREATE  = 0;
   public static final int NFS4_OPEN4_CREATE    = 1;
-  
-  
+
+
   public static final int NFS4_CREATE_UNCHECKED4      = 0;
   public static final int NFS4_CREATE_GUARDED4        = 1;
   public static final int NFS4_CREATE_EXCLUSIVE4      = 2;
-  
+
   public static final int NFS4_CLAIM_NULL              = 0;
   public static final int NFS4_CLAIM_PREVIOUS          = 1;
   public static final int NFS4_CLAIM_DELEGATE_CUR      = 2;
   public static final int NFS4_CLAIM_DELEGATE_PREV     = 3;
-  
+
   public static final int NFS4_OPEN4_SHARE_ACCESS_READ   = 0x00000001;
   public static final int NFS4_OPEN4_SHARE_ACCESS_WRITE  = 0x00000002;
   public static final int NFS4_OPEN4_SHARE_ACCESS_BOTH   = 0x00000003;
@@ -322,21 +322,21 @@ public class Constants {
   public static final int NFS4_OPEN4_SHARE_DENY_WRITE    = 0x00000002;
   public static final int NFS4_OPEN4_SHARE_DENY_BOTH     = 0x00000003;
 
-  
- /* Client must confirm open */
+
+  /* Client must confirm open */
   public static final int  NFS4_OPEN4_RESULT_CONFIRM      = 0x00000002;
- /* Type of file locking behavior at the server */
+  /* Type of file locking behavior at the server */
   public static final int  NFS4_OPEN4_RESULT_LOCKTYPE_POSIX = 0x00000004;
 
-  
+
   public static final int    NFS4_FH4_PERSISTENT          = 0x00000000;
   public static final int    NFS4_FH4_NOEXPIRE_WITH_OPEN  = 0x00000001;
   public static final int    NFS4_FH4_VOLATILE_ANY        = 0x00000002;
   public static final int    NFS4_FH4_VOL_MIGRATION       = 0x00000004;
   public static final int    NFS4_FH4_VOL_RENAME          = 0x00000008;
-  
+
   public static final InetAddress LOCALHOST;
-  
+
   static {
     try {
       LOCALHOST = InetAddress.getByName("localhost");
@@ -344,32 +344,32 @@ public class Constants {
       throw new RuntimeException("Unable to find localhost", e);
     }
   }
-  
+
   public static final int ROOT_USER_UID = 0;
   public static final long NFS4_COOKIE_OFFSET = Integer.MAX_VALUE;
 
   public static final int NFS4_COMMIT_UNSTABLE4       = 0;
   public static final int NFS4_COMMIT_DATA_SYNC4      = 1;
   public static final int NFS4_COMMIT_FILE_SYNC4      = 2;
-  
+
   public static final int NFS4_SET_TO_SERVER_TIME4 = 0;
   public static final int NFS4_SET_TO_CLIENT_TIME4 = 1;
 
-  
+
   public static final String USER_ID_MAPPER_CACHE = "hdfs.nfs.useridmapper.cache";
   public static final String USER_ID_MAPPER_CLASS = "hdfs.nfs.useridmapper";
   public static final String NFS_OWNER_DOMAIN = "hdfs.nfs.nfs4.owner.domain";
-  
+
   public static final String NFS_FILEHANDLE_STORE_CLASS = "hdfs.nfs.nfs4.filehandle.store.class";
   public static final String NFS_FILEHANDLE_STORE_FILE = "hdfs.nfs.nfs4.filehandle.store.file";
-  
+
   public static final String DEFAULT_NFS_FILEHANDLE_STORE_FILE = "hdfs.nfs.nfs4.filehandle.store.file";
-  
+
   public static final String RPC_MAX_THREADS = "hdfs.nfs.rpcserver.max.threads";
-  
+
   public static final String RPC_MAX_PENDING_REQUESTS = "hdfs.nfs.rpcworker.max.pending.requests";
-  
+
   public static final String RPC_RETRANSMIT_PENALTY_THRESHOLD = "hdfs.nfs.rpcworker.restransmit.penalty.threshold";
-  
-  
+
+
 }

@@ -49,7 +49,7 @@ public class OpaqueData implements MessageBase {
   @Override
   public void write(RPCBuffer buffer) {
     buffer.writeBytes(mData, 0, mSize);
-  }  
+  }
   public void setSize(int size) {
     mSize = size;
   }

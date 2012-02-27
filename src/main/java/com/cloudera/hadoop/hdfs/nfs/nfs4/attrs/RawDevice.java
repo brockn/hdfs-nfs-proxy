@@ -36,7 +36,7 @@ public class RawDevice extends Attribute  {
   }
 
   @Override
-  public void write(RPCBuffer buffer) { 
+  public void write(RPCBuffer buffer) {
     buffer.writeUint32(mMajor);
     buffer.writeUint32(mMinor);
   }

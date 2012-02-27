@@ -19,6 +19,7 @@
 package com.cloudera.hadoop.hdfs.nfs.rpc;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+
 import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.security.Verifier;
@@ -32,23 +33,23 @@ public class RPCResponse extends RPCPacket {
   protected int mReplyState, mAcceptState, mAuthState;
   protected int mVerifierFlavor;
   protected Verifier mVerifier;
-  
+
   public RPCResponse() {
-    
+
   }
   public RPCResponse(int xid, int rpcVersion) {
     this.mXid = xid;
     this.mRpcVersion = rpcVersion;
-    
+
     this.mMessageType = RPC_MESSAGE_TYPE_REPLY;
     this.mReplyState = RPC_REPLY_STATE_ACCEPT;
     this.mAcceptState = RPC_ACCEPT_STATE_ACCEPT;
   }
-  
+
   @Override
   public void write(RPCBuffer buffer) {
     super.write(buffer);
-    
+
     buffer.writeUint32(mReplyState);
     /*
      * It looks like if reply state is not
@@ -63,7 +64,7 @@ public class RPCResponse extends RPCPacket {
       if(mAcceptState == RPC_REJECT_AUTH_ERROR) {
         buffer.writeUint32(mAuthState);
       }
-      
+
     }
   }
 
@@ -78,9 +79,9 @@ public class RPCResponse extends RPCPacket {
     if(mReplyState == RPC_REPLY_STATE_ACCEPT) {
       mVerifierFlavor = buffer.readUint32();
       mVerifier = Verifier.readVerifier(mVerifierFlavor, buffer);
-      this.mAcceptState = buffer.readUint32();    
+      this.mAcceptState = buffer.readUint32();
     } else if(mReplyState == RPC_REPLY_STATE_DENIED) {
-      this.mAcceptState = buffer.readUint32();    
+      this.mAcceptState = buffer.readUint32();
       if(mAcceptState == RPC_REJECT_AUTH_ERROR) {
         mAuthState = buffer.readUint32();
       }

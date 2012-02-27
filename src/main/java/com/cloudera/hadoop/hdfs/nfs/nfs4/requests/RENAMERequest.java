@@ -39,24 +39,24 @@ public class RENAMERequest extends OperationRequest {
     buffer.writeString(mOldName);
     buffer.writeString(mNewName);
   }
-  
+
   @Override
   public int getID() {
     return NFS4_OP_RENAME;
   }
-  
+
   public String getOldName() {
     return mOldName;
   }
   public void setOldName(String name) {
     mOldName = name;
   }
-  
+
   public String getNewName() {
     return mNewName;
   }
   public void setNewName(String name) {
     mNewName = name;
   }
-  
+
 }

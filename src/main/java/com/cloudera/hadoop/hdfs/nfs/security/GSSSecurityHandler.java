@@ -4,12 +4,12 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.util.Random;
 
+import org.apache.log4j.Logger;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.MessageProp;
-import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
 import com.cloudera.hadoop.hdfs.nfs.Pair;
@@ -25,16 +25,16 @@ public class GSSSecurityHandler extends SecurityHandler {
   protected byte[] mToken;
   protected int mSequenceNumber;
   protected byte[] mContextID = Bytes.toBytes((new Random()).nextInt());
-  
+
   public GSSSecurityHandler() throws GSSException {
     mContext = mManager.createContext((GSSCredential) null);
   }
-  
+
   @Override
   public boolean hasAcceptableSecurity(RPCRequest request) {
     return request.getCredentials() != null && request.getCredentials() instanceof CredentialsGSS;
   }
-  
+
   @Override
   public Pair<? extends Verifier, RPCBuffer> initializeContext(RPCRequest request, RPCBuffer buffer) throws NFS4Exception {
     try {
@@ -49,12 +49,12 @@ public class GSSSecurityHandler extends SecurityHandler {
           mToken = new byte[0];
         }
       }
-      
+
       System.out.println(mContext.getSrcName());
-      
+
       CredentialsGSS creds = (CredentialsGSS)request.getCredentials();
       mSequenceNumber = creds.getSequenceNum();
-      
+
       RPCBuffer payload = new RPCBuffer();
       payload.writeUint32(mContextID.length);
       payload.writeBytes(mContextID);
@@ -66,14 +66,14 @@ public class GSSSecurityHandler extends SecurityHandler {
       byte[] sequenceNumber = Bytes.toBytes(128);
       MessageProp msgProp = new MessageProp(false);
       VerifierGSS verifier = new VerifierGSS();
-      verifier.set(mContext.getMIC(sequenceNumber, 0, sequenceNumber.length, msgProp));      
+      verifier.set(mContext.getMIC(sequenceNumber, 0, sequenceNumber.length, msgProp));
       return Pair.of(verifier, payload);
     } catch(GSSException ex) {
       LOGGER.warn("Error in initializeContext", ex);
       throw new NFS4Exception(NFS4ERR_PERM, ex);
     }
   }
-  
+
   @Override
   public Verifier getVerifer(RPCRequest request) throws NFS4Exception {
     CredentialsGSS creds = (CredentialsGSS)request.getCredentials();
@@ -89,17 +89,17 @@ public class GSSSecurityHandler extends SecurityHandler {
     }
     return verifier;
   }
-  
+
   @Override
   public boolean isWrapRequired() {
     return true;
   }
-  
+
   @Override
   public boolean isUnwrapRequired() {
     return true;
   }
-  
+
   @Override
   public byte[] unwrap(byte[] data) throws NFS4Exception {
     try {
@@ -109,7 +109,7 @@ public class GSSSecurityHandler extends SecurityHandler {
       throw new NFS4Exception(NFS4ERR_PERM, ex);
     }
   }
-  
+
   @Override
   public byte[] wrap(MessageBase response) throws NFS4Exception {
     RPCBuffer buffer = new RPCBuffer();

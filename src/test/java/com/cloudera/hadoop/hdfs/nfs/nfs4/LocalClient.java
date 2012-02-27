@@ -20,6 +20,7 @@
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
@@ -32,19 +33,19 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCTestUtil;
 public class LocalClient extends BaseClient {
 
   protected NFS4Handler mServer;
-  
+
   public LocalClient() throws NFS4Exception, IOException {
     Configuration conf = TestUtils.setupConf();
     mServer = new NFS4Handler(conf);
     initialize();
   }
-  
+
   @Override
   protected CompoundResponse doMakeRequest(CompoundRequest request) {
     CompoundResponse response = mServer.process(RPCTestUtil.createRequest(), request, LOCALHOST, "test");
     return response;
   }
-  
+
   @Override
   public void shutdown() {
     try {
@@ -52,6 +53,6 @@ public class LocalClient extends BaseClient {
     } catch (IOException e) {
     }
   }
-  
+
 
 }

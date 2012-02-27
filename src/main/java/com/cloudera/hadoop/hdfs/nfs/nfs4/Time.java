@@ -57,7 +57,7 @@ public class Time implements MessageBase {
   public void setNanoSeconds(int mNanoSeconds) {
     this.mNanoSeconds = mNanoSeconds;
   }
-  
+
   public long toMilliseconds() {
     long time = mSeconds * 1000L;
     time += (long)mNanoSeconds / 1000000L;

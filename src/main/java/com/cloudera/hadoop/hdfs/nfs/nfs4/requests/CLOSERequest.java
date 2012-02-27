@@ -28,7 +28,7 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class CLOSERequest extends OperationRequest {
   protected int mSeqID;
   protected StateID mStateID;
-  
+
   @Override
   public void read(RPCBuffer buffer) {
     mSeqID = buffer.readUint32();
@@ -41,7 +41,7 @@ public class CLOSERequest extends OperationRequest {
     buffer.writeUint32(mSeqID);
     mStateID.write(buffer);
   }
-  
+
   @Override
   public int getID() {
     return NFS4_OP_CLOSE;
@@ -61,5 +61,5 @@ public class CLOSERequest extends OperationRequest {
 
   public void setSeqID(int seqID) {
     this.mSeqID = seqID;
-  }  
+  }
 }

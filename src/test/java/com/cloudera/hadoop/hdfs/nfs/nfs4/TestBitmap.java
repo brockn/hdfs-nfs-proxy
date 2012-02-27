@@ -24,10 +24,8 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import org.junit.Test;
 
-import com.cloudera.hadoop.hdfs.nfs.nfs4.Bitmap;
-
 public class TestBitmap {
-  
+
   @Test
   public void testBitMapLarge() {
     // both first int and second int in bitmap
@@ -52,18 +50,18 @@ public class TestBitmap {
     copy(base, copy);
     deepEquals(base, copy);
   }
-  
-    @Test
-    public void testBitMapSmall() {
-      // first int only
-      Bitmap base = new Bitmap();
-      base.set(NFS4_FATTR4_LEASE_TIME);
-      base.set(NFS4_FATTR4_MAXFILESIZE);
-      base.set(NFS4_FATTR4_MAXREAD);
-      base.set(NFS4_FATTR4_MAXWRITE); // 31 (had bug where 31 was not handled)
-      base.set(64);
-      Bitmap copy = new Bitmap();
-      copy(base, copy);
-      deepEquals(base, copy);
-    }
+
+  @Test
+  public void testBitMapSmall() {
+    // first int only
+    Bitmap base = new Bitmap();
+    base.set(NFS4_FATTR4_LEASE_TIME);
+    base.set(NFS4_FATTR4_MAXFILESIZE);
+    base.set(NFS4_FATTR4_MAXREAD);
+    base.set(NFS4_FATTR4_MAXWRITE); // 31 (had bug where 31 was not handled)
+    base.set(64);
+    Bitmap copy = new Bitmap();
+    copy(base, copy);
+    deepEquals(base, copy);
+  }
 }

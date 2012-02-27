@@ -27,7 +27,7 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
 
 public class GETFHResponse extends OperationResponse implements Status {
-  
+
   protected int mStatus;
   protected FileHandle mFileHandle;
 
@@ -42,7 +42,7 @@ public class GETFHResponse extends OperationResponse implements Status {
   }
 
   protected void reset() {
-    mFileHandle = null;    
+    mFileHandle = null;
   }
   @Override
   public void write(RPCBuffer buffer) {
@@ -71,5 +71,5 @@ public class GETFHResponse extends OperationResponse implements Status {
   public void setFileHandle(FileHandle fileHandle) {
     this.mFileHandle = fileHandle;
   }
-  
+
 }

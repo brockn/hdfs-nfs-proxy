@@ -28,5 +28,5 @@ public class CasePreserving extends BooleanAttribute {
   public int getID() {
     return NFS4_FATTR4_CASE_PRESERVING;
   }
-  
+
 }

@@ -28,11 +28,11 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
 
 public class READDIRResponse extends OperationResponse implements Status {
-  
+
   protected int mStatus;
   protected OpaqueData8 mCookieVerifer;
   protected DirectoryList mDirectoryList;
-  
+
   @Override
   public void read(RPCBuffer buffer) {
     reset();
@@ -44,7 +44,7 @@ public class READDIRResponse extends OperationResponse implements Status {
       mDirectoryList.read(buffer);
     }
   }
-  
+
   protected void reset() {
     mCookieVerifer = null;
     mDirectoryList = null;
@@ -87,5 +87,5 @@ public class READDIRResponse extends OperationResponse implements Status {
   public void setDirectoryList(DirectoryList directoryList) {
     this.mDirectoryList = directoryList;
   }
-  
+
 }

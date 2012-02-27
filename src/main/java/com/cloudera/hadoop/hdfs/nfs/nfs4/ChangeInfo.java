@@ -28,7 +28,7 @@ public class ChangeInfo implements MessageBase {
   protected boolean mAtomic; // XXX boolean?
   protected ChangeID mChangeIDBefore;
   protected ChangeID mChangeIDAfter;
-  
+
 
   @Override
   public void read(RPCBuffer buffer) {
@@ -40,7 +40,7 @@ public class ChangeInfo implements MessageBase {
   }
 
   @Override
-  public void write(RPCBuffer buffer) { 
+  public void write(RPCBuffer buffer) {
     buffer.writeBoolean(mAtomic);
     mChangeIDBefore.write(buffer);
     mChangeIDAfter.write(buffer);
@@ -73,12 +73,12 @@ public class ChangeInfo implements MessageBase {
 
   public static ChangeInfo newChangeInfo(boolean atomic, long before, long after) {
     ChangeInfo changeInfo = new ChangeInfo();
-    
+
     changeInfo.setAtomic(atomic);
     ChangeID changeIDBefore = new ChangeID();
     changeIDBefore.setChangeID(before);
     changeInfo.setChangeIDBefore(changeIDBefore);
-    
+
     ChangeID changeIDAfter = new ChangeID();
     changeIDAfter.setChangeID(after);
     changeInfo.setChangeIDAfter(changeIDAfter);

@@ -19,27 +19,30 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.rpc;
 
-import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 import org.apache.log4j.Logger;
+
+import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 
 /**
  * Represents fields common to both RPCResponse and RPCRequest
  */
 public abstract class RPCPacket implements MessageBase {
   protected static final Logger LOGGER = Logger.getLogger(RPCPacket.class);
-  
+
   protected int mXid, mMessageType, mRpcVersion, mProgram, mProgramVersion, mProcedure;
-  
+
+  @Override
   public void write(RPCBuffer buffer) {
     buffer.writeInt(Integer.MAX_VALUE); // save space
     buffer.writeInt(mXid);
     buffer.writeInt(mMessageType);
   }
+  @Override
   public void read(RPCBuffer buffer) {
     this.mXid = buffer.readInt();
-    this.mMessageType = buffer.readInt();    
+    this.mMessageType = buffer.readInt();
   }
-   
+
   public int getXid() {
     return mXid;
   }

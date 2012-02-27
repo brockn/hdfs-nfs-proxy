@@ -28,5 +28,5 @@ public class LinkSupport extends BooleanAttribute {
   public int getID() {
     return NFS4_FATTR4_LINK_SUPPORT;
   }
-  
+
 }

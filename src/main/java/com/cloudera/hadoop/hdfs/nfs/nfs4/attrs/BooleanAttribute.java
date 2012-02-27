@@ -24,7 +24,7 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public abstract class BooleanAttribute extends Attribute {
 
   protected boolean mValue;
-  
+
   @Override
   public void read(RPCBuffer buffer) {
     mValue = buffer.readBoolean();
@@ -38,7 +38,7 @@ public abstract class BooleanAttribute extends Attribute {
   public boolean get() {
     return mValue;
   }
-  
+
   public void set(boolean value) {
     mValue = value;
   }

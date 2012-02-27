@@ -30,7 +30,7 @@ public class ACCESSResponse extends OperationResponse implements Status {
   protected int mStatus;
   protected int mSupported;
   protected int mAccess;
-  
+
   @Override
   public void read(RPCBuffer buffer) {
     mStatus = buffer.readUint32();
@@ -55,7 +55,7 @@ public class ACCESSResponse extends OperationResponse implements Status {
   public void setAccess(int access) {
     this.mAccess = access;
   }
-  
+
   public int getSupported() {
     return mSupported;
   }

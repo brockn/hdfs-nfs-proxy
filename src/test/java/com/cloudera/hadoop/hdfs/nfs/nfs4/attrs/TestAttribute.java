@@ -19,11 +19,11 @@ public class TestAttribute {
     for(Integer id : ids) {
       Identifiable attribute = Attribute.attributes.get(id).clazz.newInstance();
       if(attribute.getID() != id) {
-        fail(attribute.getClass().getName() + " has id " + attribute.getID() + " and not " + id);  
+        fail(attribute.getClass().getName() + " has id " + attribute.getID() + " and not " + id);
       }
-    }    
+    }
   }
-  
+
   @Test(expected=UnsupportedOperationException.class)
   public void testNotSupported() {
     Attribute.checkSupported(Integer.MIN_VALUE);

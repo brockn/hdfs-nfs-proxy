@@ -46,25 +46,25 @@ public class NetworkClient extends BaseClient {
   protected InputStream mInputStream;
   protected OutputStream mOutputStream;
   protected int mPort;
-  public NetworkClient() throws IOException, NFS4Exception {    
+  public NetworkClient() throws IOException, NFS4Exception {
     Configuration conf = TestUtils.setupConf();
     mNFS4Server = new NFS4Server();
     mNFS4Server.setConf(conf);
     mNFS4Server.start(LOCALHOST, 0);
     mPort = mNFS4Server.getPort();
-    
+
     mClient = new Socket(LOCALHOST, mPort);
-    
+
     mInputStream = mClient.getInputStream();
     mOutputStream = mClient.getOutputStream();
-    
+
     initialize();
 
   }
-  
+
   @Override
   protected CompoundResponse doMakeRequest(CompoundRequest request) throws IOException {
-    
+
     LOGGER.info("request = " + request);
     RPCBuffer buffer = new RPCBuffer();
     RPCRequest rpcRequest = RPCTestUtil.createRequest();
@@ -74,20 +74,20 @@ public class NetworkClient extends BaseClient {
     buffer.flip();
     buffer.write(mOutputStream);
     mOutputStream.flush();
-    
+
     buffer = RPCBuffer.from(mInputStream);
     RPCResponse rpcResponse = new RPCResponse();
     rpcResponse.read(buffer);
-    
+
     assertEquals(rpcRequest.getXid(), rpcResponse.getXid());
     assertEquals(RPC_REPLY_STATE_ACCEPT, rpcResponse.getReplyState());
     assertEquals(RPC_ACCEPT_SUCCESS, rpcResponse.getAcceptState());
-    
+
     CompoundResponse response = new CompoundResponse();
     response.read(buffer);
     return response;
   }
-  
+
   @Override
   public void shutdown() {
     try {

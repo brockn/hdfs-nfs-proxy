@@ -52,7 +52,7 @@ public class SETATTRRequest extends OperationRequest {
     mStateID.write(buffer);
     Attribute.writeAttrs(buffer, mAttrs, mAttrValues);
   }
-  
+
   public StateID getStateID() {
     return mStateID;
   }
@@ -73,7 +73,7 @@ public class SETATTRRequest extends OperationRequest {
   public void setAttrs(Bitmap attrs) {
     this.mAttrs = attrs;
   }
-  
+
   public ImmutableMap<Integer, Attribute> getAttrValues() {
     Map<Integer, Attribute> rtn = Maps.newHashMap();
     for(Attribute attr : mAttrValues) {
@@ -85,5 +85,5 @@ public class SETATTRRequest extends OperationRequest {
   public void setAttrValues(List<Attribute> attributes) {
     this.mAttrValues = ImmutableList.copyOf(attributes);
   }
-  
+
 }

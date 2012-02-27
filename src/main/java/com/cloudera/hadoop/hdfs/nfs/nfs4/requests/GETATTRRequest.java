@@ -38,7 +38,7 @@ public class GETATTRRequest extends OperationRequest {
   public void write(RPCBuffer buffer) {
     mAttrs.write(buffer);
   }
-  
+
   @Override
   public int getID() {
     return NFS4_OP_GETATTR;
@@ -51,5 +51,5 @@ public class GETATTRRequest extends OperationRequest {
   public void setAttrs(Bitmap attrs) {
     this.mAttrs = attrs;
   }
-  
+
 }

@@ -34,7 +34,7 @@ public class CompoundResponse implements MessageBase, Status {
   protected ImmutableList<OperationResponse> mOperations = ImmutableList.<OperationResponse>builder().build();
   protected byte[] mTags = new byte[0];
   protected int mStatus;
-  
+
   @Override
   public void read(RPCBuffer buffer) {
     mStatus = buffer.readUint32();
@@ -44,7 +44,7 @@ public class CompoundResponse implements MessageBase, Status {
     for (int i = 0; i < count; i++) {
       int id = buffer.readUint32();
       if(OperationFactory.isSupported(id)) {
-        ops.add(OperationFactory.parseResponse(id, buffer));        
+        ops.add(OperationFactory.parseResponse(id, buffer));
       }
     }
     mOperations = ImmutableList.<OperationResponse>builder().addAll(ops).build();
@@ -76,7 +76,7 @@ public class CompoundResponse implements MessageBase, Status {
   public void setStatus(int status) {
     mStatus = status;
   }
-  
+
   @Override
   public String toString() {
     return this.getClass().getName() + " = " + mOperations.toString();

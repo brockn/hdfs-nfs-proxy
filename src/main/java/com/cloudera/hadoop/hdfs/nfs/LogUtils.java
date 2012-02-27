@@ -41,15 +41,15 @@ public class LogUtils {
           for(Object grandChild : (List)child) {
             buffer.append(dump(grandChild));
           }
-        } else if (child instanceof MessageBase){ 
+        } else if (child instanceof MessageBase){
           buffer.append(dump(child));
         } else {
-            buffer.append(field.getType().getSimpleName()).append(" ").append(field.getName());
-            buffer.append(" = '").append(child).append("'\n");
+          buffer.append(field.getType().getSimpleName()).append(" ").append(field.getName());
+          buffer.append(" = '").append(child).append("'\n");
         }
       } catch (IllegalAccessException e) {
         buffer.append("IllegalAccessException: ").append(e.getMessage()).append("\n");
-      }        
+      }
     }
     return buffer.append("END ").append(parent.getClass().getName()).append("\n").toString();
   }

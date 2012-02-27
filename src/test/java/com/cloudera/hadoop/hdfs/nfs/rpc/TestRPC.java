@@ -26,8 +26,6 @@ import static org.mockito.Mockito.*;
 
 import org.junit.Test;
 
-import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
-import com.cloudera.hadoop.hdfs.nfs.rpc.RPCResponse;
 import com.cloudera.hadoop.hdfs.nfs.security.Credentials;
 
 public class TestRPC {
@@ -42,11 +40,11 @@ public class TestRPC {
     assertEquals(base.getProgram(), copy.getProgram());
     assertEquals(base.getProgramVersion(), copy.getProgramVersion());
     assertEquals(base.getProcedure(), copy.getProcedure());
-    assertEquals(base.getCredentials().getFlavor(), 
+    assertEquals(base.getCredentials().getFlavor(),
         copy.getCredentials().getFlavor());
     deepEquals(base, copy);
   }
-  
+
   @Test(expected = UnsupportedOperationException.class)
   public void testUnknownCreds() throws Exception {
     RPCRequest request = RPCTestUtil.createRequest();
@@ -55,7 +53,7 @@ public class TestRPC {
     request.setCredentials(creds);
     copy(request, new RPCRequest());
   }
-  
+
   @Test
   public void testResponseWire() throws Exception {
     RPCResponse base = RPCTestUtil.createResponse();
@@ -66,7 +64,7 @@ public class TestRPC {
     assertEquals(base.getAcceptState(), copy.getAcceptState());
     deepEquals(base, copy);
   }
-  
+
   @Test
   public void testResponseWireAuthError() throws Exception {
     RPCResponse base = RPCTestUtil.createResponse();
@@ -78,6 +76,6 @@ public class TestRPC {
     assertEquals(base.getReplyState(), copy.getReplyState());
     assertEquals(base.getAcceptState(), copy.getAcceptState());
     deepEquals(base, copy);
-  }  
+  }
 
 }

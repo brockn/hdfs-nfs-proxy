@@ -6,13 +6,13 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class VerifierGSS extends Verifier {
   protected OpaqueData mOpaqueData;
-  
+
   @Override
   public void read(RPCBuffer buffer) {
     int length = buffer.readUint32();
     mOpaqueData = new OpaqueData(length);
     mOpaqueData.read(buffer);
-    
+
   }
 
   @Override
@@ -20,12 +20,12 @@ public class VerifierGSS extends Verifier {
     buffer.writeUint32(mOpaqueData.getSize());
     mOpaqueData.write(buffer);
   }
-  
+
   public void set(byte[] data) {
     mOpaqueData = new OpaqueData(data.length);
     mOpaqueData.setData(data);
   }
-  
+
   public byte[] get() {
     return mOpaqueData.getData();
   }

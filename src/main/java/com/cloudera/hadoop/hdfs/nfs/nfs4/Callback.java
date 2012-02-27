@@ -25,7 +25,7 @@ public class Callback implements MessageBase {
   protected int mCallbackProgram;
   protected String mNetID;
   protected String mAddr;
-  
+
   @Override
   public void read(RPCBuffer buffer) {
     mCallbackProgram = buffer.readUint32();
@@ -39,8 +39,8 @@ public class Callback implements MessageBase {
     buffer.writeString(mNetID);
     buffer.writeString(mAddr);
   }
-  
-  
+
+
 
   public int getCallbackProgram() {
     return mCallbackProgram;

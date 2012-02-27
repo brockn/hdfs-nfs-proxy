@@ -7,9 +7,9 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
 public abstract class Verifier implements MessageBase {
 
-  
+
   public abstract int getFlavor();
-  
+
   public static Verifier readVerifier(int flavor, RPCBuffer buffer) {
     Verifier verifer;
     if(flavor == RPC_VERIFIER_NULL) {
@@ -22,5 +22,5 @@ public abstract class Verifier implements MessageBase {
     verifer.read(buffer);
     return verifer;
   }
-  
+
 }

@@ -25,8 +25,6 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
-
 public class TestRPCBuffer {
 
   @Test
@@ -39,7 +37,7 @@ public class TestRPCBuffer {
     assertTrue(buffer.length() == pos);
     assertTrue(buffer.position() == 0);
     String s;
-    
+
     s = buffer.readString();
     assertTrue("s is '" + s + "'", s.equals("/"));
     assertTrue(buffer.readBoolean());
@@ -54,9 +52,9 @@ public class TestRPCBuffer {
     buffer.flip();
     assertTrue(buffer.readBoolean());
     String s = buffer.readString();
-    assertEquals("brock", s);   
+    assertEquals("brock", s);
   }
-  
+
   @Test
   public void testLargeString() throws Exception {
     StringBuilder stringBuffer = new StringBuilder();
@@ -78,8 +76,8 @@ public class TestRPCBuffer {
     assertTrue(buffer.length() == pos);
     assertTrue(buffer.position() == 0);
     String x;
-    
-    
+
+
     x = buffer.readString();
     assertEquals(s, x);
     assertTrue(buffer.readBoolean());
@@ -88,7 +86,7 @@ public class TestRPCBuffer {
     assertTrue(!buffer.readBoolean());
 
   }
-  
+
   @Test
   public void testUnsigned() throws Exception {
     int sampleUnsigned32 = Integer.MAX_VALUE;
@@ -98,7 +96,7 @@ public class TestRPCBuffer {
       write.writeUint32(Integer.MAX_VALUE + 1);
       fail("Expected NumberFormatException due to writing more than signed int");
     } catch (NumberFormatException e) {
-      
+
     }
     try {
       write.writeUint32(-1);
@@ -116,7 +114,7 @@ public class TestRPCBuffer {
     write.writeUint64(sampleUnsigned64);
 
     write.flip();
-    
+
     long unsignedInt = write.readUint32();
     assertTrue("Unexpected value " + unsignedInt, unsignedInt == sampleUnsigned32);
     long unsignedLong = write.readUint64();
@@ -134,19 +132,19 @@ public class TestRPCBuffer {
     write.writeInt(sampleBytes.length);
     write.writeBytes(sampleBytes, 0, sampleBytes.length);
     write.writeBoolean(sampleBool);
-    
+
     write.flip();
-    
+
     String s = write.readString();
     assertEquals(sampleString, s);
     int i = write.readInt();
-    assertTrue("Int " + i + " is unxpected", 
+    assertTrue("Int " + i + " is unxpected",
         sampleInt == i);
     byte[] bytes = write.readBytes();
     assertTrue("Unxpected bytes array", Arrays.equals(sampleBytes, bytes));
     boolean bool = write.readBoolean();
-    assertTrue("Expected " + sampleBool, 
+    assertTrue("Expected " + sampleBool,
         bool == sampleBool);
-    
+
   }
 }

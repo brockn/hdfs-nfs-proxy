@@ -49,5 +49,5 @@ public class MaxRead extends Attribute {
   public void setSize(long size) {
     this.mSize = size;
   }
-  
+
 }

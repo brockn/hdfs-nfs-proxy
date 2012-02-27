@@ -49,7 +49,7 @@ public class Pair<S, T> {
 
     return "(" + firstString + ", " + secondString + ")";
   }
-  
+
   public static <S, T> Pair<S, T> of(S first , T second) {
     return new Pair<S, T>(first, second);
   }

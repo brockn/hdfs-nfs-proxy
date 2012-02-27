@@ -31,7 +31,7 @@ public class RENAMEResponse extends OperationResponse implements Status {
   protected int mStatus;
   protected ChangeInfo mChangeInfoSource;
   protected ChangeInfo mChangeInfoDest;
-  
+
   @Override
   public void read(RPCBuffer buffer) {
     mStatus = buffer.readUint32();
@@ -71,7 +71,7 @@ public class RENAMEResponse extends OperationResponse implements Status {
   public void setChangeInfoSource(ChangeInfo changeInfo) {
     this.mChangeInfoSource = changeInfo;
   }
-  
+
   public ChangeInfo getChangeInfoDest() {
     return mChangeInfoDest;
   }
@@ -79,5 +79,5 @@ public class RENAMEResponse extends OperationResponse implements Status {
   public void setChangeInfoDest(ChangeInfo changeInfo) {
     this.mChangeInfoDest = changeInfo;
   }
-  
+
 }

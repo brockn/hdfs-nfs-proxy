@@ -25,7 +25,7 @@ public class ClientID implements MessageBase {
   protected OpaqueData8 mVerifer;
   protected OpaqueData mID;
   @Override
-  public void read(RPCBuffer buffer) {    
+  public void read(RPCBuffer buffer) {
     mVerifer = new OpaqueData8();
     mVerifer.read(buffer);
     mID = new OpaqueData(buffer.readUint32());

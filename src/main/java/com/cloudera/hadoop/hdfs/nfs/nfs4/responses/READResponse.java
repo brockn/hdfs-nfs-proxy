@@ -26,13 +26,13 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
 
 public class READResponse extends OperationResponse implements Status {
-  
+
   protected int mStatus;
   protected boolean mEOF;
   protected byte[] mData;
   protected int mStart;
   protected int mLength;
-  
+
   @Override
   public void read(RPCBuffer buffer) {
     reset();
@@ -57,7 +57,7 @@ public class READResponse extends OperationResponse implements Status {
       buffer.writeBytes(mData, mStart, mLength);
     }
   }
-  
+
   public boolean isEOF() {
     return mEOF;
   }

@@ -27,5 +27,5 @@ public class SymLinkSupport extends BooleanAttribute {
   @Override
   public int getID() {
     return NFS4_FATTR4_SYMLINK_SUPPORT;
-  }  
+  }
 }

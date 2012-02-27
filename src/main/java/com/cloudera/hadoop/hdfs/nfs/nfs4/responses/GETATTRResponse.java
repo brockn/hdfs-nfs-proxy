@@ -34,11 +34,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
 public class GETATTRResponse extends OperationResponse implements Status {
-  
+
   protected int mStatus;
   protected Bitmap mAttrs;
   protected ImmutableList<Attribute> mAttrValues;
-  
+
   @Override
   public void read(RPCBuffer buffer) {
     reset();
@@ -49,12 +49,12 @@ public class GETATTRResponse extends OperationResponse implements Status {
       mAttrValues = pair.getSecond();
     }
   }
-  
+
   protected void reset() {
     mAttrs = null;
     mAttrValues = null;
   }
-  
+
   // TODO GETATTRResponse to a GETATTRRequest with an empty bitmap
   // results in a packet Linux appears to have no issue with
   // but the packet shows up as malformed in Wireshark. Initial
@@ -63,7 +63,7 @@ public class GETATTRResponse extends OperationResponse implements Status {
   // there are zero bytes. However, I remember I had an issue
   // where writing out 0 for attrvalues length caused problems
   // which was solved by a if(!isEmpty()) check in writeAttrs.
-  
+
   @Override
   public void write(RPCBuffer buffer) {
     buffer.writeUint32(mStatus);

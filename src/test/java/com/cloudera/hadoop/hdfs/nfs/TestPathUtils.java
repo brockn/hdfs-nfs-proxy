@@ -11,7 +11,7 @@ public class TestPathUtils {
   public void testCheckPath() {
     PathUtils.checkPath(":");
   }
-  
+
   @Test
   public void testRealPath() {
     assertEquals(PathUtils.realPath(new Path("file:///")), "/");

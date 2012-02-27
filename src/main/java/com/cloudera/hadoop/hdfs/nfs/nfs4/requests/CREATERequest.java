@@ -55,12 +55,12 @@ public class CREATERequest extends OperationRequest {
     buffer.writeString(mName);
     Attribute.writeAttrs(buffer, mAttrs, mAttrValues);
   }
-  
+
   @Override
   public int getID() {
     return NFS4_OP_CREATE;
   }
-  
+
   public String getName() {
     return mName;
   }
@@ -80,7 +80,7 @@ public class CREATERequest extends OperationRequest {
   public void setAttrs(Bitmap attrs) {
     this.mAttrs = attrs;
   }
-  
+
   public ImmutableMap<Integer, Attribute> getAttrValues() {
     Map<Integer, Attribute> rtn = Maps.newHashMap();
     for(Attribute attr : mAttrValues) {

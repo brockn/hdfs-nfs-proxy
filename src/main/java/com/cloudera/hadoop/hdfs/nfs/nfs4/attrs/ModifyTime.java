@@ -29,7 +29,7 @@ public class ModifyTime extends Attribute {
   @Override
   public void read(RPCBuffer buffer) {
     mTime = new Time();
-    mTime.read(buffer);      
+    mTime.read(buffer);
   }
 
   @Override
@@ -48,5 +48,5 @@ public class ModifyTime extends Attribute {
 
   public void setTime(Time time) {
     this.mTime = time;
-  }  
+  }
 }

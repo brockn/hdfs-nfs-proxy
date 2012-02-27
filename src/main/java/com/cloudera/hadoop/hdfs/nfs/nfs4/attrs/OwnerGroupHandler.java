@@ -40,7 +40,7 @@ public class OwnerGroupHandler extends AttributeHandler<OwnerGroup> {
     ownerGroup.setOwnerGroup(fileStatus.getGroup() + "@" + domain);
     return ownerGroup;
   }
-  
+
   @Override
   public boolean set(NFS4Handler server, Session session, FileSystem fs, FileStatus fileStatus, StateID stateID, OwnerGroup attr) throws IOException {
     String group = OwnerHandler.removeDomain(attr.getOwnerGroup());

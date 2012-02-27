@@ -20,6 +20,7 @@
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
@@ -51,7 +52,7 @@ public class UserIDMapperSystem extends UserIDMapper {
     this.mNegativeCacheTime = negativeCacheTime;
     this.mPositiveCacheTime = positiveCacheTime;
   }
-  
+
   /** a Unix command to get a given user's uid */
   protected static String[] getUIDForUserCommand(final String user) {
     return new String [] {"bash", "-c", "id -u " + user};
@@ -62,10 +63,12 @@ public class UserIDMapperSystem extends UserIDMapper {
   }
 
 
-  
+
+  @Override
   public String getGroupForGID(Configuration conf, int gid, String group) throws Exception {
     return getCachedUserGroup("/etc/group", gid, group, mNegativeGROUPCache, mPositiveGROUPCache);
   }
+  @Override
   public String getUserForUID(Configuration conf, int uid, String user) throws Exception {
     if(uid == ROOT_USER_UID) {
       String superUser = getCurrentUser();
@@ -90,8 +93,8 @@ public class UserIDMapperSystem extends UserIDMapper {
     LOGGER.info("getUIDForUser: Looking for " + user + " and got " + id);
     return id;
   }
-  
-  protected synchronized int getCachedID(String[] cmd, String name, int defaultID, 
+
+  protected synchronized int getCachedID(String[] cmd, String name, int defaultID,
       Map<String, Long> negativeCache, Map<String, IDCache<Integer>> postitveCache) throws Exception {
     Long timestamp = negativeCache.get(name);
     if(timestamp != null) {
@@ -101,7 +104,7 @@ public class UserIDMapperSystem extends UserIDMapper {
         negativeCache.remove(name);
       }
     }
-    
+
     IDCache<Integer> cache = postitveCache.get(name);
     if(cache != null) {
       if(System.currentTimeMillis() - cache.timestamp < mPositiveCacheTime) {
@@ -110,8 +113,8 @@ public class UserIDMapperSystem extends UserIDMapper {
         postitveCache.remove(name);
       }
     }
-    
-    
+
+
     String result =  null;
     try {
       result = Shell.execCommand(cmd);
@@ -124,8 +127,8 @@ public class UserIDMapperSystem extends UserIDMapper {
     negativeCache.put(name, System.currentTimeMillis());
     return defaultID;
   }
-  
-  protected synchronized String getCachedUserGroup(String idFile, int id, String defaultID, 
+
+  protected synchronized String getCachedUserGroup(String idFile, int id, String defaultID,
       Map<Integer, Long> negativeCache, Map<Integer, IDCache<String>> postitveCache) throws Exception {
     Long timestamp = negativeCache.get(id);
     if(timestamp != null) {
@@ -135,7 +138,7 @@ public class UserIDMapperSystem extends UserIDMapper {
         negativeCache.remove(id);
       }
     }
-    
+
     IDCache<String> cache = postitveCache.get(id);
     if(cache != null) {
       if(System.currentTimeMillis() - cache.timestamp < mPositiveCacheTime) {
@@ -148,7 +151,7 @@ public class UserIDMapperSystem extends UserIDMapper {
     try {
       reader = new BufferedReader(new InputStreamReader(new FileInputStream(idFile)));
       String line;
-      Pattern pattern = Pattern.compile("^([A-z]+):x:" + id + ":");    
+      Pattern pattern = Pattern.compile("^([A-z]+):x:" + id + ":");
       while((line = reader.readLine()) != null) {
         Matcher matcher = pattern.matcher(line);
         if(matcher.find()) {
@@ -170,8 +173,8 @@ public class UserIDMapperSystem extends UserIDMapper {
     }
     negativeCache.put(id, System.currentTimeMillis());
     return defaultID;
-  }  
-  
+  }
+
   class IDCache<K> {
     K id;
     long timestamp;
@@ -180,31 +183,31 @@ public class UserIDMapperSystem extends UserIDMapper {
       this.timestamp = System.currentTimeMillis();
     }
   }
-  
+
   /*
    * This class has two caches, negative (errors) and positive. Because
-   * Creating sub processes is expensive, we can this for some time. 
+   * Creating sub processes is expensive, we can this for some time.
    * 
    * Good idea? Well, if you changed the UID of a user which has files
    * in HDFS as well, it would take a little time for this class to be
    * notified. Tradeoffs....
    */
   protected Map<String, Long> mNegativeUIDCache = new HashMap<String, Long>();
-  protected Map<String, Long> mNegativeGIDCache = new HashMap<String, Long>(); 
+  protected Map<String, Long> mNegativeGIDCache = new HashMap<String, Long>();
   protected Map<String, IDCache<Integer>> mPositiveUIDCache = new HashMap<String, IDCache<Integer>>();
   protected Map<String, IDCache<Integer>> mPositiveGIDCache = new HashMap<String, IDCache<Integer>>();
 
   protected Map<Integer, Long> mNegativeUSERCache = new HashMap<Integer, Long>();
-  protected Map<Integer, Long> mNegativeGROUPCache = new HashMap<Integer, Long>(); 
+  protected Map<Integer, Long> mNegativeGROUPCache = new HashMap<Integer, Long>();
   protected Map<Integer, IDCache<String>> mPositiveUSERCache = new HashMap<Integer, IDCache<String>>();
   protected Map<Integer, IDCache<String>> mPositiveGROUPCache = new HashMap<Integer, IDCache<String>>();
 
   protected long mNegativeCacheTime;
   protected long mPositiveCacheTime;
-  
+
   protected static final long DEFAULT_NEGATIVE_CACHE = 1000L * 60L * 5L; // 5min
   protected static final long DEFAULT_POSITIVE_CACHE = 1000L * 60L * 1L; // 60 seconds
-  
+
   public static void main(String[] args) throws Exception {
     UserIDMapperSystem mapper = new UserIDMapperSystem();
     System.out.println(mapper.getUserForUID(new Configuration(), 500, "NOT FOUND"));
