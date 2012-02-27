@@ -43,7 +43,7 @@ public class OPENRequest extends OperationRequest {
   protected Bitmap mAttrs;
   protected ImmutableList<Attribute> mAttrValues;
   protected OpaqueData8 mVerifer;
-  
+
   protected int mClaimType;
   protected String mName;
 
@@ -97,12 +97,12 @@ public class OPENRequest extends OperationRequest {
     buffer.writeUint32(mClaimType);
     buffer.writeString(mName);
   }
-  
+
   @Override
   public int getID() {
     return NFS4_OP_OPEN;
   }
-  
+
   public int getSeqID() {
     return mSeqID;
   }

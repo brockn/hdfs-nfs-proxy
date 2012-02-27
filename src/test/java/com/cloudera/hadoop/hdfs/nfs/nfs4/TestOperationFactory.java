@@ -20,15 +20,15 @@ public class TestOperationFactory {
       Holder holder = OperationFactory.operations.get(id);
       Identifiable request = holder.requestClazz.newInstance();
       if(request.getID() != id) {
-        fail(request.getClass().getName() + " has id " + request.getID() + " and not " + id);  
+        fail(request.getClass().getName() + " has id " + request.getID() + " and not " + id);
       }
       Identifiable response = holder.responseClazz.newInstance();
       if(response.getID() != id) {
-        fail(response.getClass().getName() + " has id " + response.getID() + " and not " + id);  
+        fail(response.getClass().getName() + " has id " + response.getID() + " and not " + id);
       }
     }
   }
-  
+
   @Test(expected=UnsupportedOperationException.class)
   public void testNotSupported() {
     OperationFactory.checkSupported(Integer.MIN_VALUE);

@@ -38,7 +38,7 @@ public class TypeHandler extends AttributeHandler<Type> {
     if(fileStatus.isDir()) {
       type.setType(NFS4_DIR);
     } else {
-      type.setType(NFS4_REG);      
+      type.setType(NFS4_REG);
     }
     return type;
   }

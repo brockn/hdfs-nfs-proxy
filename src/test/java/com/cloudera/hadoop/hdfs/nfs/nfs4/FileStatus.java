@@ -24,7 +24,6 @@ import static org.junit.Assert.*;
 
 import org.apache.hadoop.fs.Path;
 
-import com.cloudera.hadoop.hdfs.nfs.nfs4.Time;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Attribute;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Mode;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.ModifyTime;

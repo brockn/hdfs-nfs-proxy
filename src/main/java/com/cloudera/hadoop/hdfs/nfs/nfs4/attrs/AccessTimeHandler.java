@@ -36,5 +36,5 @@ public class AccessTimeHandler extends AttributeHandler<AccessTime> {
     accessTime.setTime(new Time(fileStatus.getAccessTime()));
     return accessTime;
   }
-  
+
 }

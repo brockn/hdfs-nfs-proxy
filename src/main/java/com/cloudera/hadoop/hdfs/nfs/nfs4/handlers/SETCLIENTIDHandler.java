@@ -23,6 +23,8 @@ import static com.google.common.base.Preconditions.*;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.log4j.Logger;
+
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Callback;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Client;
@@ -34,48 +36,47 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData8;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.SETCLIENTIDRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.SETCLIENTIDResponse;
-import org.apache.log4j.Logger;
 
 public class SETCLIENTIDHandler extends OperationRequestHandler<SETCLIENTIDRequest, SETCLIENTIDResponse> {
 
-    protected static final Logger LOGGER = Logger.getLogger(SETCLIENTIDHandler.class);
-    protected static final AtomicLong VERIFER = new AtomicLong(0);
+  protected static final Logger LOGGER = Logger.getLogger(SETCLIENTIDHandler.class);
+  protected static final AtomicLong VERIFER = new AtomicLong(0);
 
-    @Override
-    protected SETCLIENTIDResponse doHandle(NFS4Handler server, Session session,
-            SETCLIENTIDRequest request) throws NFS4Exception {
-        /*
-         * TODO should follow RFC 3530 page ~211
-         */
-        ClientID clientID = checkNotNull(request.getClientID(), "clientid");
-        Callback callback = checkNotNull(request.getCallback(), "callback");
-        ClientFactory clientFactory = server.getClientFactory();
-        Client client = clientFactory.createIfNotExist(clientID);
-        String clientHost = session.getClientAddress().getCanonicalHostName();
-        if (client == null) {
-            client = checkNotNull(clientFactory.get(clientID.getOpaqueID()), "client should exist");
-            if (!clientHost.equals(client.getClientHost())) {
-                throw new NFS4Exception(NFS4ERR_CLID_INUSE,
-                        "Session is '" + clientHost + "' and client is '" + client.getClientHost() + "'");
-            }
-            // update callback info below and client verifer here
-            client.getClientID().setVerifer(clientID.getVerifer());
-        }
-        // server verifer
-        OpaqueData8 verifer = new OpaqueData8();
-        verifer.setData(Bytes.toBytes(VERIFER.addAndGet(10)));
-        client.setCallback(callback);
-        client.setVerifer(verifer);
-        client.setClientHost(clientHost);
-        SETCLIENTIDResponse response = createResponse();
-        response.setClientID(client.getShorthandID());
-        response.setVerifer(verifer);
-        response.setStatus(NFS4_OK);
-        return response;
+  @Override
+  protected SETCLIENTIDResponse doHandle(NFS4Handler server, Session session,
+      SETCLIENTIDRequest request) throws NFS4Exception {
+    /*
+     * TODO should follow RFC 3530 page ~211
+     */
+    ClientID clientID = checkNotNull(request.getClientID(), "clientid");
+    Callback callback = checkNotNull(request.getCallback(), "callback");
+    ClientFactory clientFactory = server.getClientFactory();
+    Client client = clientFactory.createIfNotExist(clientID);
+    String clientHost = session.getClientAddress().getCanonicalHostName();
+    if (client == null) {
+      client = checkNotNull(clientFactory.get(clientID.getOpaqueID()), "client should exist");
+      if (!clientHost.equals(client.getClientHost())) {
+        throw new NFS4Exception(NFS4ERR_CLID_INUSE,
+            "Session is '" + clientHost + "' and client is '" + client.getClientHost() + "'");
+      }
+      // update callback info below and client verifer here
+      client.getClientID().setVerifer(clientID.getVerifer());
     }
+    // server verifer
+    OpaqueData8 verifer = new OpaqueData8();
+    verifer.setData(Bytes.toBytes(VERIFER.addAndGet(10)));
+    client.setCallback(callback);
+    client.setVerifer(verifer);
+    client.setClientHost(clientHost);
+    SETCLIENTIDResponse response = createResponse();
+    response.setClientID(client.getShorthandID());
+    response.setVerifer(verifer);
+    response.setStatus(NFS4_OK);
+    return response;
+  }
 
-    @Override
-    protected SETCLIENTIDResponse createResponse() {
-        return new SETCLIENTIDResponse();
-    }
+  @Override
+  protected SETCLIENTIDResponse createResponse() {
+    return new SETCLIENTIDResponse();
+  }
 }

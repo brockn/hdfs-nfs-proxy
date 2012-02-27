@@ -36,5 +36,5 @@ public class CreateTimeHandler extends AttributeHandler<CreateTime> {
     time.setTime(new Time(fileStatus.getModificationTime())); // XXX bad fake?
     return time;
   }
-  
+
 }

@@ -13,7 +13,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 public class FSInfo {
 
   protected static boolean useDFSClient = false;
-  
+
   static {
     try {
       FileSystem.class.getMethod("getStatus", (Class[])null);
@@ -68,8 +68,8 @@ public class FSInfo {
     FileSystem fs = session.getFileSystem();
     return (Long)getObject(getObject(fs, "getStatus"), "getUsed");
   }
-  
-  
+
+
   protected static Object getObject(Object obj, String name) {
     try {
       Method method = obj.getClass().getMethod(name, (Class[])null);
@@ -78,4 +78,4 @@ public class FSInfo {
       throw new RuntimeException(e);
     }
   }
-} 
+}

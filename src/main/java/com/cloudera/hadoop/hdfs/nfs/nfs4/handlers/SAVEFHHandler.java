@@ -20,31 +20,32 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
+import org.apache.log4j.Logger;
+
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.SAVEFHRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.SAVEFHResponse;
-import org.apache.log4j.Logger;
 
 public class SAVEFHHandler extends OperationRequestHandler<SAVEFHRequest, SAVEFHResponse> {
 
-    protected static final Logger LOGGER = Logger.getLogger(SAVEFHHandler.class);
+  protected static final Logger LOGGER = Logger.getLogger(SAVEFHHandler.class);
 
-    @Override
-    protected SAVEFHResponse doHandle(NFS4Handler server, Session session,
-            SAVEFHRequest request) throws NFS4Exception {
-        if (session.getCurrentFileHandle() == null) {
-            throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
-        }
-        session.setSavedFileHandle(session.getCurrentFileHandle());
-        SAVEFHResponse response = createResponse();
-        response.setStatus(NFS4_OK);
-        return response;
+  @Override
+  protected SAVEFHResponse doHandle(NFS4Handler server, Session session,
+      SAVEFHRequest request) throws NFS4Exception {
+    if (session.getCurrentFileHandle() == null) {
+      throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
     }
+    session.setSavedFileHandle(session.getCurrentFileHandle());
+    SAVEFHResponse response = createResponse();
+    response.setStatus(NFS4_OK);
+    return response;
+  }
 
-    @Override
-    protected SAVEFHResponse createResponse() {
-        return new SAVEFHResponse();
-    }
+  @Override
+  protected SAVEFHResponse createResponse() {
+    return new SAVEFHResponse();
+  }
 }

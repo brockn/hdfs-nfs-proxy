@@ -28,5 +28,5 @@ public class NoTruncate extends BooleanAttribute {
   public int getID() {
     return NFS4_FATTR4_NO_TRUNC;
   }
-  
+
 }

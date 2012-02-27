@@ -61,5 +61,5 @@ public class SETCLIENTIDCONFIRMRequest extends OperationRequest {
   public void setVerifer(OpaqueData8 verifer) {
     this.mVerifer = verifer;
   }
-  
+
 }

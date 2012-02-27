@@ -43,7 +43,7 @@ public class TestNFS4Server {
 
   NFS4Server mNFS4Server;
   int mPort;
-  
+
   @Before
   public void setup() throws Exception {
     Configuration conf = TestUtils.setupConf();
@@ -52,7 +52,7 @@ public class TestNFS4Server {
     mNFS4Server.start(LOCALHOST, 0);
     mPort = mNFS4Server.getPort();
   }
-  
+
   @After
   public void cleanup() {
     if(mNFS4Server != null) {
@@ -68,14 +68,14 @@ public class TestNFS4Server {
     request.setProcedure(NFS_PROC_NULL);
     RPCBuffer buffer = new RPCBuffer();
     request.write(buffer);
-    
+
     Socket socket = new Socket(LOCALHOST, mPort);
     try {
       OutputStream out = socket.getOutputStream();
       InputStream in = socket.getInputStream();
-      
+
       buffer.write(out);
-      
+
       buffer = RPCBuffer.from(in);
       RPCResponse response = new RPCResponse();
       response.read(buffer);
@@ -88,12 +88,12 @@ public class TestNFS4Server {
       } catch(Exception ex) {}
     }
   }
-  
+
   /**
-   * Test to ensure most of the time we are able to receive a packet 
+   * Test to ensure most of the time we are able to receive a packet
    * after disconnect. Why most of the time? There is a race in that
    * the server will not always throw an exception when trying to write
-   * the packet after we have stopped listening. 
+   * the packet after we have stopped listening.
    */
   @Test
   public void testDiscconnectReconnect() throws UnknownHostException, IOException {
@@ -107,14 +107,14 @@ public class TestNFS4Server {
     }
     assertTrue("failures = " + failures, failures <= maxFailures);
   }
-  
+
   protected void doDiscconnectReconnect() throws UnknownHostException, IOException {
     assertTrue(mNFS4Server.isAlive());
     RPCRequest request = RPCTestUtil.createRequest();
     request.setProcedure(NFS_PROC_NULL);
     RPCBuffer buffer = new RPCBuffer();
     request.write(buffer);
-    
+
     Socket socket = new Socket(LOCALHOST, mPort);
     socket.setTcpNoDelay(true);
     socket.setPerformancePreferences(0, 1, 0);
@@ -122,20 +122,20 @@ public class TestNFS4Server {
     try {
       OutputStream out = socket.getOutputStream();
       InputStream in = socket.getInputStream();
-      
+
       buffer.write(out);
-      out.flush();    
+      out.flush();
       in.close();
       out.close();
       socket.close();
-      
+
       socket = new Socket(LOCALHOST, mPort);
       socket.setTcpNoDelay(true);
       socket.setPerformancePreferences(0, 1, 0);
       socket.setSoTimeout(2000);
       out = socket.getOutputStream();
       in = socket.getInputStream();
-      
+
       buffer = RPCBuffer.from(in);
       RPCResponse response = new RPCResponse();
       response.read(buffer);

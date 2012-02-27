@@ -41,7 +41,7 @@ public class SizeHandler extends AttributeHandler<Size> {
    */
   protected LRUCache<Integer, Object> mProcessedRequests = new LRUCache<Integer, Object>(1000);
   protected final Object value = new Object();
-  
+
   @Override
   public Size get(NFS4Handler server, Session session, FileSystem fs,
       FileStatus fileStatus) throws NFS4Exception {
@@ -51,6 +51,7 @@ public class SizeHandler extends AttributeHandler<Size> {
   }
   /* Linux uses SETATTR (size = 0) to truncate files.
    */
+  @Override
   public boolean set(NFS4Handler server, Session session, FileSystem fs, FileStatus fileStatus, StateID stateID, Size size)
       throws NFS4Exception, IOException {
     // we only support truncating files
@@ -67,11 +68,11 @@ public class SizeHandler extends AttributeHandler<Size> {
       FSDataOutputStream out = server.forWrite(stateID, fs, session.getCurrentFileHandle(), true);
       if(out.getPos() != 0) {
         stateID = server.close(session.getSessionID(), stateID, stateID.getSeqID(), session.getCurrentFileHandle());
-        out = server.forWrite(stateID, fs, session.getCurrentFileHandle(), true); 
+        out = server.forWrite(stateID, fs, session.getCurrentFileHandle(), true);
       }
       out.sync();
       return true;
-      
+
     }
   }
 

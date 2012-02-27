@@ -33,32 +33,32 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.Pair;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import org.apache.log4j.Logger;
 
 public class WritableFileFileHandleStore extends FileHandleStore {
   protected static final Logger LOGGER = Logger
       .getLogger(WritableFileFileHandleStore.class);
 
   File mFileHandleStoreFile;
-  
+
   protected DataOutputStream mFileHandleStore;
   protected FileChannel mFileHandleStoreChannel;
-  
+
   @Override
   protected synchronized void initialize() throws IOException {
-    
+
     Configuration configuration = getConf();
-    
+
     mFileHandleStoreFile= new File(configuration.get(
         NFS_FILEHANDLE_STORE_FILE, DEFAULT_NFS_FILEHANDLE_STORE_FILE));
-    
+
     Pair<List<FileHandleStoreEntry>, Boolean> pair = readFile();
     boolean fileHandleStoreIsBad = pair.getSecond();
-    
+
     try {
       mFileHandleStoreFile.delete();
       FileOutputStream fos = new FileOutputStream(mFileHandleStoreFile);
@@ -77,7 +77,7 @@ public class WritableFileFileHandleStore extends FileHandleStore {
     }
 
   }
-  
+
   protected Pair<List<FileHandleStoreEntry>, Boolean> readFile() throws IOException {
     List<FileHandleStoreEntry> entryList = Lists.newArrayList();
     boolean fileHandleStoreIsBad = false;
@@ -98,7 +98,7 @@ public class WritableFileFileHandleStore extends FileHandleStore {
           while (moreEntries) {
             FileHandleStoreEntry entry = new FileHandleStoreEntry();
             entry.readFields(is);
-            entryList.add(entry);            
+            entryList.add(entry);
             LOGGER.info("Read filehandle " + entry.path + " " + entry.fileID);
             try {
               moreEntries = is.readBoolean();
@@ -117,7 +117,7 @@ public class WritableFileFileHandleStore extends FileHandleStore {
     }
     return Pair.of(entryList, fileHandleStoreIsBad);
   }
-  
+
   @Override
   public synchronized ImmutableList<FileHandleStoreEntry> getAll() {
     try {
@@ -127,7 +127,7 @@ public class WritableFileFileHandleStore extends FileHandleStore {
     }
     return ImmutableList.<FileHandleStoreEntry>of();
   }
-  
+
   @Override
   public synchronized void storeFileHandle(FileHandleStoreEntry entry) throws IOException {
     mFileHandleStore.writeBoolean(true);

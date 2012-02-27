@@ -30,7 +30,7 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class FileHandle implements MessageBase {
   protected byte[] mBytes;
   public FileHandle() {
-    
+
   }
   public FileHandle(byte[] bytes) {
     this.mBytes = bytes;

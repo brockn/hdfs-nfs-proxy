@@ -50,5 +50,5 @@ public class FileHandle extends Attribute {
   public void set(byte[] fileHandle) {
     this.mFileHandle = fileHandle;
   }
-  
+
 }

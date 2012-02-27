@@ -34,7 +34,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.WRITERequest;
 import com.google.common.collect.ImmutableList;
 
 public class TestNullFileHandle {
-  
+
   static class Holder {
     OperationRequestHandler<?, ?> handler;
     OperationRequest request;
@@ -43,7 +43,7 @@ public class TestNullFileHandle {
       this.request = request;
     }
   }
-  
+
   ImmutableList<Holder> handlers = ImmutableList.<Holder>builder()
       .add(new Holder(new ACCESSHandler(), new ACCESSRequest()))
       .add(new Holder(new CLOSEHandler(), new CLOSERequest()))
@@ -64,24 +64,24 @@ public class TestNullFileHandle {
       .add(new Holder(new WRITEHandler(), new WRITERequest()))
       .build();
 
-  
+
   NFS4Handler server;
   Session session;
-  
+
   @Before
   public void setup() throws NFS4Exception {
     server = mock(NFS4Handler.class);
     session = mock(Session.class);
   }
-  
+
   @Test
-  public void testNullFileHandle() throws Exception {  
+  public void testNullFileHandle() throws Exception {
     for(Holder holder : handlers) {
       // use reflection to get around generic issues
       Method method = holder.handler.getClass().getMethod("handle", NFS4Handler.class, Session.class, OperationRequest.class);
       Status response = (Status)method.invoke(holder.handler, server, session, holder.request);
       assertEquals(holder.handler.getClass().getName(), NFS4ERR_NOFILEHANDLE, response.getStatus());
-      
+
     }
   }
 }

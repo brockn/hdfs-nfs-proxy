@@ -22,9 +22,6 @@ package com.cloudera.hadoop.hdfs.nfs.rpc;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import static org.junit.Assert.*;
 
-import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
-import com.cloudera.hadoop.hdfs.nfs.rpc.RPCResponse;
-import com.cloudera.hadoop.hdfs.nfs.rpc.XID;
 import com.cloudera.hadoop.hdfs.nfs.security.CredentialsNone;
 import com.cloudera.hadoop.hdfs.nfs.security.VerifierNone;
 
@@ -58,7 +55,7 @@ public class RPCTestUtil {
     response.setAcceptState(RPC_ACCEPT_STATE_ACCEPT);
     response.setAuthState(RPC_REJECT_AUTH_ERROR);
     response.setVerifier(new VerifierNone());
-    
+
     assertEquals(xid, response.getXid());
     assertEquals(RPC_MESSAGE_TYPE_REPLY, response.getMessageType());
     assertEquals(RPC_VERSION, response.getRpcVersion());
@@ -68,7 +65,7 @@ public class RPCTestUtil {
     assertEquals(RPC_REPLY_STATE_ACCEPT, response.getReplyState());
     assertEquals(RPC_ACCEPT_STATE_ACCEPT, response.getAcceptState());
     assertEquals(RPC_REJECT_AUTH_ERROR, response.getAuthState());
-    
+
     return response;
   }
 }

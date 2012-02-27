@@ -21,11 +21,11 @@ package com.cloudera.hadoop.hdfs.nfs.security;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.UserIDMapper;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
-import org.apache.log4j.Logger;
 
 /**
  * Implementation of RPC AUTH_SYS
@@ -33,13 +33,13 @@ import org.apache.log4j.Logger;
 public class CredentialsSystem extends Credentials implements AuthenticatedCredentials {
 
   protected static final Logger LOGGER = Logger.getLogger(CredentialsSystem.class);
- 
-  
+
+
   protected int mUID, mGID;
   protected int[] mAuxGIDs;
   protected String mHostName;
   protected int mStamp;
-  
+
   public CredentialsSystem() {
     super();
     this.mCredentialsLength = 0;
@@ -50,12 +50,12 @@ public class CredentialsSystem extends Credentials implements AuthenticatedCrede
   @Override
   public void read(RPCBuffer buffer) {
     mCredentialsLength = buffer.readUint32();
-    
+
     mStamp = buffer.readUint32();
     mHostName = buffer.readString();
     mUID = buffer.readUint32();
     mGID = buffer.readUint32();
-    
+
     int length = buffer.readUint32();
     mAuxGIDs = new int[length];
     for (int i = 0; i < length; i++) {
@@ -67,9 +67,9 @@ public class CredentialsSystem extends Credentials implements AuthenticatedCrede
   public void write(RPCBuffer buffer) {
 
     int offset = buffer.position();
-    
+
     buffer.writeUint32(Integer.MAX_VALUE);
-    
+
     buffer.writeUint32(mStamp);
     buffer.writeString(mHostName);
     buffer.writeUint32(mUID);
@@ -82,7 +82,7 @@ public class CredentialsSystem extends Credentials implements AuthenticatedCrede
         buffer.writeUint32(mAuxGIDs[i]);
       }
     }
-    
+
     mCredentialsLength = buffer.position() - offset - Bytes.SIZEOF_INT;  // do not include length
 
     buffer.putInt(offset, mCredentialsLength);
@@ -92,38 +92,39 @@ public class CredentialsSystem extends Credentials implements AuthenticatedCrede
   public int getFlavor() {
     return RPC_AUTH_UNIX;
   }
-    public String getUsername(Configuration conf) throws Exception {
-        UserIDMapper mapper = UserIDMapper.get(conf);
-        String user = mapper.getUserForUID(conf, mUID, null);
-        if (user == null) {
-            throw new Exception("Could not map " + mUID + " to user");
-        }
-        return user;
+  @Override
+  public String getUsername(Configuration conf) throws Exception {
+    UserIDMapper mapper = UserIDMapper.get(conf);
+    String user = mapper.getUserForUID(conf, mUID, null);
+    if (user == null) {
+      throw new Exception("Could not map " + mUID + " to user");
     }
+    return user;
+  }
 
-    @Override
-    public int getUID() {
-        return mUID;
-    }
+  @Override
+  public int getUID() {
+    return mUID;
+  }
 
-    public void setUID(int uid) {
-        this.mUID = uid;
-    }
+  public void setUID(int uid) {
+    this.mUID = uid;
+  }
 
-    @Override
-    public int getGID() {
-        return mGID;
-    }
+  @Override
+  public int getGID() {
+    return mGID;
+  }
 
-    public void setGID(int gid) {
-        this.mGID = gid;
-    }
+  public void setGID(int gid) {
+    this.mGID = gid;
+  }
 
-    public int[] getAuxGIDs() {
-        return mAuxGIDs;
-    }
+  public int[] getAuxGIDs() {
+    return mAuxGIDs;
+  }
 
-    public void setAuxGIDs(int[] auxGIDs) {
-        this.mAuxGIDs = auxGIDs;
-    }
+  public void setAuxGIDs(int[] auxGIDs) {
+    this.mAuxGIDs = auxGIDs;
+  }
 }

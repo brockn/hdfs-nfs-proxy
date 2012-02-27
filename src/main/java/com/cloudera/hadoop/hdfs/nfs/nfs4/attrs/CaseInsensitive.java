@@ -28,5 +28,5 @@ public class CaseInsensitive extends BooleanAttribute {
   public int getID() {
     return NFS4_FATTR4_CASE_INSENSITIVE;
   }
-  
+
 }

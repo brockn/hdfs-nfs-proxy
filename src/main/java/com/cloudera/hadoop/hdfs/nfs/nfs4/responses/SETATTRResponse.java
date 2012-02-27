@@ -27,10 +27,10 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
 
 public class SETATTRResponse extends OperationResponse implements Status {
-  
+
   protected int mStatus;
   protected Bitmap mAttrs;
-  
+
   @Override
   public void read(RPCBuffer buffer) {
     mStatus = buffer.readUint32();
@@ -39,8 +39,8 @@ public class SETATTRResponse extends OperationResponse implements Status {
       mAttrs.read(buffer);
     }
   }
-  
-  
+
+
   @Override
   public void write(RPCBuffer buffer) {
     buffer.writeUint32(mStatus);

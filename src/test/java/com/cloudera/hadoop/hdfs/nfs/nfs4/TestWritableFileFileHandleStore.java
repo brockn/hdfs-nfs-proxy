@@ -51,7 +51,7 @@ public class TestWritableFileFileHandleStore {
     assertTrue(Arrays.equals(fileHandle, entry.fileHandle));
     assertEquals(name, entry.path);
     store.close();
-    
+
     store = (WritableFileFileHandleStore)FileHandleStore.get(conf);
     assertTrue(store.getAll().size() == 1);
     entry = store.getAll().get(0);

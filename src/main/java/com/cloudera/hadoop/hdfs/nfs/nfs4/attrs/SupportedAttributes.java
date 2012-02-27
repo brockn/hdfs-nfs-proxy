@@ -52,7 +52,7 @@ public class SupportedAttributes extends Attribute {
   public void setAttrs(Bitmap attrs) {
     this.mAttrs = attrs;
   }
-  
-  
+
+
 
 }

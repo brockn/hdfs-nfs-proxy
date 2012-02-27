@@ -28,5 +28,5 @@ public class UniqueHandlesSupport extends BooleanAttribute {
   @Override
   public int getID() {
     return NFS4_FATTR4_UNIQUE_HANDLES;
-  }  
+  }
 }

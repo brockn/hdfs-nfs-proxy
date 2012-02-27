@@ -31,7 +31,7 @@ public class SETCLIENTIDResponse extends OperationResponse implements Status {
   protected int mStatus;
   protected long mClientID;
   protected OpaqueData8 mVerifer;
-  
+
   @Override
   public void read(RPCBuffer buffer) {
     mStatus = buffer.readUint32();

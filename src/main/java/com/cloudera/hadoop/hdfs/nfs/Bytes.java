@@ -28,6 +28,7 @@ import java.nio.ByteBuffer;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+
 import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.io.WritableUtils;
@@ -42,7 +43,7 @@ import org.apache.log4j.Logger;
  */
 public class Bytes {
 
-    private static final Logger LOGGER = Logger.getLogger(Bytes.class);
+  private static final Logger LOGGER = Logger.getLogger(Bytes.class);
 
   /**
    * Size of boolean in bytes
@@ -103,9 +104,11 @@ public class Bytes {
     public ByteArrayComparator() {
       super();
     }
+    @Override
     public int compare(byte [] left, byte [] right) {
       return compareTo(left, right);
     }
+    @Override
     public int compare(byte [] b1, int s1, int l1, byte [] b2, int s2, int l2) {
       return compareTo(b1, s1, l1, b2, s2, l2);
     }
@@ -115,13 +118,13 @@ public class Bytes {
    * Pass this to TreeMaps where byte [] are keys.
    */
   public static Comparator<byte []> BYTES_COMPARATOR =
-    new ByteArrayComparator();
+      new ByteArrayComparator();
 
   /**
    * Use comparing byte arrays, byte-by-byte
    */
   public static RawComparator<byte []> BYTES_RAWCOMPARATOR =
-    new ByteArrayComparator();
+      new ByteArrayComparator();
 
   /**
    * Read byte-array written with a WritableableUtils.vint prefix.
@@ -130,7 +133,7 @@ public class Bytes {
    * @throws IOException e
    */
   public static byte [] readByteArray(final DataInput in)
-  throws IOException {
+      throws IOException {
     int len = WritableUtils.readVInt(in);
     if (len < 0) {
       throw new NegativeArraySizeException(Integer.toString(len));
@@ -161,7 +164,7 @@ public class Bytes {
    * @throws IOException e
    */
   public static void writeByteArray(final DataOutput out, final byte [] b)
-  throws IOException {
+      throws IOException {
     if(b == null) {
       WritableUtils.writeVInt(out, 0);
     } else {
@@ -179,7 +182,7 @@ public class Bytes {
    */
   public static void writeByteArray(final DataOutput out, final byte [] b,
       final int offset, final int length)
-  throws IOException {
+          throws IOException {
     WritableUtils.writeVInt(out, length);
     out.write(b, offset, length);
   }
@@ -259,8 +262,8 @@ public class Bytes {
    * @param b2 The second byte array.
    */
   public static String toString(final byte [] b1,
-                                String sep,
-                                final byte [] b2) {
+      String sep,
+      final byte [] b2) {
     return toString(b1, 0, b1.length) + sep + toString(b2, 0, b2.length);
   }
 
@@ -487,16 +490,16 @@ public class Bytes {
   }
 
   private static IllegalArgumentException
-    explainWrongLengthOrOffset(final byte[] bytes,
-                               final int offset,
-                               final int length,
-                               final int expectedLength) {
+  explainWrongLengthOrOffset(final byte[] bytes,
+      final int offset,
+      final int length,
+      final int expectedLength) {
     String reason;
     if (length != expectedLength) {
       reason = "Wrong length: " + length + ", expected " + expectedLength;
     } else {
-     reason = "offset (" + offset + ") + length (" + length + ") exceed the"
-        + " capacity of the array: " + bytes.length;
+      reason = "offset (" + offset + ") + length (" + length + ") exceed the"
+          + " capacity of the array: " + bytes.length;
     }
     return new IllegalArgumentException(reason);
   }
@@ -772,7 +775,7 @@ public class Bytes {
     long tmp = i;
     while (tmp != 0) {
       tmp = tmp >> 8;
-      len--;
+    len--;
     }
 
     result[offset++] = (byte) len;
@@ -815,7 +818,7 @@ public class Bytes {
    * @return deserialized long from stream.
    */
   public static long readVLong(final byte [] buffer, final int offset)
-  throws IOException {
+      throws IOException {
     byte firstByte = buffer[offset];
     int len = WritableUtils.decodeVIntSize(firstByte);
     if (len == 1) {
@@ -877,7 +880,7 @@ public class Bytes {
       return true;
     }
     return (left == null || right == null || (left.length != right.length)
-            ? false : compareTo(left, right) == 0);
+        ? false : compareTo(left, right) == 0);
   }
 
   /**
@@ -886,8 +889,8 @@ public class Bytes {
    */
   public static boolean startsWith(byte[] bytes, byte[] prefix) {
     return bytes != null && prefix != null &&
-      bytes.length >= prefix.length &&
-      compareTo(bytes, 0, prefix.length, prefix, 0, prefix.length) == 0;      
+        bytes.length >= prefix.length &&
+        compareTo(bytes, 0, prefix.length, prefix, 0, prefix.length) == 0;
   }
 
   /**
@@ -1026,13 +1029,13 @@ public class Bytes {
     }
     return ret;
   }
-  
+
   /**
    * Iterate over keys within the passed inclusive range.
    */
   public static Iterable<byte[]> iterateOnSplits(
       final byte[] a, final byte[]b, final int num)
-  {  
+      {
     byte [] aPadded;
     byte [] bPadded;
     if (a.length < b.length) {
@@ -1069,7 +1072,7 @@ public class Bytes {
 
     final Iterator<byte[]> iterator = new Iterator<byte[]>() {
       private int i = -1;
-      
+
       @Override
       public boolean hasNext() {
         return i < num+1;
@@ -1080,7 +1083,7 @@ public class Bytes {
         i++;
         if (i == 0) return a;
         if (i == num + 1) return b;
-        
+
         BigInteger curBI = startBI.add(intervalBI.multiply(BigInteger.valueOf(i)));
         byte [] padded = curBI.toByteArray();
         if (padded[1] == 0)
@@ -1094,16 +1097,16 @@ public class Bytes {
       public void remove() {
         throw new UnsupportedOperationException();
       }
-      
+
     };
-    
+
     return new Iterable<byte[]>() {
       @Override
       public Iterator<byte[]> iterator() {
         return iterator;
       }
     };
-  }
+      }
 
   /**
    * @param t operands
@@ -1153,19 +1156,19 @@ public class Bytes {
 
     while (low <= high) {
       int mid = (low+high) >>> 1;
-      // we have to compare in this order, because the comparator order
-      // has special logic when the 'left side' is a special key.
-      int cmp = comparator.compare(key, offset, length,
-          arr[mid], 0, arr[mid].length);
-      // key lives above the midpoint
-      if (cmp > 0)
-        low = mid + 1;
-      // key lives below the midpoint
-      else if (cmp < 0)
-        high = mid - 1;
-      // BAM. how often does this really happen?
-      else
-        return mid;
+    // we have to compare in this order, because the comparator order
+    // has special logic when the 'left side' is a special key.
+    int cmp = comparator.compare(key, offset, length,
+        arr[mid], 0, arr[mid].length);
+    // key lives above the midpoint
+    if (cmp > 0)
+      low = mid + 1;
+    // key lives below the midpoint
+    else if (cmp < 0)
+      high = mid - 1;
+    // BAM. how often does this really happen?
+    else
+      return mid;
     }
     return - (low+1);
   }
@@ -1180,7 +1183,7 @@ public class Bytes {
    * @throws IOException - if value.length > SIZEOF_LONG
    */
   public static byte [] incrementBytes(byte[] value, long amount)
-  throws IOException {
+      throws IOException {
     byte[] val = value;
     if (val.length < SIZEOF_LONG) {
       // Hopefully this doesn't happen too often.
@@ -1191,11 +1194,11 @@ public class Bytes {
         newvalue = new byte[SIZEOF_LONG];
       }
       System.arraycopy(val, 0, newvalue, newvalue.length - val.length,
-        val.length);
+          val.length);
       val = newvalue;
     } else if (val.length > SIZEOF_LONG) {
       throw new IllegalArgumentException("Increment Bytes - value too big: " +
-        val.length);
+          val.length);
     }
     if(amount == 0) return val;
     if(val[0] < 0){
@@ -1253,7 +1256,7 @@ public class Bytes {
     }
     return value;
   }
-  
+
   // above is copied from HBase Bytes
 
   public static byte[] merge(List<byte[]> buffers) {

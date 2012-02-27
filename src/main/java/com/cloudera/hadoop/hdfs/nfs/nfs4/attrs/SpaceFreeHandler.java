@@ -21,7 +21,6 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4.attrs;
 
 import java.io.IOException;
 
-
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 

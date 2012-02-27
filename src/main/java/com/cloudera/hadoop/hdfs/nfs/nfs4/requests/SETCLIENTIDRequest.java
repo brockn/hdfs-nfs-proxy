@@ -31,7 +31,7 @@ public class SETCLIENTIDRequest extends OperationRequest {
   protected ClientID mClientID;
   protected Callback mCallback;
   protected int mCallbackIdent;
-  
+
   @Override
   public void read(RPCBuffer buffer) {
     mClientID = new ClientID();
@@ -76,5 +76,5 @@ public class SETCLIENTIDRequest extends OperationRequest {
   public void setCallbackIdent(int callbackIdent) {
     this.mCallbackIdent = callbackIdent;
   }
-  
+
 }

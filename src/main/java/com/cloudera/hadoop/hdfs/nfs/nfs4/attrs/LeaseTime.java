@@ -50,5 +50,5 @@ public class LeaseTime extends Attribute {
     this.mSeconds = seconds;
   }
 
-  
+
 }

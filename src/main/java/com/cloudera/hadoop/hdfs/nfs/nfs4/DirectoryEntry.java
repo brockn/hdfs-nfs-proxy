@@ -51,7 +51,7 @@ public class DirectoryEntry implements MessageBase {
     buffer.writeString(mName);
     Attribute.writeAttrs(buffer, mAttrs, mAttrValues);
   }
-  
+
   public Bitmap getAttrs() {
     return mAttrs;
   }

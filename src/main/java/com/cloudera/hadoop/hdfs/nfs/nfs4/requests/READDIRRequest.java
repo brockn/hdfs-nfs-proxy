@@ -30,7 +30,7 @@ public class READDIRRequest extends OperationRequest {
   protected long mCookie;
   protected OpaqueData8 mCookieVerifer;
   protected int mDirCount;
-  protected int mMaxCount;  
+  protected int mMaxCount;
   protected Bitmap mAttrs;
   @Override
   public void read(RPCBuffer buffer) {
@@ -51,7 +51,7 @@ public class READDIRRequest extends OperationRequest {
     buffer.writeUint32(mMaxCount);
     mAttrs.write(buffer);
   }
-  
+
   @Override
   public int getID() {
     return NFS4_OP_READDIR;
@@ -96,5 +96,5 @@ public class READDIRRequest extends OperationRequest {
   public void setAttrs(Bitmap attrs) {
     this.mAttrs = attrs;
   }
-  
+
 }

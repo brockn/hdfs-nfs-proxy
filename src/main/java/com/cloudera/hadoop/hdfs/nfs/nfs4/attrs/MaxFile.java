@@ -49,5 +49,5 @@ public class MaxFile extends Attribute {
   public void setSize(long size) {
     this.mSize = size;
   }
-  
+
 }

@@ -26,7 +26,7 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class COMMITRequest extends OperationRequest {
   protected long mOffset;
   protected int mCount;
-  
+
   @Override
   public void read(RPCBuffer buffer) {
     mOffset = buffer.readUint64();
@@ -38,7 +38,7 @@ public class COMMITRequest extends OperationRequest {
     buffer.writeUint64(mOffset);
     buffer.writeUint32(mCount);
   }
-  
+
   @Override
   public int getID() {
     return NFS4_OP_COMMIT;

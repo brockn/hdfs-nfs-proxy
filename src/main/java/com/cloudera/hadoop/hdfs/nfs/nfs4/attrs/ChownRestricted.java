@@ -28,5 +28,5 @@ public class ChownRestricted extends BooleanAttribute {
   public int getID() {
     return NFS4_FATTR4_CHOWN_RESTRICTED;
   }
-  
+
 }

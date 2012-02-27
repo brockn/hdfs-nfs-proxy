@@ -29,5 +29,5 @@ public class OpaqueData8 extends OpaqueData {
   }
   public OpaqueData8() {
     super(8);
-  }  
+  }
 }

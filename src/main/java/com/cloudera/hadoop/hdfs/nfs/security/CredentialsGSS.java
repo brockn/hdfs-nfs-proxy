@@ -22,24 +22,24 @@ package com.cloudera.hadoop.hdfs.nfs.security;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
-import org.apache.log4j.Logger;
 /**
  * Implementation of RPC AUTH_GSS
  */
 public class CredentialsGSS extends Credentials implements AuthenticatedCredentials {
 
-  protected static final Logger LOGGER = Logger.getLogger(CredentialsGSS.class);  
-  
+  protected static final Logger LOGGER = Logger.getLogger(CredentialsGSS.class);
+
   protected int mVersion;
   protected int mProcedure;
   protected int mSequenceNum;
   protected int mService;
   protected OpaqueData mContext;
-  
+
   public CredentialsGSS() {
     super();
     this.mCredentialsLength = 0;
@@ -66,7 +66,7 @@ public class CredentialsGSS extends Credentials implements AuthenticatedCredenti
     if(mVersion != RPCSEC_GSS_VERSION) {
       throw new UnsupportedOperationException("Version " + mVersion);
     }
-    int offset = buffer.position();    
+    int offset = buffer.position();
     buffer.writeUint32(Integer.MAX_VALUE);
 
     buffer.writeUint32(mVersion);
@@ -75,14 +75,14 @@ public class CredentialsGSS extends Credentials implements AuthenticatedCredenti
     buffer.writeUint32(mService);
     buffer.writeUint32(mContext.getSize());
     mContext.write(buffer);
-    
+
     mCredentialsLength = buffer.position() - offset - Bytes.SIZEOF_INT;  // do not include length
 
     buffer.putInt(offset, mCredentialsLength);
   }
 
-  
-  
+
+
   public int getVersion() {
     return mVersion;
   }

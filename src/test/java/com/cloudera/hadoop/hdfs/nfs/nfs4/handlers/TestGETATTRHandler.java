@@ -19,6 +19,11 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static org.junit.Assert.*;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.*;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
@@ -26,10 +31,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
@@ -39,14 +40,14 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.Status;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.GETATTRRequest;
 
 public class TestGETATTRHandler {
-  
+
   GETATTRHandler handler;
   NFS4Handler server;
   Session session;
   GETATTRRequest request;
   FileSystem fs;
   FileHandle fileHandle = new FileHandle("fileHandle".getBytes());
-  
+
   @Before
   public void setup() throws NFS4Exception {
     handler = new GETATTRHandler();
@@ -56,7 +57,7 @@ public class TestGETATTRHandler {
     fs = mock(FileSystem.class);
     when(session.getFileSystem()).thenReturn(fs);
   }
-    
+
   @Test
   public void testFileNotFound() throws NFS4Exception, IOException {
     when(server.getPath(any(FileHandle.class))).thenReturn(new Path("/"));

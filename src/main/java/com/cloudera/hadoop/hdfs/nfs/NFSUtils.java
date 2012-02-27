@@ -14,7 +14,7 @@ public class NFSUtils {
       return override;
     }
     String host = address.getCanonicalHostName();
-    if(address.isLoopbackAddress() && 
+    if(address.isLoopbackAddress() &&
         address.getHostAddress().equals(address.getHostName())) {
       // loopback does not resolve
       return "localdomain";

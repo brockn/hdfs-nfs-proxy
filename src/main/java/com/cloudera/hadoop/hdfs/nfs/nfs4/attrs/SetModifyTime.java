@@ -32,7 +32,7 @@ public class SetModifyTime extends Attribute {
     mHow = buffer.readUint32();
     if(mHow == NFS4_SET_TO_CLIENT_TIME4) {
       mTime = new Time();
-      mTime.read(buffer);            
+      mTime.read(buffer);
     }
   }
 
@@ -55,8 +55,8 @@ public class SetModifyTime extends Attribute {
 
   public void setTime(Time time) {
     this.mTime = time;
-  }  
-  
+  }
+
   public int getHow() {
     return mHow;
   }

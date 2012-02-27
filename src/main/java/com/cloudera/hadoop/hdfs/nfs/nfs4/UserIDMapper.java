@@ -33,15 +33,15 @@ import org.apache.hadoop.util.Shell;
  * and String usernames to UIDs. Same for group information.
  */
 public abstract class UserIDMapper {
-  
+
   public abstract int getGIDForGroup(Configuration conf, String user, int defaultGID) throws Exception;
   public abstract int getUIDForUser(Configuration conf, String user, int defaultUID) throws Exception;
 
   public abstract String getGroupForGID(Configuration conf, int gid, String defaultGroup) throws Exception;
   public abstract String getUserForUID(Configuration conf, int gid, String defaultUser) throws Exception;
-  
+
   protected static Map<Class<?>, UserIDMapper> classUserIdMapperMap = new HashMap<Class<?>, UserIDMapper>();
-  
+
   public static synchronized UserIDMapper get(Configuration conf) {
     boolean cache = conf.getBoolean(USER_ID_MAPPER_CACHE, true);
     Class<?> clazz = conf.getClass(USER_ID_MAPPER_CLASS, UserIDMapperSystem.class, UserIDMapper.class);
@@ -51,7 +51,7 @@ public abstract class UserIDMapper {
         mapper = (UserIDMapper)ReflectionUtils.newInstance(clazz, conf);
         classUserIdMapperMap.put(clazz, mapper);
       }
-      return mapper;      
+      return mapper;
     }
     return (UserIDMapper)ReflectionUtils.newInstance(clazz, conf);
   }
@@ -63,7 +63,7 @@ public abstract class UserIDMapper {
     String user = System.getenv("USER");
     if(user == null) {
       try {
-        user = Shell.execCommand("whoami").trim();        
+        user = Shell.execCommand("whoami").trim();
       } catch (Exception e) {
         throw new RuntimeException(e);
       }

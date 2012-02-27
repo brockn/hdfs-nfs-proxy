@@ -30,7 +30,7 @@ public class REMOVEResponse extends OperationResponse implements Status {
 
   protected int mStatus;
   protected ChangeInfo mChangeInfo;
-  
+
   @Override
   public void read(RPCBuffer buffer) {
     mStatus = buffer.readUint32();
@@ -67,6 +67,6 @@ public class REMOVEResponse extends OperationResponse implements Status {
   public void setChangeInfo(ChangeInfo changeInfo) {
     this.mChangeInfo = changeInfo;
   }
-  
-  
+
+
 }

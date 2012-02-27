@@ -19,8 +19,9 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import com.google.common.collect.Maps;
 import java.util.Map;
+
+import com.google.common.collect.Maps;
 
 /**
  * Class responsible for keeping a global map of shorthand
@@ -29,7 +30,7 @@ import java.util.Map;
 public class ClientFactory {
   protected static final Map<Long, Client> mShortHandMap = Maps.newHashMap();
   protected static final Map<OpaqueData, Client> mClientMap = Maps.newHashMap();
-  
+
   public synchronized Client get(OpaqueData clientID) {
     return mClientMap.get(clientID);
   }

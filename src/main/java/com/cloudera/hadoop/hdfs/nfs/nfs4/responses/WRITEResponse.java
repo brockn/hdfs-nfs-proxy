@@ -27,14 +27,14 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
 
 public class WRITEResponse extends OperationResponse implements Status {
-  
+
   protected int mStatus;
   protected int mCount;
   protected int mCommitted;
   protected OpaqueData8 mVerifer;
-  
-  
-    @Override
+
+
+  @Override
   public void read(RPCBuffer buffer) {
     mStatus = buffer.readUint32();
     if(mStatus == NFS4_OK) {
@@ -52,9 +52,9 @@ public class WRITEResponse extends OperationResponse implements Status {
       buffer.writeUint32(mCount);
       buffer.writeUint32(mCommitted);
       mVerifer.write(buffer);
-    }    
+    }
   }
-  
+
 
   @Override
   public int getStatus() {
@@ -92,6 +92,6 @@ public class WRITEResponse extends OperationResponse implements Status {
   public void setVerifer(OpaqueData8 verifer) {
     this.mVerifer = verifer;
   }
-  
-  
+
+
 }

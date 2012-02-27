@@ -25,21 +25,11 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Time;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Attribute;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.ChangeID;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.FileID;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.FileSystemID;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Mode;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.ModifyTime;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Owner;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.OwnerGroup;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Size;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Type;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
 public class TestAttrs {
-  
-  
+
+
   @Test
   public void testChangeID() throws Exception {
     ChangeID base = new ChangeID();
@@ -47,7 +37,7 @@ public class TestAttrs {
     ChangeID copy = new ChangeID();
     testAttribute(base, copy);
   }
-  
+
   @Test
   public void testFileID() throws Exception {
     FileID base = new FileID();
@@ -55,7 +45,7 @@ public class TestAttrs {
     FileID copy = new FileID();
     testAttribute(base, copy);
   }
-  
+
   @Test
   public void testFileSystemID() throws Exception {
     FileSystemID base = new FileSystemID();
@@ -64,7 +54,7 @@ public class TestAttrs {
     FileSystemID copy = new FileSystemID();
     testAttribute(base, copy);
   }
-  
+
   @Test
   public void testMode() throws Exception {
     Mode base = new Mode();
@@ -72,7 +62,7 @@ public class TestAttrs {
     Mode copy = new Mode();
     testAttribute(base, copy);
   }
-  
+
   @Test
   public void testModifyTime() throws Exception {
     ModifyTime base = new ModifyTime();
@@ -80,7 +70,7 @@ public class TestAttrs {
     ModifyTime copy = new ModifyTime();
     testAttribute(base, copy);
   }
-  
+
   @Test
   public void testOwner() throws Exception {
     Owner base = new Owner();
@@ -88,7 +78,7 @@ public class TestAttrs {
     Owner copy = new Owner();
     testAttribute(base, copy);
   }
-  
+
   @Test
   public void testOwnerGroup() throws Exception {
     OwnerGroup base = new OwnerGroup();
@@ -96,7 +86,7 @@ public class TestAttrs {
     OwnerGroup copy = new OwnerGroup();
     testAttribute(base, copy);
   }
-  
+
   @Test
   public void testSize() throws Exception {
     Size base = new Size();
@@ -104,8 +94,8 @@ public class TestAttrs {
     Size copy = new Size();
     testAttribute(base, copy);
   }
-  
-  
+
+
   @Test
   public void testType() throws Exception {
     Type base = new Type();
@@ -113,7 +103,7 @@ public class TestAttrs {
     Type copy = new Type();
     testAttribute(base, copy);
   }
-  
+
   protected static void testAttribute(Attribute base, Attribute copy) {
     copy(base, copy);
     deepEquals(base, copy);

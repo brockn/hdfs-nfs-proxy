@@ -42,7 +42,7 @@ public class ModeHandler extends AttributeHandler<Mode> {
   }
 
   @Override
-  public boolean set(NFS4Handler server, Session session, FileSystem fs, FileStatus fileStatus, StateID stateID, Mode attr) 
+  public boolean set(NFS4Handler server, Session session, FileSystem fs, FileStatus fileStatus, StateID stateID, Mode attr)
       throws NFS4Exception, IOException {
     FsPermission perm = new FsPermission((short)attr.getMode());
     fs.setPermission(fileStatus.getPath(), perm);

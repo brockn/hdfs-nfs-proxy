@@ -40,9 +40,9 @@ public class OwnerHandler extends AttributeHandler<Owner> {
     owner.setOwner(fileStatus.getOwner() + "@" + domain);
     return owner;
   }
-  
+
   @Override
-  public boolean set(NFS4Handler server, Session session, FileSystem fs, FileStatus fileStatus, StateID stateID, Owner attr) 
+  public boolean set(NFS4Handler server, Session session, FileSystem fs, FileStatus fileStatus, StateID stateID, Owner attr)
       throws IOException {
     String user = removeDomain(attr.getOwner());
     if(fileStatus.getOwner().equals(user)) {

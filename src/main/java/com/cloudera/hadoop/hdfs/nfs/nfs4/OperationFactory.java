@@ -94,7 +94,7 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.google.common.collect.ImmutableMap;
 
 public class OperationFactory {
-  
+
   static class Holder {
     Class<? extends OperationRequest> requestClazz;
     Class<? extends OperationResponse> responseClazz;
@@ -132,66 +132,66 @@ public class OperationFactory {
       .put(NFS4_OP_SETCLIENTID_CONFIRM, new Holder(SETCLIENTIDCONFIRMRequest.class, SETCLIENTIDCONFIRMResponse.class, new SETCLIENTIDCONFIRMHandler()))
       .put(NFS4_OP_WRITE, new Holder(WRITERequest.class, WRITEResponse.class, new WRITEHandler()))
       .build();
-  
-    /**
-     * @param id
-     * @return true if id is a supported operation
-     */
-    public static boolean isSupported(int id) {
-      return operations.containsKey(id);
+
+  /**
+   * @param id
+   * @return true if id is a supported operation
+   */
+  public static boolean isSupported(int id) {
+    return operations.containsKey(id);
+  }
+  protected static void checkSupported(int id) {
+    if(!isSupported(id)) {
+      throw new UnsupportedOperationException("NFS Operation " + id);
     }
-    protected static void checkSupported(int id) {
-      if(!isSupported(id)) {
-        throw new UnsupportedOperationException("NFS Operation " + id);
-      }      
+  }
+  /**
+   * Parse a request identified by id from buffer into a NFS specific operation request.
+   * @param buffer to read request from
+   * @param id of request
+   * @return Operation Request associated with id
+   */
+  public static OperationRequest parseRequest(int id, RPCBuffer buffer) {
+    checkSupported(id);
+    try {
+      OperationRequest operation = operations.get(id).requestClazz.newInstance();
+      operation.read(buffer);
+      return operation;
+    } catch (InstantiationException e) {
+      throw new RuntimeException(e);
+    } catch (IllegalAccessException e) {
+      throw new RuntimeException(e);
     }
-    /**
-     * Parse a request identified by id from buffer into a NFS specific operation request.
-     * @param buffer to read request from
-     * @param id of request
-     * @return Operation Request associated with id
-     */
-    public static OperationRequest parseRequest(int id, RPCBuffer buffer) {
-      checkSupported(id);
-      try {
-        OperationRequest operation = operations.get(id).requestClazz.newInstance();
-        operation.read(buffer);
-        return operation;
-      } catch (InstantiationException e) {
-        throw new RuntimeException(e);
-      } catch (IllegalAccessException e) {
-        throw new RuntimeException(e);
-      }
+  }
+
+  /**
+   * Parse a response identified by id from buffer into a NFS specific operation response.
+   * @param buffer to read response from
+   * @param id of request
+   * @return Operation Response associated with id
+   */
+  public static OperationResponse parseResponse(int id, RPCBuffer buffer) {
+    checkSupported(id);
+    try {
+      OperationResponse operation = operations.get(id).responseClazz.newInstance();
+      operation.read(buffer);
+      return operation;
+    } catch (InstantiationException e) {
+      throw new RuntimeException(e);
+    } catch (IllegalAccessException e) {
+      throw new RuntimeException(e);
     }
-    
-    /**
-     * Parse a response identified by id from buffer into a NFS specific operation response.
-     * @param buffer to read response from
-     * @param id of request
-     * @return Operation Response associated with id
-     */
-    public static OperationResponse parseResponse(int id, RPCBuffer buffer) {
-      checkSupported(id);
-      try {
-        OperationResponse operation = operations.get(id).responseClazz.newInstance();
-        operation.read(buffer);
-        return operation;
-      } catch (InstantiationException e) {
-        throw new RuntimeException(e);
-      } catch (IllegalAccessException e) {
-        throw new RuntimeException(e);
-      }
-    }
-    
-    /**
-     * Get the stateless handler for for a specific request type.
-     * @param id
-     * @return a stateless handler for which accepts this request type
-     */
-    @SuppressWarnings("unchecked")
-    public static <IN extends OperationRequest, OUT extends OperationResponse> OperationRequestHandler<IN, OUT> getHandler(int id) {
-      checkSupported(id);
-      return (OperationRequestHandler<IN, OUT>) operations.get(id).handler;
-    }
+  }
+
+  /**
+   * Get the stateless handler for for a specific request type.
+   * @param id
+   * @return a stateless handler for which accepts this request type
+   */
+  @SuppressWarnings("unchecked")
+  public static <IN extends OperationRequest, OUT extends OperationResponse> OperationRequestHandler<IN, OUT> getHandler(int id) {
+    checkSupported(id);
+    return (OperationRequestHandler<IN, OUT>) operations.get(id).handler;
+  }
 
 }

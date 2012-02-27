@@ -32,7 +32,7 @@ public class WRITERequest extends OperationRequest {
   protected byte[] mData;
   protected int mStart;
   protected int mLength;
-  
+
   @Override
   public void read(RPCBuffer buffer) {
     mStateID = new StateID();
@@ -52,12 +52,12 @@ public class WRITERequest extends OperationRequest {
     buffer.writeUint32(mLength);
     buffer.writeBytes(mData, mStart, mLength);
   }
-  
+
   @Override
   public int getID() {
     return NFS4_OP_WRITE;
   }
-  
+
 
   public int getStart() {
     return mStart;

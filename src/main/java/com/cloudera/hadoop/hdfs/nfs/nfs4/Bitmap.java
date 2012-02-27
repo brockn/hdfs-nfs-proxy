@@ -21,8 +21,9 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
 import java.util.BitSet;
 
-import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import org.apache.log4j.Logger;
+
+import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
 /*
  * TODO fix this. I know this can be done cleaner.
@@ -73,7 +74,7 @@ public class Bitmap implements MessageBase {
       buffer.writeInt(target);
     }
   }
-  
+
   public boolean isEmpty() {
     return mMask.isEmpty();
   }
@@ -83,15 +84,16 @@ public class Bitmap implements MessageBase {
   public void set(int bitIndex) {
     mMask.set(bitIndex);
   }
-  
+
   public boolean isSet(int bitIndex) {
     return mMask.get(bitIndex);
   }
-  
+
   public BitSet getMask() {
     return mMask;
   }
 
+  @Override
   public String toString() {
     return String.valueOf(mMask);
   }

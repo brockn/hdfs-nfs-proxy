@@ -29,7 +29,7 @@ public class PathUtils {
     }
     return path;
   }
-  
+
   public static String realPath(Path path) {
     return path.toUri().getPath();
   }

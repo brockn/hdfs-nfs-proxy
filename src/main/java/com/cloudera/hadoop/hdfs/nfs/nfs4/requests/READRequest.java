@@ -29,7 +29,7 @@ public class READRequest extends OperationRequest {
   protected StateID mStateID;
   protected long mOffset;
   protected int mCount;
-  
+
   @Override
   public void read(RPCBuffer buffer) {
     mStateID = new StateID();
@@ -44,7 +44,7 @@ public class READRequest extends OperationRequest {
     buffer.writeUint64(mOffset);
     buffer.writeUint32(mCount);
   }
-  
+
   @Override
   public int getID() {
     return NFS4_OP_READ;
@@ -73,5 +73,5 @@ public class READRequest extends OperationRequest {
   public void setCount(int count) {
     this.mCount = count;
   }
-  
+
 }

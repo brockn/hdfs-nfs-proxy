@@ -54,12 +54,12 @@ public class TestWriteOrderHandler {
     mWriteOrderHandler.setName("WriteOrderHandler");
     mWriteOrderHandler.start();
   }
-  
+
   @After
   public void teardown() throws IOException, NFS4Exception {
     mWriteOrderHandler.close();
   }
-  
+
   @Test
   public void testSimple() throws Exception {
     final AtomicLong count = new AtomicLong(0);
@@ -70,7 +70,7 @@ public class TestWriteOrderHandler {
         checkArgument(args.length == 3);
         count.addAndGet((Integer)args[2]);
         return null;
-      }      
+      }
     }).when(mOutputStream).write((byte[]) any(), anyInt(), anyInt());
     when(mOutputStream.getPos()).thenAnswer(new Answer<Long>() {
       @Override
@@ -84,6 +84,7 @@ public class TestWriteOrderHandler {
     for (int i = numThreads; i > 0; i--) {
       final long offset = (i-1) * buffer.length;
       new Thread() {
+        @Override
         public void run() {
           try {
             int count = writeOrderHandler.write("a file", xid.incrementAndGet(), offset, false, buffer, 0, buffer.length);
@@ -113,16 +114,16 @@ public class TestWriteOrderHandler {
         if(System.currentTimeMillis() - start > 20000) {
           fail("Timed out waiting for writes: expectedPos = " + expectedPos + ", pos = " + mOutputStream.getPos());
         }
-      }    
+      }
     }
   }
-  
+
   @Test(expected=IOException.class)
   public void testCannotWriteToWhenClosed() throws IOException, NFS4Exception {
     mWriteOrderHandler.close();
     mWriteOrderHandler.write("a file", xid.incrementAndGet(), 0, false, buffer, 0, buffer.length);
   }
-  
+
   @Test(expected=NFS4Exception.class)
   public void testCannotWriteToWhileDead() throws IOException, NFS4Exception, InterruptedException {
     mWriteOrderHandler.close();
@@ -131,7 +132,7 @@ public class TestWriteOrderHandler {
     }
     mWriteOrderHandler.write("a file", xid.incrementAndGet(), 0, false, buffer, 0, buffer.length);
   }
-  
+
   @Test(expected=IOException.class)
   public void testErrorOnWriteAfterError() throws IOException, NFS4Exception, InterruptedException {
     doThrow(new IOException()).when(mOutputStream).write(any(byte[].class), anyInt(), anyInt());
@@ -145,10 +146,10 @@ public class TestWriteOrderHandler {
     mWriteOrderHandler.write("a file", xid.incrementAndGet(), 0, true, buffer, 0, buffer.length);
     verify(mOutputStream, atLeastOnce()).sync();
   }
-  
+
   @Test(expected=NFS4Exception.class)
   public void testRandomWrite() throws IOException, NFS4Exception {
-    when(mOutputStream.getPos()).thenReturn(1L);    
+    when(mOutputStream.getPos()).thenReturn(1L);
     mWriteOrderHandler.write("a file", xid.incrementAndGet(), 0, true, buffer, 0, buffer.length);
   }
   @Test

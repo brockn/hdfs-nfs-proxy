@@ -23,29 +23,29 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import java.io.IOException;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.PUTROOTFHRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.PUTROOTFHResponse;
-import org.apache.log4j.Logger;
 
 public class PUTROOTFHHandler extends OperationRequestHandler<PUTROOTFHRequest, PUTROOTFHResponse> {
 
-    protected static final Logger LOGGER = Logger.getLogger(PUTROOTFHHandler.class);
+  protected static final Logger LOGGER = Logger.getLogger(PUTROOTFHHandler.class);
 
-    @Override
-    protected PUTROOTFHResponse doHandle(NFS4Handler server, Session session,
-            PUTROOTFHRequest request) throws NFS4Exception, IOException {
-        session.setCurrentFileHandle(server.createFileHandle(new Path("/")));
-        PUTROOTFHResponse response = createResponse();
-        response.setStatus(NFS4_OK);
-        return response;
-    }
+  @Override
+  protected PUTROOTFHResponse doHandle(NFS4Handler server, Session session,
+      PUTROOTFHRequest request) throws NFS4Exception, IOException {
+    session.setCurrentFileHandle(server.createFileHandle(new Path("/")));
+    PUTROOTFHResponse response = createResponse();
+    response.setStatus(NFS4_OK);
+    return response;
+  }
 
-    @Override
-    protected PUTROOTFHResponse createResponse() {
-        return new PUTROOTFHResponse();
-    }
+  @Override
+  protected PUTROOTFHResponse createResponse() {
+    return new PUTROOTFHResponse();
+  }
 }

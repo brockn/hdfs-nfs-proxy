@@ -73,7 +73,7 @@ public class SecureClient extends BaseClient {
     Oid krb5Oid = new Oid("1.2.840.113554.1.2.2");
     GSSName serverName = gssManager.createName(
         "noland@LOCALDOMAIN", null);
-     mContext = gssManager.createContext(serverName, krb5Oid, null,
+    mContext = gssManager.createContext(serverName, krb5Oid, null,
         GSSContext.DEFAULT_LIFETIME);
 
     mContext.requestMutualAuth(true);
@@ -84,7 +84,7 @@ public class SecureClient extends BaseClient {
 
     RPCResponse response = null;
     int requestSeqNumber  = -1;
-    
+
     while (!mContext.isEstablished()) {
       token = mContext.initSecContext(token, 0, token.length);
       if (token != null) {
@@ -125,18 +125,18 @@ public class SecureClient extends BaseClient {
 
       }
     }
-    
+
     System.out.println("established = " + mContext.isEstablished());
     System.out.println("mutual auth = " + mContext.getMutualAuthState());
-    
+
     checkNotNull(response);
     checkArgument(requestSeqNumber >= 0);
-    
+
     verify(requestSeqNumber, response);
-    
+
     initialize();
   }
-  
+
   protected void verify(int sequenceNumber, RPCResponse response) {
     byte[] verifer = ((VerifierGSS) response.getVerifier()).get();
     byte[] seqNumberBytes = Bytes.toBytes(sequenceNumber);
@@ -148,16 +148,16 @@ public class SecureClient extends BaseClient {
     }
 
   }
-  
+
   protected byte[] createVerifer(RPCRequest request) {
     RPCBuffer buffer = new RPCBuffer();
     request.write(buffer);
     buffer.flip();
-    
+
     int length = buffer.length();
     LOGGER.info("Reading " + length);
     byte[] data = buffer.readBytes(length);
-    
+
     try {
       // skip the first 4 bytes which are the length
       return mContext.getMIC(data, 3, data.length - 4, new MessageProp(false));
@@ -166,7 +166,7 @@ public class SecureClient extends BaseClient {
     }
 
   }
-  
+
   public byte[] wrap(MessageBase response) {
     RPCBuffer buffer = new RPCBuffer();
     response.write(buffer);
@@ -181,7 +181,7 @@ public class SecureClient extends BaseClient {
       throw new RuntimeException(ex);
     }
   }
-  
+
 
   public byte[] unwrap(byte[] data) {
     try {
@@ -191,7 +191,7 @@ public class SecureClient extends BaseClient {
       throw new RuntimeException(ex);
     }
   }
- 
+
   @Override
   protected CompoundResponse doMakeRequest(CompoundRequest request)
       throws IOException {
@@ -206,23 +206,23 @@ public class SecureClient extends BaseClient {
     creds.setVersion(RPCSEC_GSS_VERSION);
     creds.setService(RPCSEC_GSS_SERVICE_PRIVACY);
     creds.setContext(mContextID);
-    rpcRequest.setCredentials(creds);    
-    
+    rpcRequest.setCredentials(creds);
+
     VerifierGSS verifier = new VerifierGSS();
     verifier.set(createVerifer(rpcRequest));
 
     rpcRequest.setVerifier(verifier);
 
     rpcRequest.write(buffer);
-    
+
     byte[] data = wrap(request);
-    
+
     buffer.writeUint32(data.length);
     buffer.writeBytes(data);
-    
-    
+
+
     buffer.flip();
-    
+
 
     buffer.write(mOutputStream);
     mOutputStream.flush();
@@ -232,12 +232,12 @@ public class SecureClient extends BaseClient {
     rpcResponse.read(buffer);
 
     verify(sequenceNumber, rpcResponse);
-    
+
 
     assertEquals(rpcRequest.getXid(), rpcResponse.getXid());
     assertEquals(RPC_REPLY_STATE_ACCEPT, rpcResponse.getReplyState());
     assertEquals(RPC_ACCEPT_SUCCESS, rpcResponse.getAcceptState());
-    
+
     try {
       byte[] encryptedData = buffer.readBytes();
       byte[] plainData = unwrap(encryptedData);
@@ -258,18 +258,18 @@ public class SecureClient extends BaseClient {
     } catch (Exception ex) {
     }
   }
-  
- 
-  
+
+
+
 
   public static void main(String[] args) throws Exception {
-        
-     System.setProperty("java.security.krb5.realm", "LOCALDOMAIN");
-     System.setProperty("java.security.krb5.kdc", "localhost");
-     System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");
-     System.setProperty("java.security.auth.login.config", "sec.conf");
 
-     
+    System.setProperty("java.security.krb5.realm", "LOCALDOMAIN");
+    System.setProperty("java.security.krb5.kdc", "localhost");
+    System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");
+    System.setProperty("java.security.auth.login.config", "sec.conf");
+
+
     SecureClient client = new SecureClient();
     client.shutdown();
   }

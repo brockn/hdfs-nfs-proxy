@@ -27,11 +27,11 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
 
 public class CLOSEResponse extends OperationResponse implements Status {
-  
+
   protected int mStatus;
   protected StateID mStateID;
-  
-    @Override
+
+  @Override
   public void read(RPCBuffer buffer) {
     reset();
     mStatus = buffer.readUint32();
@@ -42,7 +42,7 @@ public class CLOSEResponse extends OperationResponse implements Status {
   }
 
   protected void reset() {
-    mStateID = null;    
+    mStateID = null;
   }
   @Override
   public void write(RPCBuffer buffer) {
@@ -72,5 +72,5 @@ public class CLOSEResponse extends OperationResponse implements Status {
     this.mStateID = stateID;
   }
 
-  
+
 }

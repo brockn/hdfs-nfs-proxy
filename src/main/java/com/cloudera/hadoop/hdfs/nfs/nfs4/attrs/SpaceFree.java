@@ -49,5 +49,5 @@ public class SpaceFree extends Attribute {
   public void set(long value) {
     this.mValue = value;
   }
-  
+
 }

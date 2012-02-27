@@ -22,10 +22,10 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class Client {
-  
+
   protected static final AtomicLong CLIENTID = new AtomicLong(0L);
 
-  
+
   protected ClientID mClientID;
   protected Callback mCallback;
   protected int mCallbackIdent;
@@ -34,7 +34,7 @@ public class Client {
   protected String mClientHost;
   protected boolean mConfirmed;
   protected long mRenew = System.currentTimeMillis();
-  
+
   public boolean isConfirmed() {
     return mConfirmed;
   }

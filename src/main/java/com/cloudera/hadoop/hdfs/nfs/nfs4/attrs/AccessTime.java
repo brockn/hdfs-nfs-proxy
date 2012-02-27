@@ -29,7 +29,7 @@ public class AccessTime extends Attribute {
   @Override
   public void read(RPCBuffer buffer) {
     mTime = new Time();
-    mTime.read(buffer);            
+    mTime.read(buffer);
 
   }
 

@@ -55,7 +55,7 @@ public class NFS4Exception extends Exception {
   public String getMessage() {
     String msg = "errno = " + error;
     if(super.getMessage() != null) {
-      msg += ": " + super.getMessage();      
+      msg += ": " + super.getMessage();
     }
     return msg;
   }

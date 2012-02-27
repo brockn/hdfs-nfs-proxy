@@ -31,7 +31,7 @@ public class OPENCONFIRMRequest extends OperationRequest {
   @Override
   public void read(RPCBuffer buffer) {
     mStateID = new StateID();
-    mStateID.read(buffer); 
+    mStateID.read(buffer);
     mSeqID = buffer.readUint32();
   }
 
@@ -40,7 +40,7 @@ public class OPENCONFIRMRequest extends OperationRequest {
     mStateID.write(buffer);
     buffer.writeUint32(mSeqID);
   }
-  
+
   @Override
   public int getID() {
     return NFS4_OP_OPEN_CONFIRM;
@@ -61,5 +61,5 @@ public class OPENCONFIRMRequest extends OperationRequest {
   public void setSeqID(int seqID) {
     this.mSeqID = seqID;
   }
-  
+
 }

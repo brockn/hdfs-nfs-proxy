@@ -71,7 +71,7 @@ public class BasicTest {
     }
 
     {
-      try {          
+      try {
         @SuppressWarnings("unused")
         FileOutputStream out = new FileOutputStream(file, true);
         throw new RuntimeException("was able to open file in append mode");
@@ -81,7 +81,7 @@ public class BasicTest {
       System.out.println(new Date() +" Append Test passed");
     }
 
-    
+
     /*
      * Read file sequentially, verifying the contents
      */
@@ -102,7 +102,7 @@ public class BasicTest {
       is.close();
       System.out.println(new Date() +" Sequential Read Test passed");
     }
-    
+
     /*
      * Try and open file in rw mode
      */
@@ -116,13 +116,13 @@ public class BasicTest {
       }
       System.out.println(new Date() +" Random Write Test passed");
     }
-    
+
     if(!file.delete()) {
       throw new Exception("delete " + file + " failed");
     }
     System.out.println(new Date() +" Delete Test Passed");
   }
-    
+
   public static void main(String[] args) throws Exception {
     BasicTest test = new BasicTest();
     String name = args[0];
@@ -134,5 +134,5 @@ public class BasicTest {
       ex.printStackTrace();
       System.exit(-1);
     }
-  } 
+  }
 }

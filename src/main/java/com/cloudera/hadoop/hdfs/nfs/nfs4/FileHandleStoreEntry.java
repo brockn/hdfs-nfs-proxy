@@ -30,7 +30,7 @@ class FileHandleStoreEntry implements WritableComparable<FileHandleStoreEntry> {
   protected byte[] fileHandle;
   protected String path;
   protected long fileID;
-  
+
   public FileHandleStoreEntry() {
     this(null, null, -1);
   }
@@ -93,5 +93,5 @@ class FileHandleStoreEntry implements WritableComparable<FileHandleStoreEntry> {
       return false;
     return true;
   }
-  
+
 }
