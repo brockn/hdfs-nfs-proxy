@@ -92,6 +92,10 @@ and then restart idmapd:
  
     /etc/init.d/rpcidmapd restart
 
+* All user/groups still show up as nobody or some long number?
+
+Disable ipv6
+
 * I am trying to do an operation as any user who is not running the daemon and
 I get errors?
 
