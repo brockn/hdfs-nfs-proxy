@@ -34,7 +34,9 @@ Questions? email brock at cloudera dot com
          CDH3u2:
           $ mvn package -Pcdh3
          Apache Hadoop 1.0.0 (Renamed 0.20):
-          $ mvn package -Phadoop-1.0.x
+          $ mvn package -Phadoop100
+         Apache Hadoop 1.0.3:
+          $ mvn package -Phadoop103
 
         0.23 Branch:
          $ mvn package -Phadoop-0.23
