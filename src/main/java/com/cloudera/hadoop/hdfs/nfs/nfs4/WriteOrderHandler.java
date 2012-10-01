@@ -53,6 +53,7 @@ public class WriteOrderHandler extends Thread {
   protected static final int MAX_WRITE_IDS = 500000;
   protected FSDataOutputStream mOutputStream;
   protected ConcurrentMap<Long, Write> mPendingWrites = Maps.newConcurrentMap();
+  protected AtomicLong mPendingWritesSize = new AtomicLong(0);
   protected List<Integer> mProcessedWrites = Lists.newArrayList();
   protected BlockingQueue<Write> mWriteQueue = new LinkedBlockingQueue<Write>();
   protected IOException mIOException;
@@ -72,6 +73,7 @@ public class WriteOrderHandler extends Thread {
   @Override
   public void run() {
     try {
+      long currentSize;
       while (true) {
         Write write = mWriteQueue.poll(10, TimeUnit.SECONDS);
         if (write == null) {
@@ -81,6 +83,10 @@ public class WriteOrderHandler extends Thread {
         } else {
           checkWriteState(write);
           mPendingWrites.put(write.offset, write);
+          currentSize = mPendingWritesSize.addAndGet(write.size);
+          if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Pending writes " + (currentSize / 1024L / 1024L) + "MB");
+          }
         }
         synchronized (mOutputStream) {
           checkPendingWrites();
@@ -112,6 +118,7 @@ public class WriteOrderHandler extends Thread {
     Write write = null;
     synchronized (mPendingWrites) {
       while ((write = mPendingWrites.remove(mOutputStream.getPos())) != null) {
+        mPendingWritesSize.addAndGet(-write.size);
         doWrite(write);
       }
     }
@@ -257,6 +264,7 @@ public class WriteOrderHandler extends Thread {
     int start;
     int length;
     int hashCode;
+    int size;
 
     public Write(String name, int xid, long offset, boolean sync, byte[] data, int start, int length) {
       this.name = name;
@@ -267,8 +275,22 @@ public class WriteOrderHandler extends Thread {
       this.start = start;
       this.length = length;
       this.hashCode = hashCode();
+      this.size = getSize();
     }
 
+    public int getSize() {
+      int size = 4; // obj header     
+      size += name.length() + 4; // string, 4 byte length?
+      size += 4; // xid
+      size += 8; // offset
+      size += 1; // sync
+      size += data.length + 4; // data
+      size += 4; // start
+      size += 4; // length
+      size += 4; // hashcode
+      size += 4; // size
+      return size;
+    }
     @Override
     public int hashCode() {
       final int prime = 31;
