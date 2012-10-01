@@ -6,18 +6,19 @@ then
   echo "e.g. $0 /usr/lib/hadoop/conf snapshots/hadoop-nfs-proxy-0.80-SNAPSHOT-with-deps-0.20.2-cdh3u2.jar"
   exit 1
 fi
-CONFIG=$1
+HADOOP_CONFIG=$1
 JAR=$2
 if [[ ! -f $JAR ]]
 then
   echo "Jar $JAR does not exist"
   exit 1
 fi
-if [[ ! -e $CONFIG ]]
+if [[ ! -e $HADOOP_CONFIG ]]
 then
-  echo "Config dir $CONFIG does not exist"
+  echo "Config dir $HADOOP_CONFIG does not exist"
   exit 1
 fi
+CONFIG=$PWD/conf
 JAR=$(readlink -f $JAR)
 cd target 
 if [[ -f nfsserver.pid ]]
@@ -33,7 +34,7 @@ then
     fi
   fi
 fi
-nohup java -Xms1024m -Xmx1024m -cp $JAR:$CONFIG \
-  com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Server 2049 1>nfsserver.out 2>nfsserver.err </dev/null &
+nohup java -Xmx2g -Xms2g -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -cp $CONFIG:$JAR:$HADOOP_CONFIG \
+  com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Server 2050 1>nfsserver.out 2>nfsserver.err </dev/null &
 pid="$!"
 echo $pid > nfsserver.pid
