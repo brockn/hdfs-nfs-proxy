@@ -47,6 +47,10 @@ import com.google.common.collect.Maps;
 public class WriteOrderHandler extends Thread {
 
   protected static final Logger LOGGER = Logger.getLogger(WriteOrderHandler.class);
+  /**
+   * 500,0000 * 8 bytes = 3.8MB
+   */
+  protected static final int MAX_WRITE_IDS = 500000;
   protected FSDataOutputStream mOutputStream;
   protected ConcurrentMap<Long, Write> mPendingWrites = Maps.newConcurrentMap();
   protected List<Integer> mProcessedWrites = Lists.newArrayList();
@@ -215,6 +219,9 @@ public class WriteOrderHandler extends Thread {
         if (mProcessedWrites.contains(xid)) {
           LOGGER.info("Write already processed " + xid);
           return length;
+        }
+        if(mProcessedWrites.size() >= MAX_WRITE_IDS) {
+          mProcessedWrites.remove(0);
         }
         mProcessedWrites.add(xid);
         if (offset < mOutputStream.getPos()) {
