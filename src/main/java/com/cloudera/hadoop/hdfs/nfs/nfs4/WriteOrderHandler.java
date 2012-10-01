@@ -73,7 +73,6 @@ public class WriteOrderHandler extends Thread {
   @Override
   public void run() {
     try {
-      long currentSize;
       while (true) {
         Write write = mWriteQueue.poll(10, TimeUnit.SECONDS);
         if (write == null) {
@@ -83,10 +82,10 @@ public class WriteOrderHandler extends Thread {
         } else {
           checkWriteState(write);
           mPendingWrites.put(write.offset, write);
-          currentSize = mPendingWritesSize.addAndGet(write.size);
-          if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Pending writes " + (currentSize / 1024L / 1024L) + "MB, current offset = " + getCurrentPos());
-          }
+          mPendingWritesSize.addAndGet(write.size);
+        }
+        if(LOGGER.isDebugEnabled()) {
+          LOGGER.debug("Pending writes " + (mPendingWritesSize.get() / 1024L / 1024L) + "MB, current offset = " + getCurrentPos());
         }
         synchronized (mOutputStream) {
           checkPendingWrites();
