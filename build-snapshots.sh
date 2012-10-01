@@ -14,7 +14,7 @@ do
   echo $profile
   test -d target/ || mkdir target/ 
   test -d snapshots/ || mkdir snapshots/
-  mvn package -P$profile 1>target/build.log 2>&1 
+  mvn clean compile package -P$profile 1>target/build.log 2>&1 
   FILE=target/hadoop-nfs-proxy-*-SNAPSHOT.jar
   VERSION=$(echo $FILE | awk -F- '{print $4}')
   # "" would publish non-dep jars
