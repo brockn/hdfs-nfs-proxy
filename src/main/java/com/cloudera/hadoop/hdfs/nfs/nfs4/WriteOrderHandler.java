@@ -85,7 +85,7 @@ public class WriteOrderHandler extends Thread {
           mPendingWrites.put(write.offset, write);
           currentSize = mPendingWritesSize.addAndGet(write.size);
           if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Pending writes " + (currentSize / 1024L / 1024L) + "MB");
+            LOGGER.debug("Pending writes " + (currentSize / 1024L / 1024L) + "MB, current offset = " + getCurrentPos());
           }
         }
         synchronized (mOutputStream) {
