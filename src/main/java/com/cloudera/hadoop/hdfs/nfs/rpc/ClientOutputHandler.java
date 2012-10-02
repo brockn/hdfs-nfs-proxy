@@ -30,9 +30,9 @@ import org.apache.log4j.Logger;
  * should be added to the queue by the add(buffer) method. The method is thread
  * safe.
  */
-class OutputStreamHandler extends Thread {
+class ClientOutputHandler extends Thread {
 
-  protected static final Logger LOGGER = Logger.getLogger(OutputStreamHandler.class);
+  protected static final Logger LOGGER = Logger.getLogger(ClientOutputHandler.class);
   protected BlockingQueue<RPCBuffer> mWorkQueue;
   protected OutputStream mOutputStream;
   protected String mClientName;
@@ -45,7 +45,7 @@ class OutputStreamHandler extends Thread {
    * @param outputStream
    * @param client
    */
-  public OutputStreamHandler(OutputStream outputStream, BlockingQueue<RPCBuffer> workQueue, String client) {
+  public ClientOutputHandler(OutputStream outputStream, BlockingQueue<RPCBuffer> workQueue, String client) {
     mOutputStream = outputStream;
     mWorkQueue = workQueue;
     mClientName = client;

@@ -46,7 +46,7 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
 
   protected static final Logger LOGGER = Logger.getLogger(RPCServer.class);
   protected RPCHandler<REQUEST, RESPONSE> mHandler;
-  protected ConcurrentMap<Socket, ClientWorker<REQUEST, RESPONSE>> mClients = Maps.newConcurrentMap();
+  protected ConcurrentMap<Socket, ClientInputHandler<REQUEST, RESPONSE>> mClients = Maps.newConcurrentMap();
   protected int mPort;
   protected ServerSocket mServer;
   protected Configuration mConfiguration;
@@ -86,7 +86,7 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
         String name = client.getInetAddress().getCanonicalHostName() + ":" + client.getPort();
         LOGGER.info(mHandler.getClass() + " got client " + name);
 
-        ClientWorker<REQUEST, RESPONSE> worker = new ClientWorker<REQUEST, RESPONSE>(mConfiguration, this, mHandler, client);
+        ClientInputHandler<REQUEST, RESPONSE> worker = new ClientInputHandler<REQUEST, RESPONSE>(mConfiguration, this, mHandler, client);
         mClients.put(client, worker);
         worker.start();
       }
@@ -100,7 +100,7 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
   public void shutdown() {
     // first close clients
     for (Socket client : mClients.keySet()) {
-      ClientWorker<REQUEST, RESPONSE> worker = mClients.get(client);
+      ClientInputHandler<REQUEST, RESPONSE> worker = mClients.get(client);
       if (worker != null && worker.isAlive()) {
         worker.shutdown();
       }
@@ -136,7 +136,7 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
     return mRequestsInProgress;
   }
 
-  public ConcurrentMap<Socket, ClientWorker<REQUEST, RESPONSE>> getClients() {
+  public ConcurrentMap<Socket, ClientInputHandler<REQUEST, RESPONSE>> getClients() {
     return mClients;
   }
 

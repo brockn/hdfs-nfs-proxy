@@ -60,9 +60,9 @@ import com.cloudera.hadoop.hdfs.nfs.security.VerifierNone;
  * @param <REQUEST>
  * @param <RESPONSE>
  */
-class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> extends Thread {
+class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBase> extends Thread {
 
-  protected static final Logger LOGGER = Logger.getLogger(ClientWorker.class);
+  protected static final Logger LOGGER = Logger.getLogger(ClientInputHandler.class);
   protected static final long RETRANSMIT_PENALTY_TIME = 100L;
   protected static final long TOO_MANY_PENDING_REQUESTS_PAUSE = 10L;
   protected static final long EXECUTOR_THREAD_POOL_FULL_PAUSE = 10L;
@@ -72,7 +72,7 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
   protected Socket mClient;
   protected String mClientName;
   protected RPCServer<REQUEST, RESPONSE> mRPCServer;
-  protected OutputStreamHandler mOutputHandler;
+  protected ClientOutputHandler mOutputHandler;
   protected BlockingQueue<RPCBuffer> mOutputBufferQueue;
   protected RPCHandler<REQUEST, RESPONSE> mHandler;
   protected SecurityHandler mSecurityHandler;
@@ -86,7 +86,7 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
 
   protected static final AtomicInteger SESSIONID = new AtomicInteger(Integer.MAX_VALUE);
 
-  public ClientWorker(Configuration conf, RPCServer<REQUEST, RESPONSE> server, RPCHandler<REQUEST, RESPONSE> handler, Socket client) {
+  public ClientInputHandler(Configuration conf, RPCServer<REQUEST, RESPONSE> server, RPCHandler<REQUEST, RESPONSE> handler, Socket client) {
     mConfiguration = conf;
     mRPCServer = server;
     mHandler = handler;
@@ -114,7 +114,7 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
       mClient.setPerformancePreferences(0, 1, 0);
       in = mClient.getInputStream();
       out = mClient.getOutputStream();
-      mOutputHandler = new OutputStreamHandler(out, mOutputBufferQueue, mClientName);
+      mOutputHandler = new ClientOutputHandler(out, mOutputBufferQueue, mClientName);
       mOutputHandler.setDaemon(true);
       mOutputHandler.start();
       while(true) {
@@ -249,7 +249,7 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
         mOutputHandler.close();
       }
       IOUtils.closeSocket(mClient);
-      Map<Socket, ClientWorker<REQUEST, RESPONSE>> clients = mRPCServer.getClients();
+      Map<Socket, ClientInputHandler<REQUEST, RESPONSE>> clients = mRPCServer.getClients();
       clients.remove(mClient);
     }
   }
@@ -339,12 +339,12 @@ class ClientWorker<REQUEST extends MessageBase, RESPONSE extends MessageBase> ex
     protected InetAddress mClientName;
     protected String mSessionID;
     protected RPCHandler<REQUEST, RESPONSE> mHandler;
-    protected ClientWorker<REQUEST, RESPONSE> mClientWorker;
+    protected ClientInputHandler<REQUEST, RESPONSE> mClientWorker;
     protected RPCRequest mRequest;
     protected RPCBuffer mBuffer;
 
     public ClientTask(InetAddress clientName, String sessionID,
-        ClientWorker<REQUEST, RESPONSE> clientWorker, RPCHandler<REQUEST, RESPONSE> handler,
+        ClientInputHandler<REQUEST, RESPONSE> clientWorker, RPCHandler<REQUEST, RESPONSE> handler,
         RPCRequest request, RPCBuffer buffer) {
       mClientName = clientName;
       mSessionID = sessionID;
