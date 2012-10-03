@@ -53,7 +53,8 @@ public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITERes
       FSDataOutputStream out = hdfsState.forWrite(request.getStateID(), session.getFileSystem(), fileHandle, false);
       WriteOrderHandler writeOrderHandler = hdfsState.getWriteOrderHandler(file, out);
       boolean sync = request.getStable() != NFS4_COMMIT_UNSTABLE4;
-      return writeOrderHandler.writeWouldBlock(request.getOffset(), sync);
+      return false;
+//      return writeOrderHandler.writeWouldBlock(request.getOffset(), sync);
     } catch(NFS4Exception e) {
       LOGGER.warn("Expection handing wouldBlock. Client error will " +
           "be returned on call to doHandle", e);
@@ -79,6 +80,7 @@ public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITERes
 
     WriteOrderHandler writeOrderHandler = hdfsState.getWriteOrderHandler(file, out);
     boolean sync = request.getStable() != NFS4_COMMIT_UNSTABLE4;
+    sync = false;
     int count = writeOrderHandler.write(path.toUri().getPath(), session.getXID(), request.getOffset(),
         sync, request.getData(), request.getStart(), request.getLength());
 
