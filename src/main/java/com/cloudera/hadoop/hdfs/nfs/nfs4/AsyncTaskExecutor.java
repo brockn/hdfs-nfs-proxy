@@ -27,6 +27,6 @@ public class AsyncTaskExecutor<T> {
           LOGGER.error("Unabled error", e);
         }
       }
-    }, 0L, 100L, TimeUnit.MILLISECONDS);
+    }, 0L, 1, TimeUnit.SECONDS);
   }
 }

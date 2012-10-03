@@ -154,7 +154,8 @@ public class WriteOrderHandler extends Thread {
    * @throws NFS4Exception thrown if the thread processing writes dies
    */
   public void sync(long offset) throws IOException, NFS4Exception {
-    LOGGER.info("Sync for " + mOutputStream + " and " + offset);
+    LOGGER.info("Sync for " + mOutputStream + " and " + offset + 
+        ", pending writes = " + mPendingWrites.keySet() + ", write queue = " + mWriteQueue.size());
     while (mOutputStream.getPos() < offset) {
       checkException();
       pause(10L);
@@ -173,6 +174,9 @@ public class WriteOrderHandler extends Thread {
     return false;
   }
   public boolean closeWouldBlock() throws IOException {
+    LOGGER.info("Close would block for " + mOutputStream + ", expectedLength = " + mExpectedLength.get() + 
+        ", mOutputStream.getPos = " + mOutputStream.getPos() + ", pending writes = " + mPendingWrites.keySet() + 
+        ", write queue = " + mWriteQueue.size());
     if(mOutputStream.getPos() < mExpectedLength.get()
         || !(mPendingWrites.isEmpty() && mWriteQueue.isEmpty())) {
       return true;
@@ -189,7 +193,7 @@ public class WriteOrderHandler extends Thread {
   public void close() throws IOException, NFS4Exception {
     mClosed.set(true);
     while (closeWouldBlock()) {
-      pause(10L);
+      pause(1000L);
       sync(mExpectedLength.get());
     }
     synchronized (mOutputStream) {
