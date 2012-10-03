@@ -32,9 +32,10 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.Bitmap;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Identifiable;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -162,7 +163,7 @@ public abstract class Attribute implements MessageBase, Identifiable {
     return new Pair<Bitmap, ImmutableList<Attribute>>(attrs, ImmutableList.copyOf(attrValues));
   }
 
-  public static Pair<Bitmap, ImmutableList<Attribute>> getAttrs(NFS4Handler server, Session session,
+  public static Pair<Bitmap, ImmutableList<Attribute>> getAttrs(HDFSState hdfsState, Session session,
       Bitmap requestedAttrs, FileSystem fs, FileStatus fileStatus) throws NFS4Exception, IOException {
     Bitmap responseAttrs = new Bitmap();
     List<Attribute> attrValues = Lists.newArrayList();
@@ -172,17 +173,17 @@ public abstract class Attribute implements MessageBase, Identifiable {
         if (isSupported(bitIndex)) {
           responseAttrs.set(bitIndex);
           AttributeHandler<Attribute> handler = getHandler(bitIndex);
-          attrValues.add(handler.get(server, session, fs, fileStatus));
+          attrValues.add(handler.get(hdfsState, session, fs, fileStatus));
         } else {
           LOGGER.info("getAttr Dropping attribute " + bitIndex);
-          server.incrementMetric("GETATTR_DROPPED_ATTRS", 1);
+          hdfsState.incrementMetric("GETATTR_DROPPED_ATTRS", 1);
         }
       }
     }
     return new Pair<Bitmap, ImmutableList<Attribute>>(responseAttrs, ImmutableList.copyOf(attrValues));
   }
 
-  public static Bitmap setAttrs(NFS4Handler server, Session session,
+  public static Bitmap setAttrs(HDFSState hdfsState, Session session,
       Bitmap requestedAttrs, ImmutableMap<Integer, Attribute> attrValues, FileSystem fs, FileStatus fileStatus, StateID stateID)
           throws NFS4Exception, IOException {
     Bitmap responseAttrs = new Bitmap();
@@ -190,7 +191,7 @@ public abstract class Attribute implements MessageBase, Identifiable {
     for (int bitIndex = 0; bitIndex < size; bitIndex++) {
       if (requestedAttrs.isSet(bitIndex)) {
         AttributeHandler<Attribute> handler = getHandler(bitIndex);
-        if (handler.set(server, session, fs, fileStatus, stateID, attrValues.get(bitIndex))) {
+        if (handler.set(hdfsState, session, fs, fileStatus, stateID, attrValues.get(bitIndex))) {
           responseAttrs.set(bitIndex);
         }
       }

@@ -18,7 +18,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
 
 import java.io.IOException;
 
@@ -26,19 +26,19 @@ import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.PUTROOTFHRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.PUTROOTFHResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class PUTROOTFHHandler extends OperationRequestHandler<PUTROOTFHRequest, PUTROOTFHResponse> {
 
   protected static final Logger LOGGER = Logger.getLogger(PUTROOTFHHandler.class);
 
   @Override
-  protected PUTROOTFHResponse doHandle(NFS4Handler server, Session session,
+  protected PUTROOTFHResponse doHandle(HDFSState hdfsState, Session session,
       PUTROOTFHRequest request) throws NFS4Exception, IOException {
-    session.setCurrentFileHandle(server.createFileHandle(new Path("/")));
+    session.setCurrentFileHandle(hdfsState.createFileHandle(new Path("/")));
     PUTROOTFHResponse response = createResponse();
     response.setStatus(NFS4_OK);
     return response;

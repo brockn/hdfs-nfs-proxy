@@ -18,7 +18,8 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
 
 import java.io.IOException;
 
@@ -29,11 +30,11 @@ import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Bitmap;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Attribute;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.SETATTRRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.SETATTRResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 import com.google.common.collect.ImmutableMap;
 
 public class SETATTRHandler extends OperationRequestHandler<SETATTRRequest, SETATTRResponse> {
@@ -41,16 +42,16 @@ public class SETATTRHandler extends OperationRequestHandler<SETATTRRequest, SETA
   protected static final Logger LOGGER = Logger.getLogger(SETATTRHandler.class);
 
   @Override
-  protected SETATTRResponse doHandle(NFS4Handler server, Session session,
+  protected SETATTRResponse doHandle(HDFSState hdfsState, Session session,
       SETATTRRequest request) throws NFS4Exception, IOException {
     if (session.getCurrentFileHandle() == null) {
       throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
     }
-    Path path = server.getPath(session.getCurrentFileHandle());
+    Path path = hdfsState.getPath(session.getCurrentFileHandle());
     FileSystem fs = session.getFileSystem();
     FileStatus fileStatus = fs.getFileStatus(path);
     ImmutableMap<Integer, Attribute> requestAttrs = request.getAttrValues();
-    Bitmap responseAttrs = Attribute.setAttrs(server, session,
+    Bitmap responseAttrs = Attribute.setAttrs(hdfsState, session,
         request.getAttrs(), requestAttrs, fs, fileStatus, request.getStateID());
     SETATTRResponse response = createResponse();
     response.setStatus(NFS4_OK);

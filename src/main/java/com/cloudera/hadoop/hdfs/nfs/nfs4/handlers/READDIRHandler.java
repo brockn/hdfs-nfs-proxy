@@ -18,7 +18,12 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_BAD_COOKIE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOTDIR;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_TOOSMALL;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_COOKIE_OFFSET;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -35,12 +40,12 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.Bitmap;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.DirectoryEntry;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.DirectoryList;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData8;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Attribute;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.READDIRRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.READDIRResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -50,12 +55,12 @@ public class READDIRHandler extends OperationRequestHandler<READDIRRequest, READ
   protected static final Logger LOGGER = Logger.getLogger(READDIRHandler.class);
 
   @Override
-  protected READDIRResponse doHandle(NFS4Handler server, Session session,
+  protected READDIRResponse doHandle(HDFSState hdfsState, Session session,
       READDIRRequest request) throws NFS4Exception, IOException {
     if (session.getCurrentFileHandle() == null) {
       throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
     }
-    Path path = server.getPath(session.getCurrentFileHandle());
+    Path path = hdfsState.getPath(session.getCurrentFileHandle());
     FileSystem fs = session.getFileSystem();
     FileStatus fileStatus = fs.getFileStatus(path);
     if (!fileStatus.isDir()) {
@@ -100,8 +105,8 @@ public class READDIRHandler extends OperationRequestHandler<READDIRRequest, READ
       fileStatus = fileStati[(int) (cookie - NFS4_COOKIE_OFFSET)];
       // we have to force creation of a file handle because that creates
       // a fileid which is required later in the getAttrs.
-      server.createFileHandle(fileStatus.getPath());
-      DirectoryEntry entry = readAttrs(server, session, request.getAttrs(), fs, fileStatus);
+      hdfsState.createFileHandle(fileStatus.getPath());
+      DirectoryEntry entry = readAttrs(hdfsState, session, request.getAttrs(), fs, fileStatus);
       entry.setName(fileStatus.getPath().getName());
       entry.setCookie(cookie);
 
@@ -119,7 +124,7 @@ public class READDIRHandler extends OperationRequestHandler<READDIRRequest, READ
       }
       messageSize += entryLength;
       entries.add(entry);
-      server.incrementMetric("NFS_READDIR_ENTRIES", 1);
+      hdfsState.incrementMetric("NFS_READDIR_ENTRIES", 1);
     }
     DirectoryList entryList = new DirectoryList();
     entryList.setDirEntries(entries);
@@ -132,8 +137,8 @@ public class READDIRHandler extends OperationRequestHandler<READDIRRequest, READ
     return response;
   }
 
-  protected DirectoryEntry readAttrs(NFS4Handler server, Session session, Bitmap requestedAttrs, FileSystem fs, FileStatus fileStatus) throws NFS4Exception, IOException {
-    Pair<Bitmap, ImmutableList<Attribute>> pair = Attribute.getAttrs(server, session, requestedAttrs, fs, fileStatus);
+  protected DirectoryEntry readAttrs(HDFSState hdfsState, Session session, Bitmap requestedAttrs, FileSystem fs, FileStatus fileStatus) throws NFS4Exception, IOException {
+    Pair<Bitmap, ImmutableList<Attribute>> pair = Attribute.getAttrs(hdfsState, session, requestedAttrs, fs, fileStatus);
     DirectoryEntry entry = new DirectoryEntry();
     entry.setAttrs(pair.getFirst());
     entry.setAttrValues(pair.getSecond());

@@ -26,14 +26,14 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 
 import com.cloudera.hadoop.hdfs.nfs.NFSUtils;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
 
 public class OwnerHandler extends AttributeHandler<Owner> {
 
   @Override
-  public Owner get(NFS4Handler server, Session session, FileSystem fs,
+  public Owner get(HDFSState hdfsState, Session session, FileSystem fs,
       FileStatus fileStatus) {
     Owner owner = new Owner();
     String domain = NFSUtils.getDomain(session.getConfiguration(), session.getClientAddress());
@@ -42,7 +42,7 @@ public class OwnerHandler extends AttributeHandler<Owner> {
   }
 
   @Override
-  public boolean set(NFS4Handler server, Session session, FileSystem fs, FileStatus fileStatus, StateID stateID, Owner attr)
+  public boolean set(HDFSState hdfsState, Session session, FileSystem fs, FileStatus fileStatus, StateID stateID, Owner attr)
       throws IOException {
     String user = removeDomain(attr.getOwner());
     if(fileStatus.getOwner().equals(user)) {

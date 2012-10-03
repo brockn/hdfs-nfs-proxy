@@ -25,13 +25,13 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 
 public class MaxWriteHandler extends AttributeHandler<MaxWrite> {
 
   @Override
-  public MaxWrite get(NFS4Handler server, Session session,
+  public MaxWrite get(HDFSState hdfsState, Session session,
       FileSystem fs, FileStatus fileStatus) throws NFS4Exception {
     MaxWrite max = new MaxWrite();
     max.setSize(NFS4_MAX_RWSIZE);

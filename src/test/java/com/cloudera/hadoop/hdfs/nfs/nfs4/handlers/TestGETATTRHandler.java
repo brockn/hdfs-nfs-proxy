@@ -38,11 +38,12 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Status;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.GETATTRRequest;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class TestGETATTRHandler {
 
   GETATTRHandler handler;
-  NFS4Handler server;
+  HDFSState hdfsState;
   Session session;
   GETATTRRequest request;
   FileSystem fs;
@@ -51,7 +52,7 @@ public class TestGETATTRHandler {
   @Before
   public void setup() throws NFS4Exception {
     handler = new GETATTRHandler();
-    server = mock(NFS4Handler.class);
+    hdfsState = mock(HDFSState.class);
     session = mock(Session.class);
     request = new GETATTRRequest();
     fs = mock(FileSystem.class);
@@ -60,10 +61,10 @@ public class TestGETATTRHandler {
 
   @Test
   public void testFileNotFound() throws NFS4Exception, IOException {
-    when(server.getPath(any(FileHandle.class))).thenReturn(new Path("/"));
+    when(hdfsState.getPath(any(FileHandle.class))).thenReturn(new Path("/"));
     when(session.getCurrentFileHandle()).thenReturn(fileHandle);
     when(fs.getFileStatus(any(Path.class))).thenThrow(new FileNotFoundException());
-    Status response = handler.handle(server, session, request);
+    Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_NOENT, response.getStatus());
   }
 

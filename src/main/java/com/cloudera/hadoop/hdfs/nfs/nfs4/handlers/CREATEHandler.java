@@ -18,7 +18,13 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_EXIST;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_INVAL;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_IO;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_STALE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_DIR;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
 
 import java.io.IOException;
 
@@ -30,11 +36,11 @@ import org.apache.log4j.Logger;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Bitmap;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.ChangeInfo;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Attribute;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CREATERequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CREATEResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 import com.google.common.collect.ImmutableMap;
 
 public class CREATEHandler extends OperationRequestHandler<CREATERequest, CREATEResponse> {
@@ -42,7 +48,7 @@ public class CREATEHandler extends OperationRequestHandler<CREATERequest, CREATE
   protected static final Logger LOGGER = Logger.getLogger(CREATEHandler.class);
 
   @Override
-  protected CREATEResponse doHandle(NFS4Handler server, Session session,
+  protected CREATEResponse doHandle(HDFSState hdfsState, Session session,
       CREATERequest request) throws NFS4Exception, IOException {
     if (session.getCurrentFileHandle() == null) {
       throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
@@ -53,7 +59,7 @@ public class CREATEHandler extends OperationRequestHandler<CREATERequest, CREATE
     if ("".equals(request.getName())) {
       throw new NFS4Exception(NFS4ERR_INVAL);
     }
-    Path parent = server.getPath(session.getCurrentFileHandle());
+    Path parent = hdfsState.getPath(session.getCurrentFileHandle());
     Path path = new Path(parent, request.getName());
     FileSystem fs = session.getFileSystem();
     if (!fs.exists(parent)) {
@@ -71,9 +77,9 @@ public class CREATEHandler extends OperationRequestHandler<CREATERequest, CREATE
     ImmutableMap<Integer, Attribute> requestAttrs = request.getAttrValues();
     // TODO Handlers should have annotations so that setAttrs can throw an
     // error if they require the stateID to be set.
-    Bitmap responseAttrs = Attribute.setAttrs(server, session,
+    Bitmap responseAttrs = Attribute.setAttrs(hdfsState, session,
         request.getAttrs(), requestAttrs, fs, fileStatus, null);
-    session.setCurrentFileHandle(server.createFileHandle(path));
+    session.setCurrentFileHandle(hdfsState.createFileHandle(path));
     CREATEResponse response = createResponse();
     response.setChangeInfo(ChangeInfo.newChangeInfo(true, parentModTimeBefore, parentModTimeAfter));
     response.setStatus(NFS4_OK);

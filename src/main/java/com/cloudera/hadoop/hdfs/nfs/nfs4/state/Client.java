@@ -17,9 +17,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudera.hadoop.hdfs.nfs.nfs4;
+package com.cloudera.hadoop.hdfs.nfs.nfs4.state;
 
 import java.util.concurrent.atomic.AtomicLong;
+
+import com.cloudera.hadoop.hdfs.nfs.nfs4.Callback;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.ClientID;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData8;
 
 public class Client {
 

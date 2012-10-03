@@ -18,22 +18,23 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
 
 import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.SAVEFHRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.SAVEFHResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class SAVEFHHandler extends OperationRequestHandler<SAVEFHRequest, SAVEFHResponse> {
 
   protected static final Logger LOGGER = Logger.getLogger(SAVEFHHandler.class);
 
   @Override
-  protected SAVEFHResponse doHandle(NFS4Handler server, Session session,
+  protected SAVEFHResponse doHandle(HDFSState hdfsState, Session session,
       SAVEFHRequest request) throws NFS4Exception {
     if (session.getCurrentFileHandle() == null) {
       throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);

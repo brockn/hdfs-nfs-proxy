@@ -17,10 +17,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudera.hadoop.hdfs.nfs.nfs4;
+package com.cloudera.hadoop.hdfs.nfs.nfs4.state;
 
 import java.util.Map;
 
+import com.cloudera.hadoop.hdfs.nfs.nfs4.ClientID;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData;
 import com.google.common.collect.Maps;
 
 /**

@@ -18,7 +18,14 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOTSUPP;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_CLAIM_NULL;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OPEN4_CREATE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OPEN4_RESULT_CONFIRM;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OPEN4_SHARE_ACCESS_READ;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OPEN4_SHARE_ACCESS_WRITE;
 
 import java.io.IOException;
 
@@ -31,34 +38,34 @@ import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.ChangeInfo;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.ChangeID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.OPENRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.OPENResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class OPENHandler extends OperationRequestHandler<OPENRequest, OPENResponse> {
 
   protected static final Logger LOGGER = Logger.getLogger(OPENHandler.class);
 
   @Override
-  protected OPENResponse doHandle(NFS4Handler server, Session session,
+  protected OPENResponse doHandle(HDFSState hdfsState, Session session,
       OPENRequest request) throws NFS4Exception, IOException, UnsupportedOperationException {
     if (session.getCurrentFileHandle() == null) {
       throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
     }
     switch (request.getAccess()) {
       case NFS4_OPEN4_SHARE_ACCESS_READ:
-        return read(server, session, request);
+        return read(hdfsState, session, request);
       case NFS4_OPEN4_SHARE_ACCESS_WRITE:
-        return write(server, session, request);
+        return write(hdfsState, session, request);
       default:
         throw new NFS4Exception(NFS4ERR_NOTSUPP, "read OR write not both ", true);
     }
   }
 
-  protected OPENResponse read(NFS4Handler server, Session session,
+  protected OPENResponse read(HDFSState hdfsState, Session session,
       OPENRequest request) throws NFS4Exception, IOException {
     if (request.getDeny() != 0) {
       throw new UnsupportedOperationException("Read access does not support deny " + request.getDeny());
@@ -66,11 +73,11 @@ public class OPENHandler extends OperationRequestHandler<OPENRequest, OPENRespon
     // generate stateid
     StateID stateID = StateID.newStateID(request.getSeqID());
     FileSystem fs = session.getFileSystem();
-    Path parentPath = server.getPath(session.getCurrentFileHandle());
+    Path parentPath = hdfsState.getPath(session.getCurrentFileHandle());
     Path path = new Path(parentPath, request.getName());
-    session.setCurrentFileHandle(server.createFileHandle(path));
+    session.setCurrentFileHandle(hdfsState.createFileHandle(path));
     @SuppressWarnings("unused")
-    FSDataInputStream in = server.forRead(stateID, fs, session.getCurrentFileHandle());
+    FSDataInputStream in = hdfsState.forRead(stateID, fs, session.getCurrentFileHandle());
     OPENResponse response = createResponse();
     response.setStateID(stateID);
     FileStatus fileStatus = fs.getFileStatus(path);
@@ -93,16 +100,16 @@ public class OPENHandler extends OperationRequestHandler<OPENRequest, OPENRespon
     return response;
   }
 
-  protected OPENResponse write(NFS4Handler server, Session session,
+  protected OPENResponse write(HDFSState hdfsState, Session session,
       OPENRequest request) throws NFS4Exception, IOException {
     // generate stateid
     StateID stateID = StateID.newStateID(request.getSeqID());
     FileSystem fs = session.getFileSystem();
-    Path parentPath = server.getPath(session.getCurrentFileHandle());
+    Path parentPath = hdfsState.getPath(session.getCurrentFileHandle());
     Path path = new Path(parentPath, request.getName());
-    session.setCurrentFileHandle(server.createFileHandle(path));
+    session.setCurrentFileHandle(hdfsState.createFileHandle(path));
     boolean overwrite = request.getOpenType() == NFS4_OPEN4_CREATE;
-    FSDataOutputStream out = server.forWrite(stateID, fs, session.getCurrentFileHandle(), overwrite);
+    FSDataOutputStream out = hdfsState.forWrite(stateID, fs, session.getCurrentFileHandle(), overwrite);
     out.sync(); // create file in namenode
     LOGGER.info(session.getSessionID() + " Opened " + path + " for write " + out);
     OPENResponse response = createResponse();

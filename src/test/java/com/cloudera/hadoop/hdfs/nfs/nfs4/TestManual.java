@@ -52,6 +52,8 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.GETFHResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.OperationResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.PUTROOTFHResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.SETCLIENTIDResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.Client;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.ClientFactory;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
 import com.google.common.collect.ImmutableList;

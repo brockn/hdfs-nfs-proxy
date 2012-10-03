@@ -31,27 +31,27 @@ import org.apache.log4j.Logger;
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData8;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.WRITERequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.WRITEResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITEResponse> {
 
   protected static final Logger LOGGER = Logger.getLogger(WRITEHandler.class);
   @Override
-  public boolean wouldBlock(NFS4Handler server, Session session, WRITERequest request) {
+  public boolean wouldBlock(HDFSState hdfsState, Session session, WRITERequest request) {
     try {
       if (session.getCurrentFileHandle() == null) {
         throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
       }
       FileHandle fileHandle = session.getCurrentFileHandle();
-      Path path = server.getPath(fileHandle);
+      Path path = hdfsState.getPath(fileHandle);
       String file = path.toUri().getPath();
-      FSDataOutputStream out = server.forWrite(request.getStateID(), session.getFileSystem(), fileHandle, false);
-      WriteOrderHandler writeOrderHandler = server.getWriteOrderHandler(file, out);
+      FSDataOutputStream out = hdfsState.forWrite(request.getStateID(), session.getFileSystem(), fileHandle, false);
+      WriteOrderHandler writeOrderHandler = hdfsState.getWriteOrderHandler(file, out);
       boolean sync = request.getStable() != NFS4_COMMIT_UNSTABLE4;
       return writeOrderHandler.writeWouldBlock(request.getOffset(), sync);
     } catch(NFS4Exception e) {
@@ -64,29 +64,29 @@ public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITERes
     return false;
   }
   @Override
-  protected WRITEResponse doHandle(NFS4Handler server, Session session,
+  protected WRITEResponse doHandle(HDFSState hdfsState, Session session,
       WRITERequest request) throws NFS4Exception, IOException {
     if (session.getCurrentFileHandle() == null) {
       throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
     }
 
     FileHandle fileHandle = session.getCurrentFileHandle();
-    Path path = server.getPath(fileHandle);
+    Path path = hdfsState.getPath(fileHandle);
     String file = path.toUri().getPath();
-    FSDataOutputStream out = server.forWrite(request.getStateID(), session.getFileSystem(), fileHandle, false);
+    FSDataOutputStream out = hdfsState.forWrite(request.getStateID(), session.getFileSystem(), fileHandle, false);
 
     LOGGER.info(session.getSessionID() + " xid = " + session.getXID() + ", write accepted " + file + " " + request.getOffset());
 
-    WriteOrderHandler writeOrderHandler = server.getWriteOrderHandler(file, out);
+    WriteOrderHandler writeOrderHandler = hdfsState.getWriteOrderHandler(file, out);
     boolean sync = request.getStable() != NFS4_COMMIT_UNSTABLE4;
     int count = writeOrderHandler.write(path.toUri().getPath(), session.getXID(), request.getOffset(),
         sync, request.getData(), request.getStart(), request.getLength());
 
     WRITEResponse response = createResponse();
     OpaqueData8 verifer = new OpaqueData8();
-    verifer.setData(Bytes.toBytes(server.getStartTime()));
+    verifer.setData(Bytes.toBytes(hdfsState.getStartTime()));
     response.setVerifer(verifer);
-    server.incrementMetric("HDFS_BYTES_WRITE", count);
+    hdfsState.incrementMetric("HDFS_BYTES_WRITE", count);
     response.setCount(count);
     response.setStatus(NFS4_OK);
     return response;

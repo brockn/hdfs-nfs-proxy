@@ -17,21 +17,22 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.handlers.OperationRequestHandler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.OperationRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CompoundResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.OperationResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.AbstractFuture;
 
 public class NFS4AsyncFuture extends AbstractFuture<CompoundResponse> 
 implements AsyncFuture<CompoundResponse> {
   protected static final Logger LOGGER = Logger.getLogger(NFS4AsyncFuture.class);
-  private final NFS4Handler handler;
+  private final HDFSState hdfsState;
   private final Session session;
   private final UserGroupInformation ugi;
   private final List<OperationRequest> requests;
   private final List<OperationResponse> responses;
   
   private int lastStatus;
-  public NFS4AsyncFuture(NFS4Handler handler, Session session, UserGroupInformation ugi) {
-    this.handler = handler;
+  public NFS4AsyncFuture(HDFSState hdfsState, Session session, UserGroupInformation ugi) {
+    this.hdfsState = hdfsState;
     this.session = session;
     this.ugi = ugi;
     this.requests = Lists.newArrayList(session.getCompoundRequest().getOperations());
@@ -54,7 +55,7 @@ implements AsyncFuture<CompoundResponse> {
       response.setStatus(lastStatus);
       response.setOperations(responses);
       set(response);
-      handler.incrementMetric("NFS_COMMANDS", 1);
+      hdfsState.incrementMetric("NFS_COMMANDS", 1);
     } catch (Exception ex) {
       if (ex instanceof UndeclaredThrowableException && ex.getCause() != null) {
         Throwable throwable = ex.getCause();
@@ -98,11 +99,11 @@ implements AsyncFuture<CompoundResponse> {
             + " for " + username);
       }
       OperationRequestHandler<OperationRequest, OperationResponse> requestHandler = OperationFactory.getHandler(request.getID());
-      if(requestHandler.wouldBlock(handler, session, request)) {
+      if(requestHandler.wouldBlock(hdfsState, session, request)) {
         return AsyncFuture.Complete.RETRY;
       }
       iterator.remove();
-      OperationResponse response = requestHandler.handle(handler, session,  request);
+      OperationResponse response = requestHandler.handle(hdfsState, session,  request);
       responses.add(response);
       lastStatus = response.getStatus();
       if (lastStatus != NFS4_OK) {
@@ -110,8 +111,8 @@ implements AsyncFuture<CompoundResponse> {
             + request.getClass().getSimpleName() + " for " + username);
         return AsyncFuture.Complete.COMPLETE;
       }
-      handler.incrementMetric("NFS_" + request.getClass().getSimpleName(), 1);
-      handler.incrementMetric("NFS_OPERATIONS", 1);
+      hdfsState.incrementMetric("NFS_" + request.getClass().getSimpleName(), 1);
+      hdfsState.incrementMetric("NFS_OPERATIONS", 1);
     }
     return AsyncFuture.Complete.COMPLETE;
   }

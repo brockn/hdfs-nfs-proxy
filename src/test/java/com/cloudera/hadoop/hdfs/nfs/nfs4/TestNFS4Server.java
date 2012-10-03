@@ -24,7 +24,6 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_PROC_NULL;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_ACCEPT_SUCCESS;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_REPLY_STATE_ACCEPT;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -32,7 +31,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 import org.junit.After;
@@ -44,7 +42,6 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCResponse;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCTestUtil;
-import com.google.common.collect.Lists;
 
 public class TestNFS4Server {
 

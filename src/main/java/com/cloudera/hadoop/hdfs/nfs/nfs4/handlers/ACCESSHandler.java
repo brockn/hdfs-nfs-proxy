@@ -18,7 +18,15 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_SERVERFAULT;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_ACCESS_DELETE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_ACCESS_EXECUTE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_ACCESS_EXTEND;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_ACCESS_LOOKUP;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_ACCESS_MODIFY;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_ACCESS_READ;
 
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -27,12 +35,12 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.UserIDMapper;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.ACCESSRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.ACCESSResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 import com.cloudera.hadoop.hdfs.nfs.security.AuthenticatedCredentials;
 
 public class ACCESSHandler extends OperationRequestHandler<ACCESSRequest, ACCESSResponse> {
@@ -43,14 +51,14 @@ public class ACCESSHandler extends OperationRequestHandler<ACCESSRequest, ACCESS
   public static final int ACCESS_EXECUTE = 0x01;
 
   @Override
-  protected ACCESSResponse doHandle(NFS4Handler server, Session session,
+  protected ACCESSResponse doHandle(HDFSState hdfsState, Session session,
       ACCESSRequest request) throws NFS4Exception {
     if (session.getCurrentFileHandle() == null) {
       throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
     }
     CompoundRequest compoundRequest = session.getCompoundRequest();
     AuthenticatedCredentials creds = compoundRequest.getCredentials();
-    Path path = server.getPath(session.getCurrentFileHandle());
+    Path path = hdfsState.getPath(session.getCurrentFileHandle());
     try {
 
       UserIDMapper mapper = UserIDMapper.get(session.getConfiguration());
