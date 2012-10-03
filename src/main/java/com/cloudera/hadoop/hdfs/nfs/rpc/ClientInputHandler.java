@@ -73,7 +73,7 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
 
   protected static final Logger LOGGER = Logger.getLogger(ClientInputHandler.class);
   protected static final long RETRANSMIT_PENALTY_TIME = 100L;
-  protected static final long TOO_MANY_PENDING_REQUESTS_PAUSE = 10L;
+  protected static final long TOO_MANY_PENDING_REQUESTS_PAUSE = 100L;
   protected static final long EXECUTOR_THREAD_POOL_FULL_PAUSE = 10L;
   protected int mRestransmitPenaltyThreshold;
   protected int mMaxPendingRequests;
@@ -152,7 +152,8 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
         while(mRequestsInProgress.size() > mMaxPendingRequests && count++ < mMaxPendingRequestWaits) {
           mHandler.incrementMetric("TOO_MANY_PENDING_REQUESTS", 1);
           if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug(mSessionID + " Client " + mClientName + " is waiting for pending requests to finish (SLOWDOWN)");
+            LOGGER.debug(mSessionID + " Client " + mClientName + " is waiting for pending " + 
+                mRequestsInProgress.size() + " requests to finish (SLOWDOWN)");
           }
           Thread.sleep(TOO_MANY_PENDING_REQUESTS_PAUSE);
         }
@@ -222,28 +223,25 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
             byte[] plainData = mSecurityHandler.unwrap(encryptedData);
             requestBuffer = new RPCBuffer(plainData);
           }
-
-          synchronized (mRequestsInProgress) {
-            if(mRequestsInProgress.contains(request.getXid())) {
-              mRetransmits++;
-              mHandler.incrementMetric("RESTRANSMITS", 1);
-              LOGGER.info(mSessionID + " ignoring request " + request.getXidAsHexString());
+          if(mRequestsInProgress.contains(request.getXid())) {
+            mRetransmits++;
+            mHandler.incrementMetric("RESTRANSMITS", 1);
+            LOGGER.info(mSessionID + " ignoring request " + request.getXidAsHexString());
+          } else {
+            mRetransmits--;
+            mRequestsInProgress.add(request.getXid());
+            /*
+             * TODO ensure credentials are the same for request/cached
+             * response.
+             */
+            MessageBase applicationResponse = mResponseCache.get(request.getXid());
+            if(applicationResponse != null) {
+              writeApplicationResponse(request, applicationResponse);
+              LOGGER.info(mSessionID + " serving cached response to " + request.getXidAsHexString());
             } else {
-              mRetransmits--;
-              mRequestsInProgress.add(request.getXid());
-              /*
-               * TODO ensure credentials are the same for request/cached
-               * response.
-               */
-              MessageBase applicationResponse = mResponseCache.get(request.getXid());
-              if(applicationResponse != null) {
-                writeApplicationResponse(request, applicationResponse);
-                LOGGER.info(mSessionID + " serving cached response to " + request.getXidAsHexString());
-              } else {
-                execute(request, requestBuffer);
-                if(LOGGER.isDebugEnabled()) {
-                  LOGGER.debug(mSessionID + " scheduling request " + request.getXidAsHexString());
-                }
+              execute(request, requestBuffer);
+              if(LOGGER.isDebugEnabled()) {
+                LOGGER.debug(mSessionID + " scheduling request " + request.getXidAsHexString());
               }
             }
           }
@@ -280,7 +278,6 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
   }
   protected void writeApplicationResponse(RPCRequest request, MessageBase applicationResponse) {
     mResponseCache.put(request.getXid(), applicationResponse);
-    mRequestsInProgress.remove(request.getXid()); // duplicates will be served out of cache
     LOGGER.info(mSessionID + " " + request.getXidAsHexString() + " Writing " + 
         applicationResponse.getClass().getSimpleName() + " to "  + mClientName);
     RPCBuffer responseBuffer = new RPCBuffer();
@@ -318,6 +315,8 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
       } catch (Exception x) {
         LOGGER.error(mSessionID + " Error writing failure packet", x);
       }
+    } finally {
+      mRequestsInProgress.remove(request.getXid());
     }
   }
   protected void writeRPCResponse(RPCResponse response) {
