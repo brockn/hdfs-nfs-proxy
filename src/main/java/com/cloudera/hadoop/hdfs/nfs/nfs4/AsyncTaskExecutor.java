@@ -7,6 +7,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
 
@@ -15,14 +16,16 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 public class AsyncTaskExecutor<T> {
   protected static final Logger LOGGER = Logger.getLogger(AsyncTaskExecutor.class);
 
+  private static final AtomicInteger instanceCounter = new AtomicInteger(0);
   private final BlockingQueue queue;
   private final ThreadPoolExecutor executor;
   
   public AsyncTaskExecutor() {
     queue = new DelayQueue();
     executor = new ThreadPoolExecutor(10, 500, 5L, TimeUnit.SECONDS, 
-        queue, 
-        new ThreadFactoryBuilder().setDaemon(true).setNameFormat("-%d").build()) {
+        queue, new ThreadFactoryBuilder().setDaemon(true).
+        setNameFormat("AsyncTaskExecutor-" + instanceCounter.incrementAndGet() + "-%d")
+        .build()) {
       protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
         if(runnable instanceof DelayedRunnable) {
           return (FutureTask<T>)runnable;

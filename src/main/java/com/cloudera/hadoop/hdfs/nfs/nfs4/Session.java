@@ -92,7 +92,7 @@ public class Session {
     return "Session [mCurrentFileHandle=" + mCurrentFileHandle
         + ", mSavedFileHandle=" + mSavedFileHandle + ", mCompoundRequest="
         + mCompoundRequest + ", mClientAddress=" + mClientAddress
-        + ", mSessionID=" + mSessionID + ", mXID=" + mXID + "]";
+        + ", mSessionID=" + mSessionID + ", mXID=" + getXIDAsHexString() + "]";
   }
   
 }
