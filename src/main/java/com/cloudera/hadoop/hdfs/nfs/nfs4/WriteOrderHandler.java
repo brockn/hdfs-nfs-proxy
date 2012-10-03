@@ -163,7 +163,22 @@ public class WriteOrderHandler extends Thread {
       mOutputStream.sync();
     }
   }
-
+  public boolean syncWouldBlock(long offset) throws IOException {
+    return writeWouldBlock(offset, true);
+  }
+  public boolean writeWouldBlock(long offset, boolean sync) throws IOException {
+    if(sync && mOutputStream.getPos() < offset) {
+      return true;
+    }
+    return false;
+  }
+  public boolean closeWouldBlock() throws IOException {
+    if(mOutputStream.getPos() < mExpectedLength.get()
+        || !(mPendingWrites.isEmpty() && mWriteQueue.isEmpty())) {
+      return true;
+    }
+    return false;
+  }
   /**
    * Close the underlying stream blocking until all writes have been
    * processed.
@@ -173,8 +188,7 @@ public class WriteOrderHandler extends Thread {
    */
   public void close() throws IOException, NFS4Exception {
     mClosed.set(true);
-    while (mOutputStream.getPos() < mExpectedLength.get()
-        || !(mPendingWrites.isEmpty() && mWriteQueue.isEmpty())) {
+    while (closeWouldBlock()) {
       pause(10L);
       sync(mExpectedLength.get());
     }

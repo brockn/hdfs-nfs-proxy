@@ -36,6 +36,22 @@ public class CLOSEHandler extends OperationRequestHandler<CLOSERequest, CLOSERes
   protected static final Logger LOGGER = Logger.getLogger(CLOSEHandler.class);
 
   @Override
+  public boolean wouldBlock(NFS4Handler server, Session session, CLOSERequest request) {
+    try {
+      if (session.getCurrentFileHandle() == null) {
+        throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
+      }
+      return server.closeWouldBlock(session.getCurrentFileHandle());
+    } catch(NFS4Exception e) {
+      LOGGER.warn("Expection handing wouldBlock. Client error will " +
+      		"be returned on call to doHandle", e);
+    } catch(IOException e) {
+      LOGGER.warn("Expection handing wouldBlock. Client error will " +
+          "be returned on call to doHandle", e);
+    }
+    return false;
+  }
+  @Override
   protected CLOSEResponse doHandle(NFS4Handler server, Session session,
       CLOSERequest request) throws NFS4Exception, IOException {
     if (session.getCurrentFileHandle() == null) {

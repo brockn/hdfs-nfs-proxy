@@ -25,6 +25,7 @@ import static org.junit.Assert.*;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.log4j.Logger;
 import org.junit.Test;
@@ -129,7 +130,7 @@ public class TestManual {
   }
 
   @Test
-  public void testSETCLIENTID() throws IOException {
+  public void testSETCLIENTID() throws IOException, InterruptedException, ExecutionException {
     NFS4Handler server = new NFS4Handler(TestUtils.setupConf());
     CompoundRequest request = new CompoundRequest();
     request.setCredentials(TestUtils.newCredentials());
@@ -149,7 +150,7 @@ public class TestManual {
     List<OperationRequest> operations = Lists.newArrayList();
     operations.add(setClientIDRequest);
     request.setOperations(operations);
-    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test");
+    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test").get();
     assertEquals(NFS4_OK, response.getStatus());
     SETCLIENTIDResponse setClientIDResponse = (SETCLIENTIDResponse) response.getOperations().get(0);
     assertEquals(NFS4_OK, setClientIDResponse.getStatus());
@@ -158,14 +159,14 @@ public class TestManual {
   }
 
   @Test
-  public void testBasicPUTROOTFH() throws IOException {
+  public void testBasicPUTROOTFH() throws IOException, InterruptedException, ExecutionException {
     NFS4Handler server = new NFS4Handler(TestUtils.setupConf());
     CompoundRequest request = new CompoundRequest();
     request.setCredentials(TestUtils.newCredentials());
     List<OperationRequest> operations = Lists.newArrayList();
     operations.add(new PUTROOTFHRequest());
     request.setOperations(operations);
-    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test");
+    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test").get();
     assertTrue(response.getOperations().size() == 1);
     OperationResponse operationResponse = response.getOperations().get(0);
     assertTrue(operationResponse instanceof PUTROOTFHResponse);
@@ -173,7 +174,7 @@ public class TestManual {
   }
 
   @Test
-  public void testACCESS() throws IOException {
+  public void testACCESS() throws IOException, InterruptedException, ExecutionException {
     NFS4Handler server = new NFS4Handler(TestUtils.setupConf());
     CompoundRequest request = new CompoundRequest();
     request.setCredentials(TestUtils.newCredentials());
@@ -184,7 +185,7 @@ public class TestManual {
     accesssRequest.setAccess(NFS_ACCESS_READ);
     operations.add(accesssRequest);
     request.setOperations(operations);
-    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test");
+    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test").get();
     assertEquals(NFS4_OK, response.getStatus());
     assertTrue(response.getOperations().size() == 3);
     ImmutableList<OperationResponse> operationResponses = response.getOperations();
@@ -208,7 +209,7 @@ public class TestManual {
   }
 
   @Test
-  public void testEndToEnd() throws IOException {
+  public void testEndToEnd() throws IOException, InterruptedException, ExecutionException {
     NFS4Handler server = new NFS4Handler(TestUtils.setupConf());
     CompoundRequest compoundRequest = new CompoundRequest();
     compoundRequest.setCredentials(TestUtils.newCredentials());
@@ -274,7 +275,7 @@ public class TestManual {
     getAttrRequest.setAttrs(requestAttrs);
     operations.add(getAttrRequest);
     compoundRequest.setOperations(operations);
-    CompoundResponse response = server.process(new RPCRequest(), compoundRequest, LOCALHOST, "test");
+    CompoundResponse response = server.process(new RPCRequest(), compoundRequest, LOCALHOST, "test").get();
     assertEquals(NFS4_OK, response.getStatus());
 
     assertTrue(response.getOperations().size() == 3);

@@ -43,6 +43,9 @@ public abstract class OperationRequestHandler<IN extends OperationRequest, OUT e
 
   protected static final Logger LOGGER = Logger.getLogger(OperationRequestHandler.class);
 
+  public boolean wouldBlock(NFS4Handler server, Session session, IN request) {
+    return false;
+  }
   /**
    * Handle request and any exception throwing during the process.
    *

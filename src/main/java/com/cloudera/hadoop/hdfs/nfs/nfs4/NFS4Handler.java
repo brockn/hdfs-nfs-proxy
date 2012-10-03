@@ -18,21 +18,26 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import static com.cloudera.hadoop.hdfs.nfs.PathUtils.*;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
-import static com.google.common.base.Preconditions.*;
+import static com.cloudera.hadoop.hdfs.nfs.PathUtils.realPath;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_DENIED;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_FILE_OPEN;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_ISDIR;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_OLD_STATEID;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_PERM;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_SERVERFAULT;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_STALE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_WRONGSEC;
+import static com.google.common.base.Preconditions.checkState;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.UndeclaredThrowableException;
 import java.net.InetAddress;
-import java.security.PrivilegedExceptionAction;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.hadoop.conf.Configuration;
@@ -46,17 +51,15 @@ import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
 import com.cloudera.hadoop.hdfs.nfs.Pair;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.handlers.OperationRequestHandler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.OperationRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CompoundResponse;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.OperationResponse;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCHandler;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
 import com.cloudera.hadoop.hdfs.nfs.security.AuthenticatedCredentials;
 import com.cloudera.hadoop.hdfs.nfs.security.Credentials;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 /**
  * NFS4 Request handler. The class takes a CompoundRequest, processes the
@@ -76,6 +79,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   protected Map<String, AtomicLong> mMetrics = Maps.newTreeMap();
   protected Map<FSDataOutputStream, WriteOrderHandler> mWriteOrderHandlerMap = Maps.newConcurrentMap();
   protected FileHandleStore mFileHandleStore;
+  protected AsyncTaskExecutor<CompoundResponse> executor;
 
   /**
    * Create a handler object with a default configuration object
@@ -103,6 +107,9 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       FileHolder holder = new FileHolder(fileHandle, entry.path, entry.fileID);
       putFileHandle(fileHandle, entry.path, holder);
     }
+    
+    
+    executor = new AsyncTaskExecutor<CompoundResponse>(new ScheduledThreadPoolExecutor(10));
   }
   public void shutdown() throws IOException {
     mFileHandleStore.close();
@@ -112,7 +119,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
    * Process a CompoundRequest and return a CompoundResponse.
    */
   @Override
-  public CompoundResponse process(final RPCRequest rpcRequest,
+  public ListenableFuture<CompoundResponse> process(final RPCRequest rpcRequest,
       final CompoundRequest compoundRequest, final InetAddress clientAddress,
       final String sessionID) {
     Credentials creds = (Credentials) compoundRequest.getCredentials();
@@ -120,7 +127,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     if (creds == null || !(creds instanceof AuthenticatedCredentials)) {
       CompoundResponse response = new CompoundResponse();
       response.setStatus(NFS4ERR_WRONGSEC);
-      return response;
+      return Futures.immediateFuture(response);
     }
     try {
       UserGroupInformation sudoUgi;
@@ -131,68 +138,18 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       } else {
         sudoUgi = UserGroupInformation.createRemoteUser(username);
       }
-      final NFS4Handler server = this;
-      final Session session = new Session(rpcRequest.getXid(), compoundRequest,
+      Session session = new Session(rpcRequest.getXid(), compoundRequest,
           mConfiguration, clientAddress, sessionID);
-      return sudoUgi.doAs(new PrivilegedExceptionAction<CompoundResponse>() {
-
-        @Override
-        public CompoundResponse run() throws Exception {
-          String username = UserGroupInformation.getCurrentUser().getShortUserName();
-          int lastStatus = NFS4_OK;
-          List<OperationResponse> responses = Lists.newArrayList();
-          for (OperationRequest request : compoundRequest.getOperations()) {
-            if (LOGGER.isDebugEnabled()) {
-              LOGGER.debug(sessionID + " " + request.getClass().getSimpleName()
-                  + " for " + username);
-            }
-            OperationRequestHandler<OperationRequest, OperationResponse> handler = OperationFactory.getHandler(request.getID());
-            OperationResponse response = handler.handle(server, session,
-                request);
-            responses.add(response);
-            lastStatus = response.getStatus();
-            if (lastStatus != NFS4_OK) {
-              LOGGER.warn(sessionID + " Quitting due to " + lastStatus + " on "
-                  + request.getClass().getSimpleName() + " for " + username);
-              break;
-            }
-            server.incrementMetric("NFS_" + request.getClass().getSimpleName(),
-                1);
-            server.incrementMetric("NFS_OPERATIONS", 1);
-          }
-          CompoundResponse response = new CompoundResponse();
-          response.setStatus(lastStatus);
-          response.setOperations(responses);
-          server.incrementMetric("NFS_COMMANDS", 1);
-          return response;
-        }
-      });
+      NFS4AsyncFuture task = new NFS4AsyncFuture(this, session, sudoUgi);
+      executor.schedule(task);
+      return task;
     } catch (Exception ex) {
-      if (ex instanceof UndeclaredThrowableException && ex.getCause() != null) {
-        Throwable throwable = ex.getCause();
-        if (throwable instanceof Exception) {
-          ex = (Exception) throwable;
-        } else if (throwable instanceof Error) {
-          // something really bad happened
-          LOGGER.error(sessionID + " Unhandled Error", throwable);
-          throw (Error) throwable;
-        } else {
-          LOGGER.error(sessionID + " Unhandled Throwable", throwable);
-          throw new RuntimeException(throwable);
-        }
-      }
       LOGGER.warn(sessionID + " Unhandled Exception", ex);
       CompoundResponse response = new CompoundResponse();
-      if (ex instanceof NFS4Exception) {
-        response.setStatus(((NFS4Exception) ex).getError());
-      } else if (ex instanceof UnsupportedOperationException) {
-        response.setStatus(NFS4ERR_NOTSUPP);
-      } else {
-        LOGGER.warn(sessionID + " Setting SERVERFAULT for " + clientAddress
-            + " for " + compoundRequest.getOperations());
-        response.setStatus(NFS4ERR_SERVERFAULT);
-      }
-      return response;
+      LOGGER.warn(sessionID + " Setting SERVERFAULT for " + clientAddress
+          + " for " + compoundRequest.getOperations());
+      response.setStatus(NFS4ERR_SERVERFAULT);
+      return Futures.immediateFuture(response);
     }
   }
 
@@ -261,7 +218,26 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     }
     throw new NFS4Exception(NFS4ERR_STALE, "Path " + realPath(path));
   }
-
+  public boolean closeWouldBlock(FileHandle fileHandle) throws IOException {
+    FileHolder fileHolder = null;
+    WriteOrderHandler writeOrderHandler = null;
+    OpenFile<?> file = null;
+    synchronized (this) {
+      fileHolder = mFileHandleMap.get(fileHandle);
+      if (fileHolder != null) {
+        if (fileHolder.isOpenForWrite()) {
+          file = fileHolder.getFSDataOutputStream();
+          synchronized (mWriteOrderHandlerMap) {
+            writeOrderHandler = mWriteOrderHandlerMap.get(file.get());
+          }
+        }
+      }
+    }
+    if(writeOrderHandler != null) {
+      return writeOrderHandler.closeWouldBlock();
+    }
+    return false;
+  }
   /**
    * Close the resources allocated in the server, block until the writes for
    * this file have been processed and close the underlying stream. No lock is
@@ -484,11 +460,9 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       // even if there is a known race between the exists and create
       if (!overwrite && exists) {
         // append to a file
-        // We used to be NFS4ERR_EXIST here but the linux client behaved rather
-        // oddly.
-        // It would open the fily with overwrite=true but then send the data
-        // which
-        // was to be appended at offset 0
+        // We used to be NFS4ERR_EXIST here but the linux client behaved 
+        // rather oddly. It would open the file with overwrite=true but 
+        // then send the data which was to be appended at offset 0
         throw new NFS4Exception(NFS4ERR_PERM,
             "File Exists and overwrite = false", true);
       }

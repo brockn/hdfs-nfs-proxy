@@ -18,7 +18,9 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_COMMIT_UNSTABLE4;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
 
 import java.io.IOException;
 
@@ -39,7 +41,28 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.WRITEResponse;
 public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITEResponse> {
 
   protected static final Logger LOGGER = Logger.getLogger(WRITEHandler.class);
-
+  @Override
+  public boolean wouldBlock(NFS4Handler server, Session session, WRITERequest request) {
+    try {
+      if (session.getCurrentFileHandle() == null) {
+        throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
+      }
+      FileHandle fileHandle = session.getCurrentFileHandle();
+      Path path = server.getPath(fileHandle);
+      String file = path.toUri().getPath();
+      FSDataOutputStream out = server.forWrite(request.getStateID(), session.getFileSystem(), fileHandle, false);
+      WriteOrderHandler writeOrderHandler = server.getWriteOrderHandler(file, out);
+      boolean sync = request.getStable() != NFS4_COMMIT_UNSTABLE4;
+      return writeOrderHandler.writeWouldBlock(request.getOffset(), sync);
+    } catch(NFS4Exception e) {
+      LOGGER.warn("Expection handing wouldBlock. Client error will " +
+          "be returned on call to doHandle", e);
+    } catch(IOException e) {
+      LOGGER.warn("Expection handing wouldBlock. Client error will " +
+          "be returned on call to doHandle", e);
+    }
+    return false;
+  }
   @Override
   protected WRITEResponse doHandle(NFS4Handler server, Session session,
       WRITERequest request) throws NFS4Exception, IOException {

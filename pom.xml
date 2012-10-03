@@ -66,8 +66,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>r09</version>
-            <!-- consider upgrading vesion -->
+            <version>13.0.1</version>
         </dependency>
         
     </dependencies>

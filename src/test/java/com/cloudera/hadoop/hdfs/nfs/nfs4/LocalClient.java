@@ -29,6 +29,7 @@ import com.cloudera.hadoop.hdfs.nfs.TestUtils;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CompoundResponse;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCTestUtil;
+import com.google.common.base.Throwables;
 
 public class LocalClient extends BaseClient {
 
@@ -42,8 +43,12 @@ public class LocalClient extends BaseClient {
 
   @Override
   protected CompoundResponse doMakeRequest(CompoundRequest request) {
-    CompoundResponse response = mServer.process(RPCTestUtil.createRequest(), request, LOCALHOST, "test");
-    return response;
+    try {
+      CompoundResponse response = mServer.process(RPCTestUtil.createRequest(), request, LOCALHOST, "test").get();
+      return response;
+    } catch(Exception e) {
+      throw Throwables.propagate(e);
+    }
   }
 
   @Override

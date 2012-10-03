@@ -157,6 +157,7 @@ public class UserIDMapperSystem extends UserIDMapper {
         if(matcher.find()) {
           String name = matcher.group(1);
           postitveCache.put(id, new IDCache<String>(name));
+          reader.close();
           return name;
         }
       }

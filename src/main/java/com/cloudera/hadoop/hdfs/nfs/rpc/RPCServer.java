@@ -18,8 +18,6 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.rpc;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -30,10 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IOUtils;
@@ -53,7 +48,6 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
   protected Map<Integer, MessageBase> mResponseCache =
       Collections.synchronizedMap(new LRUCache<Integer, MessageBase>(500));
   protected Set<Integer> mRequestsInProgress = Collections.synchronizedSet(new HashSet<Integer>());
-  protected ExecutorService mExecutor;
   protected Map<String, BlockingQueue<RPCBuffer>> mOutputQueueMap = Maps.newHashMap();
 
   public RPCServer(RPCHandler<REQUEST, RESPONSE> rpcHandler, Configuration conf, InetAddress address) throws Exception {
@@ -61,9 +55,6 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
   }
 
   public RPCServer(RPCHandler<REQUEST, RESPONSE> rpcHandler, Configuration conf, InetAddress address, int port) throws IOException {
-    mExecutor = new ThreadPoolExecutor(10, conf.getInt(RPC_MAX_THREADS, 500),
-        30, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
-
     mHandler = rpcHandler;
     mConfiguration = conf;
     mPort = port;
@@ -138,9 +129,5 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
 
   public ConcurrentMap<Socket, ClientInputHandler<REQUEST, RESPONSE>> getClients() {
     return mClients;
-  }
-
-  public ExecutorService getExecutorService() {
-    return mExecutor;
   }
 }
