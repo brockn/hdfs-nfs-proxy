@@ -282,7 +282,7 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
     mResponseCache.put(request.getXid(), applicationResponse);
     mRequestsInProgress.remove(request.getXid()); // duplicates will be served out of cache
     LOGGER.info(mSessionID + " " + request.getXidAsHexString() + " Writing " + 
-        applicationResponse.getClass().getSimpleName() + " to "  + mClientName, new Throwable());
+        applicationResponse.getClass().getSimpleName() + " to "  + mClientName);
     RPCBuffer responseBuffer = new RPCBuffer();
     try {
       RPCResponse response = new RPCResponse(request.getXid(), RPC_VERSION);
