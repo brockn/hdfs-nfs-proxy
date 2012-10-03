@@ -95,8 +95,7 @@ implements AsyncFuture<CompoundResponse> {
     for (Iterator<OperationRequest> iterator = requests.iterator(); iterator.hasNext();) {
       OperationRequest request = iterator.next();
       if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug(session.getSessionID() + " " + request.getClass().getSimpleName()
-            + " for " + username);
+        LOGGER.debug(session.getSessionID() + " " + session.getXID() + " " + request + " for " + username);
       }
       OperationRequestHandler<OperationRequest, OperationResponse> requestHandler = OperationFactory.getHandler(request.getID());
       if(requestHandler.wouldBlock(hdfsState, session, request)) {

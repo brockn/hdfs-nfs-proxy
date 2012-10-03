@@ -51,6 +51,9 @@ public class Session {
     mClientAddress = clientAddress;
     mSessionID = sessionID;
   }
+  public String getXIDAsHexString() {
+    return Integer.toHexString(mXID);
+  }
   public int getXID() {
     return mXID;
   }
@@ -84,4 +87,12 @@ public class Session {
   public String getSessionID() {
     return mSessionID;
   }
+  @Override
+  public String toString() {
+    return "Session [mCurrentFileHandle=" + mCurrentFileHandle
+        + ", mSavedFileHandle=" + mSavedFileHandle + ", mCompoundRequest="
+        + mCompoundRequest + ", mClientAddress=" + mClientAddress
+        + ", mSessionID=" + mSessionID + ", mXID=" + mXID + "]";
+  }
+  
 }

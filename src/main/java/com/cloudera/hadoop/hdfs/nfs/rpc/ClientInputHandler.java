@@ -240,9 +240,6 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
               LOGGER.info(mSessionID + " serving cached response to " + request.getXidAsHexString());
             } else {
               execute(request, requestBuffer);
-              if(LOGGER.isDebugEnabled()) {
-                LOGGER.debug(mSessionID + " scheduling request " + request.getXidAsHexString());
-              }
             }
           }
         } else {

@@ -28,9 +28,20 @@ public class AsyncTaskExecutor<T> {
           return (FutureTask<T>)runnable;
         }
         return new FutureTask<T>(runnable, value);
-    }
+      }
     };
-    
+    new Thread(){
+      public void run() {
+        while(true) {
+          try {
+            Thread.sleep(10L * 1000L);
+          } catch (InterruptedException e) {
+            
+          }
+          LOGGER.info("Queue is " + queue.size());
+        }
+      }
+    }.start();
   }
   
   public void schedule(final AsyncFuture<T> task) {
@@ -38,6 +49,7 @@ public class AsyncTaskExecutor<T> {
       @Override
       public void run() {
         try {
+          LOGGER.debug("Running " + task);
           AsyncFuture.Complete status = task.makeProgress();
           if(status != AsyncFuture.Complete.COMPLETE) {
             LOGGER.info("Status of " + task + " is " + status + ", queue.size = " + queue.size());
