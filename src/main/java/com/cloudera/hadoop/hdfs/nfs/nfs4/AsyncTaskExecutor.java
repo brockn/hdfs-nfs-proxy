@@ -54,7 +54,7 @@ public class AsyncTaskExecutor<T> {
   }
   
   public void schedule(final AsyncFuture<T> task) {
-    executor.submit(new TaskRunnable(queue, task));
+    executor.submit(new DelayedRunnable(new TaskRunnable(queue, task)));
   }
   private static class TaskRunnable implements Runnable {
     private AsyncFuture<?> task;
