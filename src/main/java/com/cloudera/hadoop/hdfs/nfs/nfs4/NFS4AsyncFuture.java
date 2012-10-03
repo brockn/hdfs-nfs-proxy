@@ -116,4 +116,10 @@ implements AsyncFuture<CompoundResponse> {
     }
     return AsyncFuture.Complete.COMPLETE;
   }
+  @Override
+  public String toString() {
+    return "NFS4AsyncFuture [session=" + session + ", ugi=" + ugi
+        + ", requests=" + requests + ", responses=" + responses
+        + ", lastStatus=" + lastStatus + "]";
+  }
 }

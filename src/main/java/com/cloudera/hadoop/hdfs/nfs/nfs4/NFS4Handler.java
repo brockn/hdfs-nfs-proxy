@@ -23,7 +23,6 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_WRONGSEC;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -66,7 +65,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     mConfiguration = configuration;
     mMetrics = new Metrics();
     mHDFSState = new HDFSState(mConfiguration, mMetrics);    
-    executor = new AsyncTaskExecutor<CompoundResponse>(new ScheduledThreadPoolExecutor(10));
+    executor = new AsyncTaskExecutor<CompoundResponse>();
   }
   public void shutdown() throws IOException {
     mHDFSState.close();
