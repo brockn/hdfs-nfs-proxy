@@ -41,41 +41,58 @@ public class AsyncTaskExecutor<T> {
           } catch (InterruptedException e) {
             
           }
-          LOGGER.info("Queue is " + queue.size());
+          DelayedRunnable delaedRunnable = (DelayedRunnable)queue.peek();
+          if(delaedRunnable == null) {
+            LOGGER.info("Queue is " + queue.size());            
+          } else {
+            AsyncFuture<?> future = delaedRunnable.delegate.task;
+            LOGGER.info("Queue is " + queue.size() + ", head is " + future);            
+          }
         }
       }
     }.start();
   }
   
   public void schedule(final AsyncFuture<T> task) {
-    Runnable runnable =  new Runnable() {
-      @Override
-      public void run() {
-        try {
-          LOGGER.debug("Running " + task);
-          AsyncFuture.Complete status = task.makeProgress();
-          if(status != AsyncFuture.Complete.COMPLETE) {
-            LOGGER.info("Status of " + task + " is " + status + ", queue.size = " + queue.size());
-            queue.add(new DelayedRunnable(this, 1, TimeUnit.SECONDS));
-          }
-        } catch (Exception e) {
-          LOGGER.error("Unabled exception while executing " + task, e);
-        } catch (Error e) {
-          LOGGER.error("Unabled error while executing " + task, e);
-        }
-      }
-    };
-    executor.submit(new DelayedRunnable(runnable));
+    executor.submit(new TaskRunnable(queue, task));
   }
-  
+  private static class TaskRunnable implements Runnable {
+    private AsyncFuture<?> task;
+    private BlockingQueue queue;
+    public TaskRunnable(BlockingQueue queue, AsyncFuture<?> task) {
+      this.queue = queue;
+      this.task = task;
+    }
+    @Override
+    public void run() {
+      try {
+        if(LOGGER.isDebugEnabled()) {
+          LOGGER.debug("Running " + task);
+        }
+        AsyncFuture.Complete status = task.makeProgress();
+        if(status != AsyncFuture.Complete.COMPLETE) {
+          if(LOGGER.isDebugEnabled()) {
+            LOGGER.info("Status of " + task + " is " + status + ", queue.size = " + queue.size());
+          }
+          queue.add(new DelayedRunnable(this, 1, TimeUnit.SECONDS));
+        }
+      } catch (Exception e) {
+        LOGGER.error("Unabled exception while executing " + task, e);
+      } catch (Error e) {
+        LOGGER.error("Unabled error while executing " + task, e);
+      }
+    }
+  }
   private static class DelayedRunnable extends FutureTask<Void> implements Delayed {
     private final long delay;
     private final TimeUnit unit;
-    public DelayedRunnable(Runnable delegate) {
+    private TaskRunnable delegate;
+    public DelayedRunnable(TaskRunnable delegate) {
       this(delegate, 0L, TimeUnit.NANOSECONDS);
     }
-    public DelayedRunnable(Runnable delegate, long delay, TimeUnit unit) {
+    public DelayedRunnable(TaskRunnable delegate, long delay, TimeUnit unit) {
       super(delegate, null);
+      this.delegate = delegate;
       this.delay = delay;
       this.unit = unit;
     }

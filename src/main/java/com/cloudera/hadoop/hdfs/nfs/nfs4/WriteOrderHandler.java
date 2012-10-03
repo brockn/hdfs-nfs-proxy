@@ -46,10 +46,6 @@ import com.google.common.collect.Maps;
 public class WriteOrderHandler extends Thread {
 
   protected static final Logger LOGGER = Logger.getLogger(WriteOrderHandler.class);
-  /**
-   * 500,0000 * 8 bytes = 3.8MB
-   */
-  protected static final int MAX_WRITE_IDS = 500000;
   protected FSDataOutputStream mOutputStream;
   protected ConcurrentMap<Long, PendingWrite> mPendingWrites = Maps.newConcurrentMap();
   protected AtomicLong mPendingWritesSize = new AtomicLong(0);
@@ -83,8 +79,9 @@ public class WriteOrderHandler extends Thread {
           mPendingWrites.put(write.offset, write);
           mPendingWritesSize.addAndGet(write.size);
         }
-        if(LOGGER.isDebugEnabled()) {
-          LOGGER.debug("Pending writes " + (mPendingWritesSize.get() / 1024L / 1024L) + "MB, current offset = " + getCurrentPos());
+        if(mPendingWritesSize.get() > 0L) {
+          LOGGER.info("Pending writes " + (mPendingWritesSize.get() / 1024L / 1024L) + "MB, " +
+          		"current offset = " + getCurrentPos());          
         }
         synchronized (mOutputStream) {
           checkPendingWrites();
@@ -124,8 +121,10 @@ public class WriteOrderHandler extends Thread {
     long preWritePos = mOutputStream.getPos();
     checkState(preWritePos == write.offset, " Offset = " + write.offset + ", pos = " + preWritePos);
     mOutputStream.write(write.data, write.start, write.length);
-    LOGGER.info("Writing to " + write.name + " " + write.offset + ", "
-        + write.length + ", new offset = " + mOutputStream.getPos() + ", hash = " + write.hashCode);
+    if(LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Writing to " + write.name + " " + write.offset + ", "
+            + write.length + ", new offset = " + mOutputStream.getPos() + ", hash = " + write.hashCode);
+    }
     if (write.sync) {
       mOutputStream.sync();
     }
@@ -155,8 +154,10 @@ public class WriteOrderHandler extends Thread {
     synchronized (mPendingWrites) {
       pendingWrites = mPendingWrites.keySet().toString();
     }
-    LOGGER.info("Sync for " + mOutputStream + " and " + offset + 
-        ", pending writes = " + pendingWrites + ", write queue = " + mWriteQueue.size());
+    if(LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Sync for " + mOutputStream + " and " + offset + 
+          ", pending writes = " + pendingWrites + ", write queue = " + mWriteQueue.size());      
+    }
     while (mOutputStream.getPos() < offset) {
       checkException();
       pause(10L);
@@ -193,13 +194,15 @@ public class WriteOrderHandler extends Thread {
    * @throws IOException
    */
   public boolean closeWouldBlock() throws IOException {
-    String pendingWrites;
-    synchronized (mPendingWrites) {
-      pendingWrites = mPendingWrites.keySet().toString();
+    if(LOGGER.isDebugEnabled()) {
+      String pendingWrites;
+      synchronized (mPendingWrites) {
+        pendingWrites = mPendingWrites.keySet().toString();
+      }
+      LOGGER.debug("Close would block for " + mOutputStream + ", expectedLength = " + mExpectedLength.get() + 
+          ", mOutputStream.getPos = " + mOutputStream.getPos() + ", pending writes = " + pendingWrites + 
+          ", write queue = " + mWriteQueue.size());
     }
-    LOGGER.info("Close would block for " + mOutputStream + ", expectedLength = " + mExpectedLength.get() + 
-        ", mOutputStream.getPos = " + mOutputStream.getPos() + ", pending writes = " + pendingWrites + 
-        ", write queue = " + mWriteQueue.size());
     if(mOutputStream.getPos() < mExpectedLength.get()
         || !(mPendingWrites.isEmpty() && mWriteQueue.isEmpty())) {
       return true;
@@ -266,9 +269,6 @@ public class WriteOrderHandler extends Thread {
         if (mProcessedWrites.contains(xid)) {
           LOGGER.info("Write already processed " + xid);
           return length;
-        }
-        if(mProcessedWrites.size() >= MAX_WRITE_IDS) {
-          mProcessedWrites.remove(0);
         }
         mProcessedWrites.add(xid);
         if (offset < mOutputStream.getPos()) {
