@@ -10,7 +10,6 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_SERVERFAULT;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_STALE;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -126,6 +125,12 @@ public class HDFSState {
     }
     throw new NFS4Exception(NFS4ERR_STALE, "Path " + realPath(path));
   }
+  /**
+   * Check to see if a close to the file handle would block
+   * @param fileHandle
+   * @return true if a close to fileHandle would block
+   * @throws IOException
+   */
   public boolean closeWouldBlock(FileHandle fileHandle) throws IOException {
     HDFSFile fileHolder = null;
     WriteOrderHandler writeOrderHandler = null;
@@ -472,20 +477,33 @@ public class HDFSState {
   public ClientFactory getClientFactory() {
     return mClientFactory;
   }
-  
+  /**
+   * Close the state store
+   * @throws IOException
+   */
   public void close() throws IOException {
     mFileHandleStore.close();
   }
-
+  /**
+   * Increment name by count
+   * @param name
+   * @param count
+   */
   public void incrementMetric(String name, long count) {
     mMetrics.incrementMetric(name, count);
   }
-
+  /**
+   * @return next fileID
+   */
   private long getNextFileID() {
     synchronized (RANDOM) {
       return FILEID.addAndGet(RANDOM.nextInt(20) + 1);
     }
   }
+  /**
+   * Get the start time of the NFS server in milliseconds
+   * @return start time in ms
+   */
   public long getStartTime() {
     return mStartTime;
   }

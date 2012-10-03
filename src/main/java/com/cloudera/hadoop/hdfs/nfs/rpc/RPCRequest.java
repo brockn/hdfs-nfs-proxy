@@ -18,7 +18,8 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.rpc;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPCSEC_GSS_DESTROY;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_MESSAGE_TYPE_CALL;
 
 import org.apache.log4j.Logger;
 

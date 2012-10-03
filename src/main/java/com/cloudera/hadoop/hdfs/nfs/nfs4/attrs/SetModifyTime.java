@@ -19,7 +19,8 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.attrs;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_MODIFY_SET;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_SET_TO_CLIENT_TIME4;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Time;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;

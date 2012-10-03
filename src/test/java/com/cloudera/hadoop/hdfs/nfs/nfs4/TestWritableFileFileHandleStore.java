@@ -19,8 +19,10 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
-import static org.junit.Assert.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_FILEHANDLE_STORE_CLASS;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_FILEHANDLE_STORE_FILE;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.util.Arrays;

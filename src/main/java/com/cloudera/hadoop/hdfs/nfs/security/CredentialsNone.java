@@ -18,7 +18,8 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.security;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.ANONYMOUS_USERNAME;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_AUTH_NULL;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;

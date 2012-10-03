@@ -26,9 +26,9 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 
 import com.cloudera.hadoop.hdfs.nfs.NFSUtils;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class OwnerHandler extends AttributeHandler<Owner> {
 

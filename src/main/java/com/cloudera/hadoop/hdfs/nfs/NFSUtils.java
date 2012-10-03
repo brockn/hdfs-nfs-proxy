@@ -1,6 +1,6 @@
 package com.cloudera.hadoop.hdfs.nfs;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_OWNER_DOMAIN;
 
 import java.net.InetAddress;
 

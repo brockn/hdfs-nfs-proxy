@@ -19,8 +19,17 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.rpc;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
-import static org.junit.Assert.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_PROC_COMPOUND;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_PROG;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_VERSION;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_ACCEPT_STATE_ACCEPT;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_AUTH_NULL;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_MESSAGE_TYPE_CALL;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_MESSAGE_TYPE_REPLY;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_REJECT_AUTH_ERROR;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_REPLY_STATE_ACCEPT;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_VERSION;
+import static org.junit.Assert.assertEquals;
 
 import com.cloudera.hadoop.hdfs.nfs.security.CredentialsNone;
 import com.cloudera.hadoop.hdfs.nfs.security.VerifierNone;

@@ -19,7 +19,8 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.DEFAULT_NFS_FILEHANDLE_STORE_FILE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_FILEHANDLE_STORE_FILE;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
