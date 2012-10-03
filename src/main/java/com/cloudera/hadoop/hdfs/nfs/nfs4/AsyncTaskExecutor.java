@@ -3,6 +3,8 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -20,12 +22,19 @@ public class AsyncTaskExecutor<T> {
     queue = new DelayQueue();
     executor = new ThreadPoolExecutor(10, 500, 5L, TimeUnit.SECONDS, 
         queue, 
-        new ThreadFactoryBuilder().setDaemon(true).setNameFormat("-%d").build());
+        new ThreadFactoryBuilder().setDaemon(true).setNameFormat("-%d").build()) {
+      protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
+        if(runnable instanceof DelayedRunnable) {
+          return (FutureTask<T>)runnable;
+        }
+        return new FutureTask<T>(runnable, value);
+    }
+    };
     
   }
   
   public void schedule(final AsyncFuture<T> task) {
-    executor.submit(new Runnable() {
+    executor.submit(new DelayedRunnable(new Runnable() {
       @Override
       public void run() {
         try {
@@ -38,22 +47,20 @@ public class AsyncTaskExecutor<T> {
           LOGGER.error("Unabled error while executing " + task, e);
         }
       }
-    });
+    }));
   }
   
-  private static class DelayedRunnable implements Runnable, Delayed {
-    private final Runnable delegate;
+  private static class DelayedRunnable extends FutureTask<Void> implements Delayed {
     private final long delay;
     private final TimeUnit unit;
+    public DelayedRunnable(Runnable delegate) {
+      this(delegate, 0L, TimeUnit.NANOSECONDS);
+    }
     public DelayedRunnable(Runnable delegate, long delay, TimeUnit unit) {
-      this.delegate = delegate;
+      super(delegate, null);
       this.delay = delay;
       this.unit = unit;
     }
-    public void run() {
-      delegate.run();
-    }
-
     @Override
     public int compareTo(Delayed other) {
       long d = (getDelay(TimeUnit.NANOSECONDS) - other.getDelay(TimeUnit.NANOSECONDS));
