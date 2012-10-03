@@ -44,12 +44,11 @@ import com.google.common.util.concurrent.ListenableFuture;
  * request and returns a CompoundResponse.
  */
 public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
-
   protected static final Logger LOGGER = Logger.getLogger(NFS4Handler.class);
-  protected final Configuration mConfiguration;
-  protected Metrics mMetrics;
-  protected AsyncTaskExecutor<CompoundResponse> executor;
-  protected final HDFSState mHDFSState;
+  private final Configuration mConfiguration;
+  private final Metrics mMetrics;
+  private final AsyncTaskExecutor<CompoundResponse> executor;
+  private final HDFSState mHDFSState;
   
   /**
    * Create a handler object with a default configuration object
@@ -112,6 +111,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   }
 
 
+  @Override
   public void incrementMetric(String name, long count) {
     mMetrics.incrementMetric(name, count);
   }

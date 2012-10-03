@@ -8,7 +8,7 @@ import org.apache.log4j.Logger;
 public class AsyncTaskExecutor<T> {
   protected static final Logger LOGGER = Logger.getLogger(AsyncTaskExecutor.class);
 
-  private ScheduledThreadPoolExecutor executor; 
+  private final ScheduledThreadPoolExecutor executor; 
   public AsyncTaskExecutor(ScheduledThreadPoolExecutor executor) {
     this.executor = executor;
   }

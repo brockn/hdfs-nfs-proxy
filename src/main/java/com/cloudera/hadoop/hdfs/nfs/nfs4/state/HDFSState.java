@@ -37,16 +37,16 @@ import com.google.common.collect.Maps;
 
 public class HDFSState {
   protected static final Logger LOGGER = Logger.getLogger(HDFSState.class);
-  protected final Map<String, HDFSFile> mPathMap = Maps.newConcurrentMap();
-  protected final Map<FileHandle, HDFSFile> mFileHandleMap = Maps.newConcurrentMap();
-  protected final long mStartTime = System.currentTimeMillis();
-  protected final Configuration mConfiguration;
-  protected final ClientFactory mClientFactory = new ClientFactory();
-  protected static final AtomicLong FILEID = new AtomicLong(0L);
-  protected static final Random RANDOM = new Random();
-  protected final Map<FSDataOutputStream, WriteOrderHandler> mWriteOrderHandlerMap = Maps.newConcurrentMap();
-  protected final FileHandleStore mFileHandleStore;
-  private final  Metrics mMetrics;
+  private static final AtomicLong FILEID = new AtomicLong(0L);
+  private static final Random RANDOM = new Random();
+  private final Map<String, HDFSFile> mPathMap = Maps.newConcurrentMap();
+  private final Map<FileHandle, HDFSFile> mFileHandleMap = Maps.newConcurrentMap();
+  private final long mStartTime = System.currentTimeMillis();
+  private final ClientFactory mClientFactory = new ClientFactory();
+  private final Map<FSDataOutputStream, WriteOrderHandler> mWriteOrderHandlerMap = Maps.newConcurrentMap();
+  private final FileHandleStore mFileHandleStore;
+  private final Configuration mConfiguration;
+  private final Metrics mMetrics;
   
   public HDFSState(Configuration configuration, Metrics metrics) {
     mConfiguration = configuration;

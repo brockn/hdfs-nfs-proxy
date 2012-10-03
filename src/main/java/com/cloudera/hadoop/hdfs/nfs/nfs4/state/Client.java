@@ -26,18 +26,20 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.ClientID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData8;
 
 public class Client {
-
   protected static final AtomicLong CLIENTID = new AtomicLong(0L);
 
-
-  protected ClientID mClientID;
-  protected Callback mCallback;
-  protected int mCallbackIdent;
-  protected long mShorthandID;
-  protected OpaqueData8 mVerifer;
-  protected String mClientHost;
-  protected boolean mConfirmed;
-  protected long mRenew = System.currentTimeMillis();
+  private ClientID mClientID;
+  private Callback mCallback;
+  private int mCallbackIdent;
+  private long mShorthandID;
+  private OpaqueData8 mVerifer;
+  private String mClientHost;
+  private boolean mConfirmed;
+  /**
+   * Last time the lease was renewed. We don't use leases.
+   */
+  @SuppressWarnings("unused")
+  private long mRenew = System.currentTimeMillis();
 
   public boolean isConfirmed() {
     return mConfirmed;

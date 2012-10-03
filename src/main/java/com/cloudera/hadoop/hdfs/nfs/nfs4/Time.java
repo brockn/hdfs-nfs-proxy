@@ -60,7 +60,7 @@ public class Time implements MessageBase {
 
   public long toMilliseconds() {
     long time = mSeconds * 1000L;
-    time += (long)mNanoSeconds / 1000000L;
+    time += mNanoSeconds / 1000000L;
     return time;
   }
 }

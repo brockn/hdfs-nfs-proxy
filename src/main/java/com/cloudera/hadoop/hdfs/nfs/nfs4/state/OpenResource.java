@@ -11,14 +11,14 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
  */
 public class OpenResource<T extends Closeable> implements Closeable {
 
-  protected boolean mConfirmed;
-  protected T mResource;
-  protected long mTimestamp;
-  protected StateID mStateID;
-  protected HDFSFile mHDFSFile;
+  private final HDFSFile mHDFSFile;
+  private final T mResource;
+  private final StateID mStateID;
+  private boolean mConfirmed;
+  private long mTimestamp;
 
-  public OpenResource(HDFSFile fileHolder, StateID stateID, T resource) {
-    this.mHDFSFile = fileHolder;
+  public OpenResource(HDFSFile hdfsFile, StateID stateID, T resource) {
+    this.mHDFSFile = hdfsFile;
     this.mStateID = stateID;
     this.mResource = resource;
     mTimestamp = System.currentTimeMillis();

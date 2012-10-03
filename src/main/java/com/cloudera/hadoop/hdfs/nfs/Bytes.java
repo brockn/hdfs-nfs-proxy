@@ -1279,11 +1279,11 @@ public class Bytes {
     if(count < 1024L) {
       return count + " bytes";
     } else if(count < 1024L * 1024L) {
-      return String.format("%2.2f", ((double)count / 1024d)) + " KB";
+      return String.format("%2.2f", (count / 1024d)) + " KB";
     } else if(count < 1024L * 1024L * 1024L) {
-      return String.format("%2.2f", ((double)count / 1024d / 1024d)) + " MB";
+      return String.format("%2.2f", (count / 1024d / 1024d)) + " MB";
     } else {
-      return String.format("%2.2f", ((double)count / 1024d / 1024d / 1024d)) + " GB";
+      return String.format("%2.2f", (count / 1024d / 1024d / 1024d)) + " GB";
     }
   }
 

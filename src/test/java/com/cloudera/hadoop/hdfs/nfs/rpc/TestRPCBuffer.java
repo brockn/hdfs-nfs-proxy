@@ -71,7 +71,7 @@ public class TestRPCBuffer {
     buffer.writeBoolean(false);
     int i = 0;
     while(i++ < 1000) {
-      buffer.writeLong((long)i);
+      buffer.writeLong(i);
     }
     int pos = buffer.position();
     buffer.flip();

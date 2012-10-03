@@ -19,11 +19,12 @@ import com.google.common.collect.Maps;
  */
 public class HDFSFile {
 
-  protected String mPath;
-  protected FileHandle mFileHandle;
-  protected Map<StateID, OpenResource<FSDataInputStream>> mInputStreams = Maps.newHashMap();
+
+  protected final FileHandle mFileHandle;
+  protected final String mPath;
+  protected final long mFileID;
+  protected final Map<StateID, OpenResource<FSDataInputStream>> mInputStreams = Maps.newHashMap();
   protected Pair<StateID, OpenResource<FSDataOutputStream>> mOutputStream;
-  protected long mFileID;
 
   public HDFSFile(FileHandle fileHandle, String path, long fileID) {
     this.mFileHandle = fileHandle;
@@ -91,10 +92,6 @@ public class HDFSFile {
       FSDataOutputStream fsDataOutputStream) {
     mOutputStream = Pair.of(stateID, new OpenResource<FSDataOutputStream>(this,
         stateID, fsDataOutputStream));
-  }
-
-  public void setFileID(long fileID) {
-    mFileID = fileID;
   }
 
   public long getFileID() {
