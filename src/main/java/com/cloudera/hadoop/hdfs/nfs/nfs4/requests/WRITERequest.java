@@ -98,4 +98,9 @@ public class WRITERequest extends OperationRequest {
     this.mStable = stable;
   }
 
+  @Override
+  public String toString() {
+    return "WRITERequest [mStateID=" + mStateID + ", mOffset=" + mOffset
+        + ", mStable=" + mStable + ", mLength=" + mLength + "]";
+  }
 }
