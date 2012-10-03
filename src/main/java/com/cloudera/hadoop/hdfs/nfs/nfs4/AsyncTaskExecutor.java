@@ -14,12 +14,19 @@ public class AsyncTaskExecutor<T> {
   }
   
   public void schedule(final AsyncFuture<T> task) {
-    executor.scheduleAtFixedRate(new Runnable() {
+    executor.submit(new Runnable() {
+      private volatile boolean  needsRemoval;
       @Override
       public void run() {
         try {
           if(task.makeProgress() == AsyncFuture.Complete.COMPLETE) {
-            executor.getQueue().remove(task);
+            if(needsRemoval) {
+              executor.remove(this);
+            }
+          } else {
+            needsRemoval = true;
+            executor.scheduleWithFixedDelay(this, 500L, 1000L, 
+                TimeUnit.MILLISECONDS);
           }
         } catch (Exception e) {
           LOGGER.error("Unabled exception", e);
@@ -27,6 +34,6 @@ public class AsyncTaskExecutor<T> {
           LOGGER.error("Unabled error", e);
         }
       }
-    }, 0L, 1, TimeUnit.SECONDS);
+    });
   }
 }
