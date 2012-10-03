@@ -34,11 +34,13 @@ public class AsyncTaskExecutor<T> {
   }
   
   public void schedule(final AsyncFuture<T> task) {
-    executor.submit(new DelayedRunnable(new Runnable() {
+    Runnable runnable =  new Runnable() {
       @Override
       public void run() {
         try {
-          if(task.makeProgress() != AsyncFuture.Complete.COMPLETE) {
+          AsyncFuture.Complete status = task.makeProgress();
+          if(status != AsyncFuture.Complete.COMPLETE) {
+            LOGGER.info("Status of " + task + " is " + status + ", queue.size = " + queue.size());
             queue.add(new DelayedRunnable(this, 1, TimeUnit.SECONDS));
           }
         } catch (Exception e) {
@@ -47,7 +49,8 @@ public class AsyncTaskExecutor<T> {
           LOGGER.error("Unabled error while executing " + task, e);
         }
       }
-    }));
+    };
+    executor.submit(new DelayedRunnable(runnable));
   }
   
   private static class DelayedRunnable extends FutureTask<Void> implements Delayed {
