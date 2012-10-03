@@ -76,7 +76,8 @@ public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITERes
     String file = path.toUri().getPath();
     FSDataOutputStream out = hdfsState.forWrite(request.getStateID(), session.getFileSystem(), fileHandle, false);
 
-    LOGGER.info(session.getSessionID() + " xid = " + session.getXID() + ", write accepted " + file + " " + request.getOffset());
+    LOGGER.info(session.getSessionID() + " xid = " + session.getXIDAsHexString() + 
+        ", write accepted " + file + " " + request.getOffset());
 
     WriteOrderHandler writeOrderHandler = hdfsState.getWriteOrderHandler(file, out);
     boolean sync = request.getStable() != NFS4_COMMIT_UNSTABLE4;
