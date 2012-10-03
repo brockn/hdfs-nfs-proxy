@@ -3,17 +3,23 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4.attrs;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.hdfs.DFSClient;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
+import com.google.common.collect.Maps;
 
 public class FSInfo {
 
-  protected static boolean useDFSClient = false;
-
+  private static boolean useDFSClient = false;
+  private static final Map<Configuration, BlockingQueue<DFSClient>> clients = Maps.newHashMap();
+  
   static {
     try {
       FileSystem.class.getMethod("getStatus", (Class[])null);
@@ -33,42 +39,74 @@ public class FSInfo {
       throw new RuntimeException("The version of hadoop you have is not supported", ex);
     }
   }
-  public static long getCapacity(Session session) throws IOException {
+  
+   
+  public long getCapacity(Session session) throws IOException {
     if(session.getFileSystem() instanceof LocalFileSystem) {
       File partition = new File("/");
       return partition.getTotalSpace();
     }
     if(useDFSClient) {
-      DFSClient client = new DFSClient(session.getConfiguration());
+      DFSClient client = getDFSClient(session.getConfiguration());
       try {
         return (Long)getObject(client, "totalRawCapacity");
       } finally {
-        client.close();
+        putDFSClient(session.getConfiguration(), client);
       }
     }
     FileSystem fs = session.getFileSystem();
     return (Long)getObject(getObject(fs, "getStatus"), "getCapacity");
   }
-  public static long getRemaining(Session session)  throws IOException{
+  public long getRemaining(Session session)  throws IOException{
     return getCapacity(session) - getUsed(session);
   }
-  public static long getUsed(Session session)  throws IOException {
+  public long getUsed(Session session)  throws IOException {
     if(session.getFileSystem() instanceof LocalFileSystem) {
       File partition = new File("/");
       return partition.getTotalSpace() - partition.getFreeSpace();
     }
     if(useDFSClient) {
-      DFSClient client = new DFSClient(session.getConfiguration());
+      DFSClient client = getDFSClient(session.getConfiguration());
       try {
         return (Long)getObject(client, "totalRawUsed");
       } finally {
-        client.close();
+        putDFSClient(session.getConfiguration(), client);
       }
     }
     FileSystem fs = session.getFileSystem();
     return (Long)getObject(getObject(fs, "getStatus"), "getUsed");
   }
 
+  private static void putDFSClient(Configuration conf, DFSClient client) 
+      throws IOException {
+    BlockingQueue<DFSClient> clientQueue;
+    synchronized(clients) {
+      clientQueue = clients.get(conf);
+      if(clientQueue == null) {
+        clientQueue = new ArrayBlockingQueue<DFSClient>(1);
+        clients.put(conf, clientQueue);
+      }      
+    }
+    if(!clientQueue.offer(client)) {
+      client.close();
+    }
+  }
+  private static DFSClient getDFSClient(Configuration conf) 
+      throws IOException {
+    BlockingQueue<DFSClient> clientQueue;
+    synchronized(clients) {
+      clientQueue = clients.get(conf);
+      if(clientQueue == null) {
+        clientQueue = new ArrayBlockingQueue<DFSClient>(1);
+        clients.put(conf, clientQueue);
+      }      
+    }
+    DFSClient client = clientQueue.poll();
+    if(client == null) {
+      client = new DFSClient(conf);
+    }
+    return client;
+  }
 
   protected static Object getObject(Object obj, String name) {
     try {

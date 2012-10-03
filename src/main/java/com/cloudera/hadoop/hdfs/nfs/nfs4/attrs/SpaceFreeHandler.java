@@ -29,12 +29,12 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class SpaceFreeHandler extends AttributeHandler<SpaceFree> {
-
+  private final FSInfo fsInfo = new FSInfo();
   @Override
   public SpaceFree get(HDFSState hdfsState, Session session,
       FileSystem fs, FileStatus fileStatus) throws NFS4Exception, IOException {
     SpaceFree space = new SpaceFree();
-    space.set(FSInfo.getRemaining(session));
+    space.set(fsInfo.getRemaining(session));
     return space;
   }
 

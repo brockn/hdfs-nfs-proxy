@@ -30,11 +30,13 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class SpaceAvailableHandler extends AttributeHandler<SpaceAvailable> {
 
+  private final FSInfo fsInfo = new FSInfo();
+  
   @Override
   public SpaceAvailable get(HDFSState hdfsState, Session session,
       FileSystem fs, FileStatus fileStatus) throws NFS4Exception, IOException {
     SpaceAvailable space = new SpaceAvailable();
-    space.set(FSInfo.getRemaining(session));
+    space.set(fsInfo.getRemaining(session));
     return space;
   }
 
