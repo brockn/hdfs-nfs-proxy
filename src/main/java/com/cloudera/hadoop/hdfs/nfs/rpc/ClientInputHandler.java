@@ -134,29 +134,29 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
         // request is used to indicate if we should send
         // a failure packet in case of an error
         request = null;
-        if(mRetransmits >= mRestransmitPenaltyThreshold) {
-          mRetransmits = 0L;
-          mHandler.incrementMetric("RETRANSMIT_PENALTY_BOX", 1);
-          Thread.sleep(RETRANSMIT_PENALTY_TIME);
-          if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug(mSessionID + " Client " + mClientName + " is going in the penalty box (SLOWDOWN)");
-          }
-        }
+//        if(mRetransmits >= mRestransmitPenaltyThreshold) {
+//          mRetransmits = 0L;
+//          mHandler.incrementMetric("RETRANSMIT_PENALTY_BOX", 1);
+//          Thread.sleep(RETRANSMIT_PENALTY_TIME);
+//          if(LOGGER.isDebugEnabled()) {
+//            LOGGER.debug(mSessionID + " Client " + mClientName + " is going in the penalty box (SLOWDOWN)");
+//          }
+//        }
         mRetransmits = mRetransmits > 0 ? mRetransmits : 0;
 
         // Some requests will burn a thread while waiting for a
         // condition. For example close waits for writes to finish
         // and rename waits for a few ms for the file to close
         // if open. We should have an async return path.
-        int count = 0;
-        while(mRequestsInProgress.size() > mMaxPendingRequests && count++ < mMaxPendingRequestWaits) {
-          mHandler.incrementMetric("TOO_MANY_PENDING_REQUESTS", 1);
-          if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug(mSessionID + " Client " + mClientName + " is waiting for pending " + 
-                mRequestsInProgress.size() + " requests to finish (SLOWDOWN)");
-          }
-          Thread.sleep(TOO_MANY_PENDING_REQUESTS_PAUSE);
-        }
+//        int count = 0;
+//        while(mRequestsInProgress.size() > mMaxPendingRequests && count++ < mMaxPendingRequestWaits) {
+//          mHandler.incrementMetric("TOO_MANY_PENDING_REQUESTS", 1);
+//          if(LOGGER.isDebugEnabled()) {
+//            LOGGER.debug(mSessionID + " Client " + mClientName + " is waiting for pending " + 
+//                mRequestsInProgress.size() + " requests to finish (SLOWDOWN)");
+//          }
+//          Thread.sleep(TOO_MANY_PENDING_REQUESTS_PAUSE);
+//        }
 
         RPCBuffer requestBuffer = RPCBuffer.from(in);
         LOGGER.info(mSessionID + " got request");
