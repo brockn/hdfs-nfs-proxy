@@ -30,10 +30,13 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.TEMP_DIRECTORIES;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.hadoop.conf.Configuration;
@@ -64,11 +67,20 @@ public class HDFSState {
   protected static final Logger LOGGER = Logger.getLogger(HDFSState.class);
   private static final AtomicLong FILEID = new AtomicLong(0L);
   private static final Random RANDOM = new Random();
+  /**
+   * getFileHandle is not synchronized on this as such a concurrent map is used
+   */
   private final Map<String, HDFSFile> mPathMap = Maps.newConcurrentMap();
+  /**
+   * getPath is not synchronized on this as such a concurrent map is used
+   */
   private final Map<FileHandle, HDFSFile> mFileHandleMap = Maps.newConcurrentMap();
   private final long mStartTime = System.currentTimeMillis();
   private final ClientFactory mClientFactory = new ClientFactory();
-  private final Map<HDFSOutputStream, WriteOrderHandler> mWriteOrderHandlerMap = Maps.newConcurrentMap();
+  /**
+   * Synchronized on the map itself
+   */
+  private final Map<HDFSOutputStream, WriteOrderHandler> mWriteOrderHandlerMap = Maps.newHashMap();
   private final FileHandleStore mFileHandleStore;
   private final Configuration mConfiguration;
   private final Metrics mMetrics;
@@ -134,6 +146,66 @@ public class HDFSState {
         }
       }
     });
+    
+    Thread backgroundWorker = new Thread() {
+      public void run() {
+        while(true) {
+          try {
+            TimeUnit.MINUTES.sleep(1L);
+          } catch (InterruptedException e) {
+            // not interruptible
+          }
+          Set<HDFSOutputStream> keys;
+          synchronized (mWriteOrderHandlerMap) {
+            keys = new HashSet<HDFSOutputStream>(mWriteOrderHandlerMap.keySet());
+          }
+          for(HDFSOutputStream out : keys) {
+            if(LOGGER.isDebugEnabled()) {
+              LOGGER.debug("Performing activity check on " + out);
+            }
+            long elapsed = System.currentTimeMillis() - out.getLastOperation();
+            long elapsedMinutes = TimeUnit.MINUTES.convert(elapsed, TimeUnit.MILLISECONDS);
+            if(elapsedMinutes > 60L) {
+              LOGGER.warn("File " + out + " has not been written to for " + elapsedMinutes + " minutes");
+            } else if(elapsedMinutes > 1440L) {
+              LOGGER.error("File " + out + " has not been written to for " + elapsedMinutes + 
+                  " minutes. Closing the file.");
+              WriteOrderHandler writeOrderHandler;
+              synchronized (mWriteOrderHandlerMap) {
+                writeOrderHandler = mWriteOrderHandlerMap.remove(out);
+              }
+              if(writeOrderHandler != null) {
+                try {
+                  writeOrderHandler.close();
+                } catch (Exception e) {
+                  LOGGER.error("Error thrown trying to close " + out, e);
+                }
+                cleanup(writeOrderHandler);
+              }
+              try {
+                synchronized (HDFSState.this) {
+                  HDFSFile hdfsFile = mFileHandleMap.get(out.getFileHandle());
+                  if(hdfsFile.isOpenForRead()) {
+                    OpenResource<HDFSOutputStream> res = hdfsFile.getHDFSOutputStream();
+                    if(res != null) {
+                      res.close();
+                    }
+                  } else {
+                    mFileHandleMap.remove(out.getFileHandle());
+                    hdfsFile.close();
+                  }
+                }
+              } catch (Exception e) {
+                LOGGER.error("Error thrown trying to close " + out, e);
+              }
+            }
+          }
+        }
+      }
+    };
+    backgroundWorker.setName("HDFSState-BackgroundWorker");
+    backgroundWorker.setDaemon(true);
+    backgroundWorker.start();
     
     for (FileHandleStoreEntry entry : mFileHandleStore.getAll()) {
       FileHandle fileHandle = new FileHandle(entry.getFileHandle());
@@ -471,7 +543,7 @@ public class HDFSState {
       if (exists && fs.getFileStatus(path).isDir()) {
         throw new NFS4Exception(NFS4ERR_ISDIR);
       }
-      HDFSOutputStream out = new HDFSOutputStream(fs.create(path, overwrite), path.toString());
+      HDFSOutputStream out = new HDFSOutputStream(fs.create(path, overwrite), path.toString(), fileHandle);
       mMetrics.incrementMetric("FILES_OPENED_WRITE", 1);
       fileHolder.setHDFSOutputStream(stateID, out);
       return out;

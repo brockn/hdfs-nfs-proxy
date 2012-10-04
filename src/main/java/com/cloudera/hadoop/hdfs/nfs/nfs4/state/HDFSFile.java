@@ -20,6 +20,7 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4.state;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Map;
@@ -57,6 +58,19 @@ public class HDFSFile {
     return mFileHandle;
   }
 
+  public void close() throws IOException {
+    if(mOutputStream != null) {
+      OpenResource<HDFSOutputStream> res = mOutputStream.getSecond();
+      if(res != null && res.get() != null) {
+        res.get().close();
+      }
+    }
+    for(OpenResource<FSDataInputStream> res : mInputStreams.values()) {
+      if(res != null && res.get() != null) {
+        res.get().close();
+      }
+    }
+  }
   public OpenResource<FSDataInputStream> getFSDataInputStream(StateID stateID) {
     if (mInputStreams.containsKey(stateID)) {
       OpenResource<FSDataInputStream> file = mInputStreams.get(stateID);
@@ -128,7 +142,7 @@ public class HDFSFile {
 
   @Override
   public String toString() {
-    return "FileHolder [mPath=" + mPath + ", mFileHandle=" + mFileHandle
+    return "HDFSFile [mPath=" + mPath + ", mFileHandle=" + mFileHandle
         + ", mFSDataOutputStream=" + mOutputStream + ", mFileID=" + mFileID
         + "]";
   }

@@ -23,15 +23,21 @@ import java.io.OutputStream;
 
 import org.apache.hadoop.fs.FSDataOutputStream;
 
+import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
+
 public class HDFSOutputStream extends OutputStream {
 
   private final FSDataOutputStream outputStream;
   private final String filename;
+  private FileHandle fileHandle;
   private long position;
-  public HDFSOutputStream(FSDataOutputStream outputStream, String filename) {
+  private long lastOperation;
+  
+  public HDFSOutputStream(FSDataOutputStream outputStream, String filename, FileHandle fileHandle) {
     super();
     this.outputStream = outputStream;
     this.filename = filename;
+    this.fileHandle = fileHandle;
     this.position = 0L;
   }
   public void write(byte b[]) throws IOException {
@@ -40,16 +46,25 @@ public class HDFSOutputStream extends OutputStream {
   public void write(byte b[], int off, int len) throws IOException {
     outputStream.write(b, off, len);
     position += len;
+    lastOperation = System.currentTimeMillis();
   }
   @Override
   public void write(int b) throws IOException {
     outputStream.write(b);
     position++;
+    lastOperation = System.currentTimeMillis();
   }
   public long getPos()  {
     return position;
   }
+  public long getLastOperation() {
+    return lastOperation;
+  }
+  public FileHandle getFileHandle() {
+    return fileHandle;
+  }
   public void sync() throws IOException {
+    lastOperation = System.currentTimeMillis();
     outputStream.sync();
   }
   @Override
