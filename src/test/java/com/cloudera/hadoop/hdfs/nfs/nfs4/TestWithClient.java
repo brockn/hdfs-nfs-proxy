@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.UUID;
 
 import org.apache.hadoop.conf.Configuration;
@@ -43,7 +44,9 @@ import org.junit.Test;
 
 import com.cloudera.hadoop.hdfs.nfs.NFSUtils;
 import com.cloudera.hadoop.hdfs.nfs.TestUtils;
+import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
+import com.google.common.io.Files;
 
 public class TestWithClient {
 
@@ -213,13 +216,45 @@ public class TestWithClient {
   }
 
   protected String getOwner(File file) throws IOException {
-    String[] cmd = new String[]{"stat", "-c", "%U", file.getCanonicalPath()};
-    return Shell.execCommand(cmd).trim();
+    File script = null;
+    String[] cmd = new String[]{"/usr/bin/stat", "-c", "%U", file.getCanonicalPath()};
+    if("Mac OS X".equalsIgnoreCase(System.getProperty("os.name"))) {
+      script = File.createTempFile("stat", ".sh");
+      String statCmd = "stat " + file.getCanonicalPath() + "| cut -d ' ' -f5";
+      cmd = new String[2];
+      cmd[0] = "bash";
+      cmd[1] = script.getAbsolutePath();
+      Files.write(statCmd, script, Charsets.UTF_8);
+    }
+    LOGGER.info("Executing " + Arrays.toString(cmd));
+    try {
+      return Shell.execCommand(cmd).trim();      
+    } finally {
+      if(script != null) {
+        script.delete();        
+      }
+    }
   }
 
   protected String getOwnerGroup(File file) throws IOException {
+    File script = null;
     String[] cmd = new String[]{"/usr/bin/stat", "-c", "%G", file.getAbsolutePath()};
-    return Shell.execCommand(cmd).trim();
+    if("Mac OS X".equalsIgnoreCase(System.getProperty("os.name"))) {
+      script = File.createTempFile("stat", ".sh");
+      String statCmd = "stat " + file.getCanonicalPath() + "| cut -d ' ' -f6";
+      cmd = new String[2];
+      cmd[0] = "bash";
+      cmd[1] = script.getAbsolutePath();
+      Files.write(statCmd, script, Charsets.UTF_8);
+    }
+    LOGGER.info("Executing " + Arrays.toString(cmd));
+    try {
+      return Shell.execCommand(cmd).trim();      
+    } finally {
+      if(script != null) {
+        script.delete();        
+      }
+    }
   }
 
   protected void doCompareFileStatusFile(FileStatus fileStatus) throws IOException {

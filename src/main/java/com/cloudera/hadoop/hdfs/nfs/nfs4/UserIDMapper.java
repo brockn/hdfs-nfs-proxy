@@ -57,6 +57,7 @@ public abstract class UserIDMapper {
     return (UserIDMapper)ReflectionUtils.newInstance(clazz, conf);
   }
 
+  
   /**
    * @return String username associated with the current process
    */

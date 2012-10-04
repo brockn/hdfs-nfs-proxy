@@ -19,6 +19,7 @@
 package com.cloudera.hadoop.hdfs.nfs;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_FILEHANDLE_STORE_FILE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.USER_ID_MAPPER_CLASS;
 import static org.junit.Assert.assertEquals;
 
 import java.io.BufferedOutputStream;
@@ -37,6 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
+import com.cloudera.hadoop.hdfs.nfs.nfs4.FixedUserIDMapper;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCPacket;
@@ -78,7 +80,20 @@ public class TestUtils {
   }
 
   public static Configuration setupConf(Configuration conf) throws IOException {
-    conf.set(NFS_FILEHANDLE_STORE_FILE, "/tmp/" + UUID.randomUUID().toString());
+    if(conf.get(USER_ID_MAPPER_CLASS) == null) {
+      conf.set(USER_ID_MAPPER_CLASS, FixedUserIDMapper.class.getName());
+    }
+    final String dir = "/tmp/" + UUID.randomUUID().toString();
+    conf.set(NFS_FILEHANDLE_STORE_FILE, dir);
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      public void run() {
+        try {
+          PathUtils.fullyDelete(new File(dir));
+        } catch (IOException e) {
+
+        }
+      }
+    });
     return conf;
   }
 
