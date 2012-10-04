@@ -568,10 +568,10 @@ public class HDFSState {
   }
   
   public File getTemporaryFile(String identifer, String name) throws IOException {
-    int hashCode = name.hashCode();
+    int hashCode = Math.abs(name.hashCode());
     int fileIndex = hashCode % mTempDirs.length;
     File base = mTempDirs[fileIndex];
-    int bucketIndex = name.hashCode() % 512;
+    int bucketIndex = hashCode % 512;
     File dir = new File(base, Joiner.on(File.separator).join(identifer, bucketIndex));
     if(!dir.isDirectory()) {
       if(!(dir.mkdirs() || dir.isDirectory())) {
