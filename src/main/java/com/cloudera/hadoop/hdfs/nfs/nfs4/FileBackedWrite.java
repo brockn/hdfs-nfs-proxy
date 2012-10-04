@@ -62,6 +62,10 @@ public class FileBackedWrite extends AbstractPendingWrite {
   public int getLength() {
     return length;
   }
+  @Override
+  public void close() {
+   backingFile.delete(); 
+  }
   private void writeBytes(byte[] buffer, int start, int length) 
       throws IOException {
     FileOutputStream out = new FileOutputStream(backingFile);

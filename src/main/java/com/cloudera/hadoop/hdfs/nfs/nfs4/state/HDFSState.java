@@ -262,6 +262,7 @@ public class HDFSState {
       writeOrderHandler.close(); // blocks
       LOGGER.info(sessionID + " Closed WriteOrderHandler for "
           + fileHolder.getPath());
+      cleanup(writeOrderHandler);
     }
     synchronized (this) {
       file.close();
@@ -566,7 +567,16 @@ public class HDFSState {
   public long getStartTime() {
     return mStartTime;
   }
-  
+  private void cleanup(WriteOrderHandler writeOrderHandler) {
+    for(File tempDir : mTempDirs) {
+      File dir = new File(tempDir, writeOrderHandler.getIdentifer());
+      try {
+        PathUtils.fullyDelete(dir);
+      } catch (IOException e) {
+        LOGGER.warn("Unexpected error cleaning up " + dir, e);
+      }
+    }
+  }
   public File getTemporaryFile(String identifer, String name) throws IOException {
     int hashCode = Math.abs(name.hashCode());
     int fileIndex = hashCode % mTempDirs.length;

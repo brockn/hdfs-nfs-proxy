@@ -13,5 +13,10 @@ public interface PendingWrite {
   public byte[] getData();
   public int getStart();
   public int getLength();
+  
+  /**
+   * Release any resources used by the write
+   */
+  public void close();
 
 }

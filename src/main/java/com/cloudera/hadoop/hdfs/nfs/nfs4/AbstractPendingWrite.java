@@ -34,6 +34,10 @@ abstract class AbstractPendingWrite implements PendingWrite {
   public boolean isSync() {
     return sync;
   }
+  @Override
+  public void close() {
+    
+  }
   protected static int getHashCode(long offset, byte[] data, int start, int length) {
     final int prime = 31;
     int result = 1;
