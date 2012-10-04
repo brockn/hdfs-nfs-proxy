@@ -102,11 +102,11 @@ public class AsyncTaskExecutor<T> {
 
     @Override
     public long getDelay(TimeUnit unit) {
-      long timeRemaining = System.currentTimeMillis() - start;
-      if(timeRemaining >= 0) {
-        return unit.convert(timeRemaining, TimeUnit.MILLISECONDS);
+      long elapsed = System.currentTimeMillis() - start;
+      if(elapsed >= delayMS) {
+        return 0L;
       }
-      return 0L;
+      return unit.convert(delayMS - elapsed, TimeUnit.MILLISECONDS);
     }
     @Override
     public String toString() {
