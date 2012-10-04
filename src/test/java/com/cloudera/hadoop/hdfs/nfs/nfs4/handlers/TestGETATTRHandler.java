@@ -20,52 +20,43 @@
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOENT;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
 
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.Bitmap;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Status;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.GETATTRRequest;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
-public class TestGETATTRHandler {
+public class TestGETATTRHandler extends TestBaseHandler {
 
   GETATTRHandler handler;
-  HDFSState hdfsState;
-  Session session;
   GETATTRRequest request;
-  FileSystem fs;
-  FileHandle fileHandle = new FileHandle("fileHandle".getBytes());
 
   @Before
-  public void setup() throws NFS4Exception {
+  public void setup() throws Exception {
+    super.setup();
     handler = new GETATTRHandler();
-    hdfsState = mock(HDFSState.class);
-    session = mock(Session.class);
     request = new GETATTRRequest();
-    fs = mock(FileSystem.class);
-    when(session.getFileSystem()).thenReturn(fs);
+    request.setAttrs(new Bitmap());
   }
 
   @Test
-  public void testFileNotFound() throws NFS4Exception, IOException {
-    when(hdfsState.getPath(any(FileHandle.class))).thenReturn(new Path("/"));
-    when(session.getCurrentFileHandle()).thenReturn(fileHandle);
+  public void testFileNotFound() throws Exception {
     when(fs.getFileStatus(any(Path.class))).thenThrow(new FileNotFoundException());
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_NOENT, response.getStatus());
   }
-
+  @Test
+  public void testSuccess() throws Exception {
+    Status response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4_OK, response.getStatus());
+  }
 }

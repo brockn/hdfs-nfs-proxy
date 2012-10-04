@@ -39,10 +39,11 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.RENAMERequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.RENAMEResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
+import com.google.common.base.Strings;
 
 public class RENAMEHandler extends OperationRequestHandler<RENAMERequest, RENAMEResponse> {
 
-  protected static final Logger LOGGER = Logger.getLogger(RENAMEHandler.class);
+  protected static final Logger LOGGER = Logger.getLogger(TestRENAMEHandler.class);
 
   @Override
   protected RENAMEResponse doHandle(HDFSState hdfsState, Session session,
@@ -50,7 +51,7 @@ public class RENAMEHandler extends OperationRequestHandler<RENAMERequest, RENAME
     if (session.getCurrentFileHandle() == null || session.getSavedFileHandle() == null) {
       throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
     }
-    if ("".equals(request.getOldName()) || "".equals(request.getNewName())) {
+    if (Strings.isNullOrEmpty(request.getOldName()) || Strings.isNullOrEmpty(request.getNewName())) {
       throw new NFS4Exception(NFS4ERR_INVAL);
     }
     FileSystem fs = session.getFileSystem();
@@ -60,7 +61,7 @@ public class RENAMEHandler extends OperationRequestHandler<RENAMERequest, RENAME
     Path newPath = new Path(newParentPath, request.getNewName());
     if (!(fs.getFileStatus(oldParentPath).isDir() && fs.getFileStatus(newParentPath).isDir())) {
       throw new NFS4Exception(NFS4ERR_NOTDIR);
-    }
+    }     
     if (!hdfsState.fileExists(fs, oldPath)) {
       throw new NFS4Exception(NFS4ERR_NOENT, "Path " + oldPath + " does not exist.");
     }
