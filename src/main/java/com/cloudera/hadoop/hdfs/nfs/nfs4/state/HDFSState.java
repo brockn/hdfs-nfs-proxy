@@ -55,7 +55,7 @@ public class HDFSState {
   private final Metrics mMetrics;
   private final File[] mTempDirs;
   
-  public HDFSState(Configuration configuration, Metrics metrics) {
+  public HDFSState(Configuration configuration, Metrics metrics) throws IOException {
     mConfiguration = configuration;
     mMetrics = metrics;
     mFileHandleStore = FileHandleStore.get(mConfiguration);
@@ -80,14 +80,26 @@ public class HDFSState {
         } else if(tempDir.isFile()) {
           tempDir.delete();
         }
-        if(!(tempDir.isDirectory() || tempDir.mkdirs())) {
-          throw new IllegalStateException("Directory " + tempDir +
-              " does not exist or could not be created.");
-        }
       } catch (IOException e) {
         LOGGER.error("Error deleting " + tempDir, e);
         Throwables.propagate(e);
       }
+      if(!(tempDir.isDirectory() || tempDir.mkdirs())) {
+        throw new IOException("Directory " + tempDir +
+            " does not exist or could not be created.");
+      }
+      File testFile = new File(tempDir, "test");
+      try {
+        if(testFile.isFile() && !testFile.delete()) {
+          throw new IOException("Test file " + testFile + " exists but cannot be deleted");
+        }
+        if(!testFile.createNewFile()) {
+          throw new IOException("Unable to create test file " + testFile);
+        }        
+      } finally {
+        testFile.delete();
+      }
+      
     }
     
     LOGGER.info("Writing temp files to " + Arrays.toString(mTempDirs));
@@ -555,11 +567,17 @@ public class HDFSState {
     return mStartTime;
   }
   
-  public File getTemporaryFile(String identifer, String name) {
+  public File getTemporaryFile(String identifer, String name) throws IOException {
     int hashCode = name.hashCode();
     int fileIndex = hashCode % mTempDirs.length;
     File base = mTempDirs[fileIndex];
     int bucketIndex = name.hashCode() % 512;
-    return new File(base, Joiner.on(File.separator).join(identifer, bucketIndex, name));
+    File dir = new File(base, Joiner.on(File.separator).join(identifer, bucketIndex));
+    if(dir.isDirectory()) {
+      if(!(dir.mkdirs() || dir.isDirectory())) {
+        throw new IOException("Unable to create " + dir);
+      }
+    }
+    return new File(dir, name);
   }
 }

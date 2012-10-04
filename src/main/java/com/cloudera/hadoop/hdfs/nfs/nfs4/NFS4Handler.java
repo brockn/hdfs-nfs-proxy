@@ -51,8 +51,9 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   
   /**
    * Create a handler object with a default configuration object
+   * @throws IOException 
    */
-  public NFS4Handler() {
+  public NFS4Handler() throws IOException {
     this(new Configuration());
   }
 
@@ -60,8 +61,9 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
    * Create a handler with the configuration passed into the constructor
    *
    * @param configuration
+   * @throws IOException 
    */
-  public NFS4Handler(Configuration configuration) {
+  public NFS4Handler(Configuration configuration) throws IOException {
     mConfiguration = configuration;
     mMetrics = new Metrics();
     mHDFSState = new HDFSState(mConfiguration, mMetrics);    
