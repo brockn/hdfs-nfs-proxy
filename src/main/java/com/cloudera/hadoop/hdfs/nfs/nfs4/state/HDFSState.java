@@ -573,7 +573,7 @@ public class HDFSState {
     File base = mTempDirs[fileIndex];
     int bucketIndex = name.hashCode() % 512;
     File dir = new File(base, Joiner.on(File.separator).join(identifer, bucketIndex));
-    if(dir.isDirectory()) {
+    if(!dir.isDirectory()) {
       if(!(dir.mkdirs() || dir.isDirectory())) {
         throw new IOException("Unable to create " + dir);
       }
