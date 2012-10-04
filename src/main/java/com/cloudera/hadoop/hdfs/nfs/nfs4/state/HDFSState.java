@@ -11,6 +11,7 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.TEMP_DIRECTORIES;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -88,6 +89,8 @@ public class HDFSState {
         Throwables.propagate(e);
       }
     }
+    
+    LOGGER.info("Writing temp files to " + Arrays.toString(mTempDirs));
     
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
