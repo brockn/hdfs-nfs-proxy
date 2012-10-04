@@ -24,7 +24,6 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
 
 import java.io.IOException;
 
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
@@ -36,6 +35,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.WRITERequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.WRITEResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSOutputStream;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITEResponse> {
@@ -50,11 +50,30 @@ public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITERes
       FileHandle fileHandle = session.getCurrentFileHandle();
       Path path = hdfsState.getPath(fileHandle);
       String file = path.toUri().getPath();
-      FSDataOutputStream out = hdfsState.forWrite(request.getStateID(), session.getFileSystem(), fileHandle, false);
+      HDFSOutputStream out = hdfsState.forWrite(request.getStateID(), session.getFileSystem(), fileHandle, false);
       WriteOrderHandler writeOrderHandler = hdfsState.getWriteOrderHandler(file, out);
       boolean sync = request.getStable() != NFS4_COMMIT_UNSTABLE4;
+      if(sync && writeOrderHandler.synchronousWriteWouldBlock(request.getOffset())) {
+        /*
+         * I have observed NFS clients which will send some writes with
+         * a sync flag and some other without a sync flag. I believe this
+         * is when feels the nfs server is responding slow or when
+         * the nfs server sends errors. I know for a fact it will 
+         * will do this during the error condition to try and bubble
+         * the error back up to the writer.
+         * 
+         * However, in the case where we have not received the pre-req writes
+         * we cannot honor the sync flag. This should only occur when the
+         * kernel adds the sync flag to write, not when someone calls fsync
+         * on the stream.
+         * 
+         * We could honor this by queuing this write but it's observed that 
+         * clients (ubuntu 12.10) will stop sending write requests waiting
+         * for the response to the previous requests.
+         */
+        return false;
+      }
       return false;
-//      return writeOrderHandler.writeWouldBlock(request.getOffset(), sync);
     } catch(NFS4Exception e) {
       LOGGER.warn("Expection handing wouldBlock. Client error will " +
           "be returned on call to doHandle", e);
@@ -74,14 +93,20 @@ public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITERes
     FileHandle fileHandle = session.getCurrentFileHandle();
     Path path = hdfsState.getPath(fileHandle);
     String file = path.toUri().getPath();
-    FSDataOutputStream out = hdfsState.forWrite(request.getStateID(), session.getFileSystem(), fileHandle, false);
+    HDFSOutputStream out = hdfsState.forWrite(request.getStateID(), session.getFileSystem(), fileHandle, false);
 
     LOGGER.info(session.getSessionID() + " xid = " + session.getXIDAsHexString() + 
         ", write accepted " + file + " " + request.getOffset());
 
     WriteOrderHandler writeOrderHandler = hdfsState.getWriteOrderHandler(file, out);
     boolean sync = request.getStable() != NFS4_COMMIT_UNSTABLE4;
-    sync = false;
+    if(sync  && writeOrderHandler.synchronousWriteWouldBlock(request.getOffset())) {
+      /* 
+       * See comment above. In this case, we cannot honor the sync request
+       */
+      sync = false;
+      LOGGER.info("Attempted synchronous random write " + file + ", offset = " + request.getOffset());
+    }
     int count = writeOrderHandler.write(path.toUri().getPath(), session.getXID(), request.getOffset(),
         sync, request.getData(), request.getStart(), request.getLength());
 

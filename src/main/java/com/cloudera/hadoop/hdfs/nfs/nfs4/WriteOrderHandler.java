@@ -23,6 +23,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -31,9 +32,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.log4j.Logger;
 
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSOutputStream;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -46,7 +47,7 @@ import com.google.common.collect.Maps;
 public class WriteOrderHandler extends Thread {
 
   protected static final Logger LOGGER = Logger.getLogger(WriteOrderHandler.class);
-  protected FSDataOutputStream mOutputStream;
+  protected HDFSOutputStream mOutputStream;
   protected ConcurrentMap<Long, PendingWrite> mPendingWrites = Maps.newConcurrentMap();
   protected AtomicLong mPendingWritesSize = new AtomicLong(0);
   protected List<Integer> mProcessedWrites = Lists.newArrayList();
@@ -56,12 +57,12 @@ public class WriteOrderHandler extends Thread {
   protected AtomicLong mExpectedLength = new AtomicLong(0);
   protected AtomicBoolean mClosed = new AtomicBoolean(false);
 
-  public WriteOrderHandler(FSDataOutputStream outputStream) throws IOException {
+  public WriteOrderHandler(HDFSOutputStream outputStream) throws IOException {
     mOutputStream = outputStream;
     mExpectedLength.set(mOutputStream.getPos());
   }
 
-  public long getCurrentPos() throws IOException {
+  public long getCurrentPos() {
     return mOutputStream.getPos();
   }
 
@@ -72,7 +73,11 @@ public class WriteOrderHandler extends Thread {
         PendingWrite write = mWriteQueue.poll(10, TimeUnit.SECONDS);
         if (write == null) {
           synchronized (mPendingWrites) {
-            LOGGER.info("Pending Write Offsets: " + new TreeSet<Long>(mPendingWrites.keySet()));
+            SortedSet<Long> offsets = new TreeSet<Long>(mPendingWrites.keySet());
+            if(!offsets.isEmpty()) {
+              LOGGER.info("Pending Write Offsets " + offsets.size() + ": first = " + 
+                  offsets.first() +  ", last = " + offsets.last());
+            }
           }
         } else {
           checkWriteState(write);
@@ -172,18 +177,17 @@ public class WriteOrderHandler extends Thread {
    * @return true if the sync call would block
    * @throws IOException
    */
-  public boolean syncWouldBlock(long offset) throws IOException {
-    return writeWouldBlock(offset, true);
+  public boolean syncWouldBlock(long offset) {
+    return synchronousWriteWouldBlock(offset);
   }
   /**
    * Check to see if a write to offset with sync flag would block
    * @param offset the write occurs at
-   * @param sync true if write is synchrnous
    * @return true if the write would block
    * @throws IOException
    */
-  public boolean writeWouldBlock(long offset, boolean sync) throws IOException {
-    if(sync && mOutputStream.getPos() < offset) {
+  public boolean synchronousWriteWouldBlock(long offset) {
+    if(getCurrentPos() < offset) {
       return true;
     }
     return false;

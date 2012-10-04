@@ -6,7 +6,6 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_FILE_OPEN;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_ISDIR;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_OLD_STATEID;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_PERM;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_SERVERFAULT;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_STALE;
 
 import java.io.IOException;
@@ -18,7 +17,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -43,7 +41,7 @@ public class HDFSState {
   private final Map<FileHandle, HDFSFile> mFileHandleMap = Maps.newConcurrentMap();
   private final long mStartTime = System.currentTimeMillis();
   private final ClientFactory mClientFactory = new ClientFactory();
-  private final Map<FSDataOutputStream, WriteOrderHandler> mWriteOrderHandlerMap = Maps.newConcurrentMap();
+  private final Map<HDFSOutputStream, WriteOrderHandler> mWriteOrderHandlerMap = Maps.newConcurrentMap();
   private final FileHandleStore mFileHandleStore;
   private final Configuration mConfiguration;
   private final Metrics mMetrics;
@@ -139,7 +137,7 @@ public class HDFSState {
       fileHolder = mFileHandleMap.get(fileHandle);
       if (fileHolder != null) {
         if (fileHolder.isOpenForWrite()) {
-          file = fileHolder.getFSDataOutputStream();
+          file = fileHolder.getHDFSOutputStream();
           synchronized (mWriteOrderHandlerMap) {
             writeOrderHandler = mWriteOrderHandlerMap.get(file.get());
           }
@@ -175,7 +173,7 @@ public class HDFSState {
         if (fileHolder.isOpenForWrite()) {
           LOGGER.info(sessionID + " Closing " + fileHolder.getPath()
               + " for write");
-          file = fileHolder.getFSDataOutputStream();
+          file = fileHolder.getHDFSOutputStream();
         } else {
           LOGGER.info(sessionID + " Closing " + fileHolder.getPath()
               + " for read");
@@ -223,7 +221,7 @@ public class HDFSState {
     OpenResource<?> file = null;
     if (fileHolder != null) {
       if (fileHolder.isOpenForWrite()) {
-        file = fileHolder.getFSDataOutputStream();
+        file = fileHolder.getHDFSOutputStream();
       } else {
         file = fileHolder.getFSDataInputStream(stateID);
       }
@@ -304,7 +302,7 @@ public class HDFSState {
    * creating the WriteOrderHandler.
    */
   public WriteOrderHandler getWriteOrderHandler(String name,
-      FSDataOutputStream out) throws IOException {
+      HDFSOutputStream out) throws IOException {
     WriteOrderHandler writeOrderHandler;
     synchronized (mWriteOrderHandlerMap) {
       writeOrderHandler = mWriteOrderHandlerMap.get(out);
@@ -331,7 +329,7 @@ public class HDFSState {
       FileHandle fileHandle) throws NFS4Exception {
     HDFSFile fileHolder = mFileHandleMap.get(fileHandle);
     if (fileHolder != null) {
-      OpenResource<FSDataOutputStream> file = fileHolder.getFSDataOutputStream();
+      OpenResource<HDFSOutputStream> file = fileHolder.getHDFSOutputStream();
       if (file != null) {
         synchronized (mWriteOrderHandlerMap) {
           if (mWriteOrderHandlerMap.containsKey(file.get())) {
@@ -353,12 +351,12 @@ public class HDFSState {
    * @throws NFS4Exception
    * @throws IOException
    */
-  public synchronized FSDataOutputStream forWrite(StateID stateID,
+  public synchronized HDFSOutputStream forWrite(StateID stateID,
       FileSystem fs, FileHandle fileHandle, boolean overwrite)
           throws NFS4Exception, IOException {
     HDFSFile fileHolder = mFileHandleMap.get(fileHandle);
     if (fileHolder != null) {
-      OpenResource<FSDataOutputStream> file = fileHolder.getFSDataOutputStream();
+      OpenResource<HDFSOutputStream> file = fileHolder.getHDFSOutputStream();
       if (file != null) {
         if (file.isOwnedBy(stateID)) {
           return file.get();
@@ -388,9 +386,9 @@ public class HDFSState {
       if (exists && fs.getFileStatus(path).isDir()) {
         throw new NFS4Exception(NFS4ERR_ISDIR);
       }
-      FSDataOutputStream out = fs.create(path, overwrite);
+      HDFSOutputStream out = new HDFSOutputStream(fs.create(path, overwrite), path.toString());
       mMetrics.incrementMetric("FILES_OPENED_WRITE", 1);
-      fileHolder.setFSDataOutputStream(stateID, out);
+      fileHolder.setHDFSOutputStream(stateID, out);
       return out;
     }
     throw new NFS4Exception(NFS4ERR_STALE);
@@ -458,14 +456,10 @@ public class HDFSState {
   public long getFileSize(FileStatus status) throws NFS4Exception {
     HDFSFile fileHolder = mPathMap.get(realPath(status.getPath()));
     if (fileHolder != null) {
-      OpenResource<FSDataOutputStream> file = fileHolder.getFSDataOutputStream();
+      OpenResource<HDFSOutputStream> file = fileHolder.getHDFSOutputStream();
       if (file != null) {
-        try {
-          FSDataOutputStream out = file.get();
-          return out.getPos();
-        } catch (IOException e) {
-          throw new NFS4Exception(NFS4ERR_SERVERFAULT, e);
-        }
+        HDFSOutputStream out = file.get();
+        return out.getPos();
       }
     }
     return status.getLen();

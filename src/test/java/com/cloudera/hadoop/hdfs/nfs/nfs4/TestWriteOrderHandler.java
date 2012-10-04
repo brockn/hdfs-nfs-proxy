@@ -38,25 +38,25 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSOutputStream;
 import com.google.common.collect.Lists;
 
 public class TestWriteOrderHandler {
 
-  FSDataOutputStream mOutputStream;
+  HDFSOutputStream mOutputStream;
   WriteOrderHandler mWriteOrderHandler;
   final AtomicInteger xid = new AtomicInteger(0);
   final byte[] buffer = new byte[1000];
 
   @Before
   public void setup() throws IOException {
-    mOutputStream = mock(FSDataOutputStream.class);
+    mOutputStream = mock(HDFSOutputStream.class);
     mWriteOrderHandler = new WriteOrderHandler(mOutputStream);
     mWriteOrderHandler.setDaemon(true);
     mWriteOrderHandler.setName("WriteOrderHandler");

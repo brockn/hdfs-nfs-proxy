@@ -30,7 +30,6 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OPEN4_SHARE_ACCES
 import java.io.IOException;
 
 import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -43,6 +42,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.ChangeID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.OPENRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.OPENResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSOutputStream;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class OPENHandler extends OperationRequestHandler<OPENRequest, OPENResponse> {
@@ -109,7 +109,7 @@ public class OPENHandler extends OperationRequestHandler<OPENRequest, OPENRespon
     Path path = new Path(parentPath, request.getName());
     session.setCurrentFileHandle(hdfsState.createFileHandle(path));
     boolean overwrite = request.getOpenType() == NFS4_OPEN4_CREATE;
-    FSDataOutputStream out = hdfsState.forWrite(stateID, fs, session.getCurrentFileHandle(), overwrite);
+    HDFSOutputStream out = hdfsState.forWrite(stateID, fs, session.getCurrentFileHandle(), overwrite);
     out.sync(); // create file in namenode
     LOGGER.info(session.getSessionID() + " Opened " + path + " for write " + out);
     OPENResponse response = createResponse();

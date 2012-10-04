@@ -7,7 +7,6 @@ import java.io.OutputStream;
 import java.util.Map;
 
 import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FSDataOutputStream;
 
 import com.cloudera.hadoop.hdfs.nfs.Pair;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
@@ -24,7 +23,7 @@ public class HDFSFile {
   protected final String mPath;
   protected final long mFileID;
   protected final Map<StateID, OpenResource<FSDataInputStream>> mInputStreams = Maps.newHashMap();
-  protected Pair<StateID, OpenResource<FSDataOutputStream>> mOutputStream;
+  protected Pair<StateID, OpenResource<HDFSOutputStream>> mOutputStream;
 
   public HDFSFile(FileHandle fileHandle, String path, long fileID) {
     this.mFileHandle = fileHandle;
@@ -64,12 +63,12 @@ public class HDFSFile {
   }
 
   public boolean isOpenForWrite() {
-    return getFSDataOutputStream() != null;
+    return getHDFSOutputStream() != null;
   }
 
-  public OpenResource<FSDataOutputStream> getFSDataOutputStream() {
+  public OpenResource<HDFSOutputStream> getHDFSOutputStream() {
     if (mOutputStream != null) {
-      OpenResource<FSDataOutputStream> file = mOutputStream.getSecond();
+      OpenResource<HDFSOutputStream> file = mOutputStream.getSecond();
       file.setTimestamp(System.currentTimeMillis());
       return file;
     }
@@ -88,9 +87,9 @@ public class HDFSFile {
     }
   }
 
-  public void setFSDataOutputStream(StateID stateID,
-      FSDataOutputStream fsDataOutputStream) {
-    mOutputStream = Pair.of(stateID, new OpenResource<FSDataOutputStream>(this,
+  public void setHDFSOutputStream(StateID stateID,
+      HDFSOutputStream fsDataOutputStream) {
+    mOutputStream = Pair.of(stateID, new OpenResource<HDFSOutputStream>(this,
         stateID, fsDataOutputStream));
   }
 

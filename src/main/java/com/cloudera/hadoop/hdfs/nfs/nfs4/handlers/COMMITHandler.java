@@ -52,9 +52,6 @@ public class COMMITHandler extends OperationRequestHandler<COMMITRequest, COMMIT
     } catch(NFS4Exception e) {
       LOGGER.warn("Expection handing wouldBlock. Client error will " +
           "be returned on call to doHandle", e);
-    } catch(IOException e) {
-      LOGGER.warn("Expection handing wouldBlock. Client error will " +
-          "be returned on call to doHandle", e);
     }
     return false;
   }
