@@ -33,24 +33,6 @@ public class AsyncTaskExecutor<T> {
         return new FutureTask<T>(runnable, value);
       }
     };
-    new Thread(){
-      public void run() {
-        while(true) {
-          try {
-            Thread.sleep(10L * 1000L);
-          } catch (InterruptedException e) {
-            
-          }
-          DelayedRunnable delaedRunnable = (DelayedRunnable)queue.peek();
-          if(delaedRunnable == null) {
-            LOGGER.info("Queue is " + queue.size());            
-          } else {
-            AsyncFuture<?> future = delaedRunnable.delegate.task;
-            LOGGER.info("Queue is " + queue.size() + ", head is " + future);            
-          }
-        }
-      }
-    }.start();
   }
   
   public void schedule(final AsyncFuture<T> task) {
@@ -74,7 +56,7 @@ public class AsyncTaskExecutor<T> {
           if(LOGGER.isDebugEnabled()) {
             LOGGER.info("Status of " + task + " is " + status + ", queue.size = " + queue.size());
           }
-          queue.add(new DelayedRunnable(this, 1, TimeUnit.SECONDS));
+          queue.add(new DelayedRunnable(this, 1000L));
         }
       } catch (Exception e) {
         LOGGER.error("Unabled exception while executing " + task, e);
@@ -84,17 +66,15 @@ public class AsyncTaskExecutor<T> {
     }
   }
   private static class DelayedRunnable extends FutureTask<Void> implements Delayed {
-    private final long delay;
-    private final TimeUnit unit;
-    private TaskRunnable delegate;
+    private final long delayMS;
+    private final long start;
     public DelayedRunnable(TaskRunnable delegate) {
-      this(delegate, 0L, TimeUnit.NANOSECONDS);
+      this(delegate, 0L);
     }
-    public DelayedRunnable(TaskRunnable delegate, long delay, TimeUnit unit) {
+    public DelayedRunnable(TaskRunnable delegate, long delayMS) {
       super(delegate, null);
-      this.delegate = delegate;
-      this.delay = delay;
-      this.unit = unit;
+      this.delayMS = delayMS;
+      this.start = System.currentTimeMillis();
     }
     @Override
     public int compareTo(Delayed other) {
@@ -104,7 +84,11 @@ public class AsyncTaskExecutor<T> {
 
     @Override
     public long getDelay(TimeUnit unit) {
-      return unit.convert(delay, this.unit);
+      long timeRemaining = System.currentTimeMillis() - start;
+      if(timeRemaining >= 0) {
+        return TimeUnit.MILLISECONDS.convert(delayMS, unit);
+      }
+      return 0L;
     }
   }
 }
