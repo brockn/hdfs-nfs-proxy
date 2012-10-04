@@ -560,6 +560,6 @@ public class HDFSState {
     int fileIndex = hashCode % mTempDirs.length;
     File base = mTempDirs[fileIndex];
     int bucketIndex = name.hashCode() % 512;
-    return new File(base, Joiner.on(File.pathSeparator).join(identifer, bucketIndex, name));
+    return new File(base, Joiner.on(File.separator).join(identifer, bucketIndex, name));
   }
 }
