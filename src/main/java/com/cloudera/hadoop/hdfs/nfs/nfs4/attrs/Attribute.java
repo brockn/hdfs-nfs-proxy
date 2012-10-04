@@ -98,9 +98,6 @@ public abstract class Attribute implements MessageBase, Identifiable {
     }
   }
 
-  //TODO Brock?? want to breakup this long line into a couple lines of statements that read easier?
-  // Yes this had always been multiple lines for me, not sure how it got into one long line? Did
-  // you run an atuomatic reformater?
   static ImmutableMap<Integer, AttributeHolder> attributes =
       ImmutableMap.<Integer, AttributeHolder>builder()
       .put(NFS4_FATTR4_ACL_SUPPORT, new AttributeHolder(ACLSupport.class, new ACLSupportHandler()))

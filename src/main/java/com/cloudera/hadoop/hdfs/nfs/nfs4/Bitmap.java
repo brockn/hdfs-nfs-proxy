@@ -84,6 +84,10 @@ public class Bitmap implements MessageBase {
   public void set(int bitIndex) {
     mMask.set(bitIndex);
   }
+  
+  public void clear(int bitIndex) {
+    mMask.clear(bitIndex);
+  }
 
   public boolean isSet(int bitIndex) {
     return mMask.get(bitIndex);
