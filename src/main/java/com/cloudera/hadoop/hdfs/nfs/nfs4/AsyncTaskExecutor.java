@@ -104,9 +104,15 @@ public class AsyncTaskExecutor<T> {
     public long getDelay(TimeUnit unit) {
       long timeRemaining = System.currentTimeMillis() - start;
       if(timeRemaining >= 0) {
-        return unit.convert(delayMS, TimeUnit.MILLISECONDS);
+        return unit.convert(timeRemaining, TimeUnit.MILLISECONDS);
       }
       return 0L;
     }
+    @Override
+    public String toString() {
+      return "DelayedRunnable [delayMS=" + delayMS + ", getDelay(ms)=" + getDelay(TimeUnit.MILLISECONDS) + "]";
+    }
+    
+    
   }
 }

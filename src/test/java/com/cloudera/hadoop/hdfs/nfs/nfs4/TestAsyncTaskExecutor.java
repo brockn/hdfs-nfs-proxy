@@ -21,6 +21,7 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4;
 import static org.fest.reflect.core.Reflection.field;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -40,19 +41,18 @@ public class TestAsyncTaskExecutor {
         .in(executor)
         .get();    
     Thread.sleep(2000L);
-    Assert.assertTrue(task1.called);
+    Assert.assertEquals(2, task1.calls.get());
     Assert.assertTrue(queue.isEmpty());
   }
   
   private static class AsyncFutureImpl extends AbstractFuture<Void> 
-  implements AsyncFuture<Void> {  
-    boolean called;
+  implements AsyncFuture<Void> {
+    AtomicInteger calls = new AtomicInteger(0);
     @Override
     public AsyncFuture.Complete makeProgress() {
-      if(called) {
+      if(calls.incrementAndGet() > 1) {
         return AsyncFuture.Complete.COMPLETE;
       }
-      called = true;
       return AsyncFuture.Complete.RETRY;
     }    
   }
