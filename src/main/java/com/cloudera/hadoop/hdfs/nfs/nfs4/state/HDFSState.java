@@ -7,7 +7,9 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_ISDIR;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_OLD_STATEID;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_PERM;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_STALE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.TEMP_DIRECTORIES;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +26,7 @@ import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.log4j.Logger;
 
+import com.cloudera.hadoop.hdfs.nfs.PathUtils;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandleStore;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandleStoreEntry;
@@ -31,7 +34,11 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.Metrics;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
+import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
+import com.google.common.io.Files;
 
 public class HDFSState {
   protected static final Logger LOGGER = Logger.getLogger(HDFSState.class);
@@ -45,12 +52,55 @@ public class HDFSState {
   private final FileHandleStore mFileHandleStore;
   private final Configuration mConfiguration;
   private final Metrics mMetrics;
+  private final File[] mTempDirs;
   
   public HDFSState(Configuration configuration, Metrics metrics) {
     mConfiguration = configuration;
     mMetrics = metrics;
     mFileHandleStore = FileHandleStore.get(mConfiguration);
 
+    String[] tempDirs = mConfiguration.getStrings(TEMP_DIRECTORIES);
+    if(tempDirs == null) {
+      mTempDirs = new File[1];
+      mTempDirs[0] = Files.createTempDir();
+    } else {
+      mTempDirs = new File[tempDirs.length];
+      for (int i = 0; i < tempDirs.length; i++) {
+        mTempDirs[i] = new File(tempDirs[i]);
+        Preconditions.checkState(mTempDirs[i].isDirectory(), "Path " + mTempDirs[i] + 
+            " is not a directory");
+      }
+    }
+    
+    for(File tempDir : mTempDirs) {
+      try {
+        if(tempDir.isDirectory()) {
+          PathUtils.fullyDeleteContents(tempDir);          
+        } else if(tempDir.isFile()) {
+          tempDir.delete();
+        }
+        if(!(tempDir.isDirectory() || tempDir.mkdirs())) {
+          throw new IllegalStateException("Directory " + tempDir +
+              " does not exist or could not be created.");
+        }
+      } catch (IOException e) {
+        LOGGER.error("Error deleting " + tempDir, e);
+        Throwables.propagate(e);
+      }
+    }
+    
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      public void run() {
+        for(File tempDir : mTempDirs) {
+          try {
+            PathUtils.fullyDelete(tempDir);
+          } catch (IOException e) {
+            LOGGER.error("Error deleting " + tempDir, e);
+          }
+        }
+      }
+    });
+    
     for (FileHandleStoreEntry entry : mFileHandleStore.getAll()) {
       FileHandle fileHandle = new FileHandle(entry.getFileHandle());
       HDFSFile holder = new HDFSFile(fileHandle, entry.getPath(), entry.getFileID());
@@ -500,5 +550,13 @@ public class HDFSState {
    */
   public long getStartTime() {
     return mStartTime;
+  }
+  
+  public File getTemporaryFile(String identifer, String name) {
+    int hashCode = name.hashCode();
+    int fileIndex = hashCode % mTempDirs.length;
+    File base = mTempDirs[fileIndex];
+    int bucketIndex = name.hashCode() % 512;
+    return new File(base, Joiner.on(File.pathSeparator).join(identifer, bucketIndex, name));
   }
 }

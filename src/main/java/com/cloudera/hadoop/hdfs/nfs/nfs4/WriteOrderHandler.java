@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -56,12 +57,17 @@ public class WriteOrderHandler extends Thread {
   protected NFS4Exception mNFSException;
   protected AtomicLong mExpectedLength = new AtomicLong(0);
   protected AtomicBoolean mClosed = new AtomicBoolean(false);
-
+  private String identifer;
+  
   public WriteOrderHandler(HDFSOutputStream outputStream) throws IOException {
     mOutputStream = outputStream;
     mExpectedLength.set(mOutputStream.getPos());
+    identifer = UUID.randomUUID().toString();
   }
 
+  public String getIdentifer() {
+    return identifer;
+  }
   public long getCurrentPos() {
     return mOutputStream.getPos();
   }
@@ -81,8 +87,8 @@ public class WriteOrderHandler extends Thread {
           }
         } else {
           checkWriteState(write);
-          mPendingWrites.put(write.offset, write);
-          mPendingWritesSize.addAndGet(write.size);
+          mPendingWrites.put(write.getOffset(), write);
+          mPendingWritesSize.addAndGet(write.getSize());
         }
         if(mPendingWritesSize.get() > 0L) {
           LOGGER.info("Pending writes " + (mPendingWritesSize.get() / 1024L / 1024L) + "MB, " +
@@ -105,32 +111,32 @@ public class WriteOrderHandler extends Thread {
   // turns out NFS clients will send the same write twice if the write rate is slow
 
   protected void checkWriteState(PendingWrite write) throws NFS4Exception {
-    PendingWrite other = mPendingWrites.get(write.offset);
+    PendingWrite other = mPendingWrites.get(write.getOffset());
     if (other != null && !write.equals(other)) {
       throw new NFS4Exception(NFS4ERR_PERM, "Unable to process write (random write) at "
-          + write.offset
-          + ", sync = " + write.sync
-          + ", length = " + write.length);
+          + write.getOffset()
+          + ", sync = " + write.isSync()
+          + ", length = " + write.getLength());
     }
   }
 
   protected void checkPendingWrites() throws IOException {
     PendingWrite write = null;
     while ((write = mPendingWrites.remove(mOutputStream.getPos())) != null) {
-      mPendingWritesSize.addAndGet(-write.size);
+      mPendingWritesSize.addAndGet(-write.getSize());
       doWrite(write);
     }
   }
 
   protected void doWrite(PendingWrite write) throws IOException {
     long preWritePos = mOutputStream.getPos();
-    checkState(preWritePos == write.offset, " Offset = " + write.offset + ", pos = " + preWritePos);
-    mOutputStream.write(write.data, write.start, write.length);
+    checkState(preWritePos == write.getOffset(), " Offset = " + write.getOffset() + ", pos = " + preWritePos);
+    mOutputStream.write(write.getData(), write.getStart(), write.getLength());
     if(LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Writing to " + write.name + " " + write.offset + ", "
-            + write.length + ", new offset = " + mOutputStream.getPos() + ", hash = " + write.hashCode);
+        LOGGER.debug("Writing to " + write.getName() + " " + write.getOffset() + ", "
+            + write.getLength() + ", new offset = " + mOutputStream.getPos() + ", hash = " + write.hashCode());
     }
-    if (write.sync) {
+    if (write.isSync()) {
       mOutputStream.sync();
     }
   }
@@ -259,7 +265,7 @@ public class WriteOrderHandler extends Thread {
    * the queue
    * @throws NFS4Exception if random write
    */
-  public int write(String name, int xid, long offset, boolean sync, byte[] data, int start, int length)
+  public int write(PendingWrite write)
       throws IOException, NFS4Exception {
     checkException();
     if (mClosed.get()) {
@@ -270,29 +276,29 @@ public class WriteOrderHandler extends Thread {
       // this happens when writes are retransmitted but not in
       // our response cache. Surprisingly often.
       synchronized (mProcessedWrites) {
-        if (mProcessedWrites.contains(xid)) {
-          LOGGER.info("Write already processed " + xid);
-          return length;
+        if (mProcessedWrites.contains(write.getXid())) {
+          LOGGER.info("Write already processed " + write.getXidAsHexString());
+          return write.getLength();
         }
-        mProcessedWrites.add(xid);
-        if (offset < mOutputStream.getPos()) {
+        mProcessedWrites.add(write.getXid());
+        if (write.getOffset() < mOutputStream.getPos()) {
           throw new NFS4Exception(NFS4ERR_PERM, "Unable to process write (random write) at "
-              + offset
-              + ", pos = " + mOutputStream.getPos()
-              + ", sync = " + sync
-              + ", length = " + length);
+              + write.getOffset()
+              + ", pos = " + getCurrentPos()
+              + ", sync = " + write.isSync()
+              + ", length = " + write.getLength());
         }
         synchronized (mExpectedLength) {
-          if (offset > mExpectedLength.get()) {
-            mExpectedLength.set(offset);
+          if (write.getOffset() > mExpectedLength.get()) {
+            mExpectedLength.set(write.getOffset());
           }
         }
-        mWriteQueue.put(new PendingWrite(name, xid, offset, sync, data, start, length));
+        mWriteQueue.put(write);
       }
-      if (sync) {
-        sync(offset); // blocks
+      if (write.isSync()) {
+        sync(write.getOffset()); // blocks
       }
-      return length;
+      return write.getLength();
     } catch (InterruptedException e) {
       throw new IOException("Interrupted While Putting Write", e);
     }

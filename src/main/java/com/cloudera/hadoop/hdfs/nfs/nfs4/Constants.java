@@ -344,6 +344,8 @@ public class Constants {
       throw new RuntimeException("Unable to find localhost", e);
     }
   }
+  
+  public static final long ONE_MB = 1024L * 1024L;
 
   public static final int ROOT_USER_UID = 0;
   public static final long NFS4_COOKIE_OFFSET = Integer.MAX_VALUE;
@@ -371,5 +373,6 @@ public class Constants {
 
   public static final String RPC_RETRANSMIT_PENALTY_THRESHOLD = "hdfs.nfs.rpcworker.restransmit.penalty.threshold";
 
+  public static final String TEMP_DIRECTORIES = "hdfs.nfs.temp.dirs";
 
 }

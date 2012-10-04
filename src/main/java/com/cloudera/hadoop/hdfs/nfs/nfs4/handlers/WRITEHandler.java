@@ -21,16 +21,21 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_COMMIT_UNSTABLE4;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.ONE_MB;
 
+import java.io.File;
 import java.io.IOException;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.FileBackedWrite;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.MemoryBackedWrite;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData8;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.PendingWrite;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.WRITERequest;
@@ -100,16 +105,28 @@ public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITERes
 
     WriteOrderHandler writeOrderHandler = hdfsState.getWriteOrderHandler(file, out);
     boolean sync = request.getStable() != NFS4_COMMIT_UNSTABLE4;
-    if(sync  && writeOrderHandler.synchronousWriteWouldBlock(request.getOffset())) {
+    boolean wouldBlock = writeOrderHandler.synchronousWriteWouldBlock(request.getOffset());
+    if(sync  && wouldBlock) {
       /* 
        * See comment above. In this case, we cannot honor the sync request
        */
       sync = false;
       LOGGER.info("Attempted synchronous random write " + file + ", offset = " + request.getOffset());
     }
-    int count = writeOrderHandler.write(path.toUri().getPath(), session.getXID(), request.getOffset(),
-        sync, request.getData(), request.getStart(), request.getLength());
-
+    PendingWrite write = null;
+    if(request.getOffset() > out.getPos() + ONE_MB) {
+      File backingFile = hdfsState.getTemporaryFile(writeOrderHandler.getIdentifer(), 
+          String.valueOf(request.getOffset()));
+      write = new FileBackedWrite(backingFile, path.toUri().getPath(), session.getXID(), request.getOffset(),
+          sync, request.getData(), request.getStart(), request.getLength());
+      if(LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Created file backed write at " + write);
+      }
+    } else {
+      write = new MemoryBackedWrite(path.toUri().getPath(), session.getXID(), request.getOffset(),
+          sync, request.getData(), request.getStart(), request.getLength());
+    }
+    int count = writeOrderHandler.write(write);
     WRITEResponse response = createResponse();
     OpaqueData8 verifer = new OpaqueData8();
     verifer.setData(Bytes.toBytes(hdfsState.getStartTime()));
