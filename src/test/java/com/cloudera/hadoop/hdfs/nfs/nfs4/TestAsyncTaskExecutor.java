@@ -21,6 +21,7 @@ public class TestAsyncTaskExecutor {
         .in(executor)
         .get();    
     Thread.sleep(2000L);
+    Assert.assertTrue(task1.called);
     Assert.assertTrue(queue.isEmpty());
   }
   
