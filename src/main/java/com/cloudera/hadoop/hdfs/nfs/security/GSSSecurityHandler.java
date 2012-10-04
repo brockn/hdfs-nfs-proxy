@@ -2,8 +2,6 @@ package com.cloudera.hadoop.hdfs.nfs.security;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_PERM;
 
-import java.util.Random;
-
 import org.apache.log4j.Logger;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
@@ -12,6 +10,7 @@ import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.MessageProp;
 
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
+import com.cloudera.hadoop.hdfs.nfs.NFSUtils;
 import com.cloudera.hadoop.hdfs.nfs.Pair;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
@@ -24,7 +23,7 @@ public class GSSSecurityHandler extends SecurityHandler {
   protected GSSContext mContext;
   protected byte[] mToken;
   protected int mSequenceNumber;
-  protected byte[] mContextID = Bytes.toBytes((new Random()).nextInt());
+  protected byte[] mContextID = Bytes.toBytes(NFSUtils.nextRandomInt());
 
   public GSSSecurityHandler() throws GSSException {
     mContext = mManager.createContext((GSSCredential) null);
@@ -43,11 +42,11 @@ public class GSSSecurityHandler extends SecurityHandler {
         mToken = buffer.readBytes(length);
         System.out.println("Reading token " + length + ": " + Bytes.asHex(mToken));
         mToken = mContext.acceptSecContext(mToken, 0, mToken.length);
-        System.out.println("Writing token " + mToken.length + ": " + Bytes.asHex(mToken));
-        System.out.println("Established " + mContext.isEstablished());
         if(mToken == null) {
           mToken = new byte[0];
         }
+        System.out.println("Writing token " + mToken.length + ": " + Bytes.asHex(mToken));
+        System.out.println("Established " + mContext.isEstablished());
       }
 
       System.out.println(mContext.getSrcName());

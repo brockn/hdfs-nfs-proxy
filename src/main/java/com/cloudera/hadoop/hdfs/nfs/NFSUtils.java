@@ -3,11 +3,14 @@ package com.cloudera.hadoop.hdfs.nfs;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_OWNER_DOMAIN;
 
 import java.net.InetAddress;
+import java.util.Random;
 
 import org.apache.hadoop.conf.Configuration;
 
 public class NFSUtils {
 
+  private static final Random RANDOM = new Random();
+  
   public static String getDomain(Configuration conf, InetAddress address) {
     String override = conf.get(NFS_OWNER_DOMAIN);
     if(override != null) {
@@ -26,4 +29,8 @@ public class NFSUtils {
     return host;
   }
 
+  
+  public static synchronized int nextRandomInt() {
+    return RANDOM.nextInt();
+  }
 }

@@ -41,7 +41,7 @@ public abstract class UserIDMapper {
   public abstract String getGroupForGID(Configuration conf, int gid, String defaultGroup) throws Exception;
   public abstract String getUserForUID(Configuration conf, int gid, String defaultUser) throws Exception;
 
-  protected static Map<Class<?>, UserIDMapper> classUserIdMapperMap = new HashMap<Class<?>, UserIDMapper>();
+  protected static final Map<Class<?>, UserIDMapper> classUserIdMapperMap = new HashMap<Class<?>, UserIDMapper>();
 
   public static synchronized UserIDMapper get(Configuration conf) {
     boolean cache = conf.getBoolean(USER_ID_MAPPER_CACHE, true);

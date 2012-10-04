@@ -31,6 +31,7 @@ import org.apache.hadoop.io.IOUtils;
 import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
+import com.google.common.base.Charsets;
 
 /**
  * Class implements the basic RPC protocol. We do not have unsigned integers in
@@ -300,7 +301,7 @@ public class RPCBuffer {
   }
 
   public void writeString(String s) {
-    byte[] bytes = s.getBytes();
+    byte[] bytes = s.getBytes(Charsets.UTF_8);
     writeInt(bytes.length);
     writeBytes(bytes);
   }

@@ -35,6 +35,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.Metrics;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
+import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
@@ -157,7 +158,7 @@ public class HDFSState {
       return file.getFileHandle();
     }
     String s = UUID.randomUUID().toString().replace("-", "");
-    byte[] bytes = s.getBytes();
+    byte[] bytes = s.getBytes(Charsets.UTF_8);
     FileHandle fileHandle = new FileHandle(bytes);
     HDFSFile holder = new HDFSFile(fileHandle, realPath, getNextFileID());
     FileHandleStoreEntry storeEntry = new FileHandleStoreEntry(bytes, realPath, holder.getFileID());
@@ -578,7 +579,7 @@ public class HDFSState {
     }
   }
   public File getTemporaryFile(String identifer, String name) throws IOException {
-    int hashCode = Math.abs(name.hashCode());
+    int hashCode = name.hashCode() & Integer.MAX_VALUE;
     int fileIndex = hashCode % mTempDirs.length;
     File base = mTempDirs[fileIndex];
     int bucketIndex = hashCode % 512;
