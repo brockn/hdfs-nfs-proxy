@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,23 +17,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudera.hadoop.hdfs.nfs.nfs4;
+package com.cloudera.hadoop.hdfs.nfs.nfs4.state;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-public class Client {
+import com.cloudera.hadoop.hdfs.nfs.nfs4.Callback;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.ClientID;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData8;
 
+public class Client {
   protected static final AtomicLong CLIENTID = new AtomicLong(0L);
 
-
-  protected ClientID mClientID;
-  protected Callback mCallback;
-  protected int mCallbackIdent;
-  protected long mShorthandID;
-  protected OpaqueData8 mVerifer;
-  protected String mClientHost;
-  protected boolean mConfirmed;
-  protected long mRenew = System.currentTimeMillis();
+  private ClientID mClientID;
+  private Callback mCallback;
+  private int mCallbackIdent;
+  private long mShorthandID;
+  private OpaqueData8 mVerifer;
+  private String mClientHost;
+  private boolean mConfirmed;
+  /**
+   * Last time the lease was renewed. We don't use leases.
+   */
+  @SuppressWarnings("unused")
+  private long mRenew = System.currentTimeMillis();
 
   public boolean isConfirmed() {
     return mConfirmed;

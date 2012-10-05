@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,9 +18,31 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
-import static com.google.common.base.Preconditions.*;
-import static org.junit.Assert.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_CLAIM_NULL;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_COMMIT_UNSTABLE4;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_CHANGE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_FILEID;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_FSID;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_MODE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_OWNER;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_OWNER_GROUP;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_RAWDEV;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SIZE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SPACE_USED;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_ACCESS;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_METADATA;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_MODIFY;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_MODIFY_SET;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_ACCESS_SET;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TYPE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OPEN4_CREATE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OPEN4_NOCREATE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OPEN4_SHARE_ACCESS_READ;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OPEN4_SHARE_ACCESS_WRITE;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,6 +52,7 @@ import java.util.Map;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 
 import com.cloudera.hadoop.hdfs.nfs.LogUtils;
 import com.cloudera.hadoop.hdfs.nfs.TestUtils;
@@ -47,6 +70,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.PUTFHRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.PUTROOTFHRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.READDIRRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.READRequest;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.RequiresCredentials;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.SETCLIENTIDCONFIRMRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.SETCLIENTIDRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.WRITERequest;
@@ -67,6 +91,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.SETCLIENTIDCONFIRMResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.SETCLIENTIDResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.WRITEResponse;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -114,17 +139,26 @@ public abstract class BaseClient {
    * @param message
    * @return message
    */
+  @SuppressWarnings("unchecked")
   protected <T extends MessageBase> T serde(T message) {
     RPCBuffer buffer = new RPCBuffer();
     message.write(buffer);
     buffer.flip();
     try {
-      message.read(buffer);
+      MessageBase result = message.getClass().newInstance();      
+      result.read(buffer);
+      if(result instanceof RequiresCredentials) {
+        RequiresCredentials requiresCredentials = (RequiresCredentials)result;
+        requiresCredentials.setCredentials(((RequiresCredentials)message).getCredentials());
+      }
+      TestUtils.deepEquals(message, result);
+      return (T)result;
     } catch (RuntimeException x) {
       LOGGER.warn("Error reading buffer: " + LogUtils.dump(message), x);
       throw x;
+    } catch (Exception x) {
+      throw Throwables.propagate(x);
     }
-    return message;
   }
 
   /**
@@ -222,6 +256,9 @@ public abstract class BaseClient {
     long cookie = 0;
     OpaqueData8 verifer = new OpaqueData8(0);
     List<Path> paths = Lists.newArrayList();
+    Bitmap supportedAttrs = Attribute.getSupported();
+    supportedAttrs.clear(NFS4_FATTR4_TIME_ACCESS_SET);
+    supportedAttrs.clear(NFS4_FATTR4_TIME_MODIFY_SET);
     while (!eof) {
 
       CompoundRequest compoundRequest = newRequest();
@@ -236,7 +273,7 @@ public abstract class BaseClient {
       readdirRequest.setCookieVerifer(verifer);
       readdirRequest.setDirCount(1024);
       readdirRequest.setMaxCount(8192);
-      readdirRequest.setAttrs(new Bitmap());
+      readdirRequest.setAttrs(supportedAttrs);
       operations.add(readdirRequest);
 
 
@@ -249,6 +286,14 @@ public abstract class BaseClient {
       eof = readDirResponse.getDirectoryList().isEOF();
 
       for (DirectoryEntry entry : readDirResponse.getDirectoryList().getDirEntries()) {
+        assertEquals(entry.getAttrs(), entry.getAttrs());
+        Map<Integer, Attribute> attrs = entry.getAttrValues();
+        // ensure the attributes we are getting back are supported
+        for(Integer key : attrs.keySet()) {
+          Assert.assertTrue(String.valueOf(key), supportedAttrs.isSet(key));
+          Attribute attr = attrs.get(key);
+          Assert.assertTrue(String.valueOf(key), supportedAttrs.isSet(attr.getID()));
+        }
         cookie = entry.getCookie();
         paths.add(new Path(path, entry.getName()));
       }

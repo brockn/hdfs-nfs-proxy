@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,7 +19,8 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.responses;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_READ;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Status;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;

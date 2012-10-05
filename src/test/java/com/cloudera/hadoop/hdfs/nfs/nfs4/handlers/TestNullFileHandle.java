@@ -1,8 +1,26 @@
+/**
+ * Copyright 2012 The Apache Software Foundation
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with this
+ * work for additional information regarding copyright ownership. The ASF
+ * licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 import java.lang.reflect.Method;
 
@@ -10,7 +28,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Status;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.ACCESSRequest;
@@ -31,6 +48,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.RESTOREFHRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.SAVEFHRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.SETATTRRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.WRITERequest;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 import com.google.common.collect.ImmutableList;
 
 public class TestNullFileHandle {
@@ -65,12 +83,12 @@ public class TestNullFileHandle {
       .build();
 
 
-  NFS4Handler server;
+  HDFSState mHDFSState;
   Session session;
 
   @Before
   public void setup() throws NFS4Exception {
-    server = mock(NFS4Handler.class);
+    mHDFSState = mock(HDFSState.class);
     session = mock(Session.class);
   }
 
@@ -78,8 +96,8 @@ public class TestNullFileHandle {
   public void testNullFileHandle() throws Exception {
     for(Holder holder : handlers) {
       // use reflection to get around generic issues
-      Method method = holder.handler.getClass().getMethod("handle", NFS4Handler.class, Session.class, OperationRequest.class);
-      Status response = (Status)method.invoke(holder.handler, server, session, holder.request);
+      Method method = holder.handler.getClass().getMethod("handle", HDFSState.class, Session.class, OperationRequest.class);
+      Status response = (Status)method.invoke(holder.handler, mHDFSState, session, holder.request);
       assertEquals(holder.handler.getClass().getName(), NFS4ERR_NOFILEHANDLE, response.getStatus());
 
     }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,7 +18,14 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_EXIST;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_FILE_OPEN;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_INVAL;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_IO;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOENT;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOTDIR;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
 
 import java.io.IOException;
 
@@ -28,36 +35,37 @@ import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.ChangeInfo;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.RENAMERequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.RENAMEResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
+import com.google.common.base.Strings;
 
 public class RENAMEHandler extends OperationRequestHandler<RENAMERequest, RENAMEResponse> {
 
   protected static final Logger LOGGER = Logger.getLogger(RENAMEHandler.class);
 
   @Override
-  protected RENAMEResponse doHandle(NFS4Handler server, Session session,
+  protected RENAMEResponse doHandle(HDFSState hdfsState, Session session,
       RENAMERequest request) throws NFS4Exception, IOException {
     if (session.getCurrentFileHandle() == null || session.getSavedFileHandle() == null) {
       throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
     }
-    if ("".equals(request.getOldName()) || "".equals(request.getNewName())) {
+    if (Strings.isNullOrEmpty(request.getOldName()) || Strings.isNullOrEmpty(request.getNewName())) {
       throw new NFS4Exception(NFS4ERR_INVAL);
     }
     FileSystem fs = session.getFileSystem();
-    Path oldParentPath = server.getPath(session.getSavedFileHandle());
+    Path oldParentPath = hdfsState.getPath(session.getSavedFileHandle());
     Path oldPath = new Path(oldParentPath, request.getOldName());
-    Path newParentPath = server.getPath(session.getCurrentFileHandle());
+    Path newParentPath = hdfsState.getPath(session.getCurrentFileHandle());
     Path newPath = new Path(newParentPath, request.getNewName());
     if (!(fs.getFileStatus(oldParentPath).isDir() && fs.getFileStatus(newParentPath).isDir())) {
       throw new NFS4Exception(NFS4ERR_NOTDIR);
-    }
-    if (!server.fileExists(fs, oldPath)) {
+    }     
+    if (!hdfsState.fileExists(fs, oldPath)) {
       throw new NFS4Exception(NFS4ERR_NOENT, "Path " + oldPath + " does not exist.");
     }
-    if (server.fileExists(fs, newPath)) {
+    if (hdfsState.fileExists(fs, newPath)) {
       // TODO according to the RFC we are supposed to check to see if
       // the entry which exists is compatible (overwrite file and
       // empty directory if the "old" item is a file or dir respectively.
@@ -68,7 +76,7 @@ public class RENAMEHandler extends OperationRequestHandler<RENAMERequest, RENAME
     // the rename request is received before the close.
     // Below we delay the rename if the file is open
     for (int i = 0; i < 5; i++) {
-      if (!server.isFileOpen(oldPath)) {
+      if (!hdfsState.isFileOpen(oldPath)) {
         break;
       }
       try {
@@ -77,7 +85,7 @@ public class RENAMEHandler extends OperationRequestHandler<RENAMERequest, RENAME
         throw new IOException("Interrupted while waiting for file to close", e);
       }
     }
-    if (server.isFileOpen(oldPath)) {
+    if (hdfsState.isFileOpen(oldPath)) {
       throw new NFS4Exception(NFS4ERR_FILE_OPEN);
     }
     LOGGER.info(session.getSessionID() + " Renaming " + oldPath + " to " + newPath);

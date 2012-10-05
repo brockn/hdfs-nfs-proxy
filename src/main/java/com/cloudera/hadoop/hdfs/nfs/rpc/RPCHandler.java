@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -22,11 +22,12 @@ package com.cloudera.hadoop.hdfs.nfs.rpc;
 import java.net.InetAddress;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
+import com.google.common.util.concurrent.ListenableFuture;
 
 
 public abstract class RPCHandler<REQUEST extends MessageBase, RESPONSE extends MessageBase> {
 
-  public abstract RESPONSE process(final RPCRequest rpcRequest, final REQUEST request, final InetAddress clientAddress, final String sessionID);
+  public abstract ListenableFuture<RESPONSE> process(final RPCRequest rpcRequest, final REQUEST request, final InetAddress clientAddress, final String sessionID);
 
   public abstract RESPONSE createResponse();
 

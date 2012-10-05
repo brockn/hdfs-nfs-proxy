@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,7 +19,8 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.USER_ID_MAPPER_CACHE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.USER_ID_MAPPER_CLASS;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,7 +41,7 @@ public abstract class UserIDMapper {
   public abstract String getGroupForGID(Configuration conf, int gid, String defaultGroup) throws Exception;
   public abstract String getUserForUID(Configuration conf, int gid, String defaultUser) throws Exception;
 
-  protected static Map<Class<?>, UserIDMapper> classUserIdMapperMap = new HashMap<Class<?>, UserIDMapper>();
+  protected static final Map<Class<?>, UserIDMapper> classUserIdMapperMap = new HashMap<Class<?>, UserIDMapper>();
 
   public static synchronized UserIDMapper get(Configuration conf) {
     boolean cache = conf.getBoolean(USER_ID_MAPPER_CACHE, true);
@@ -56,6 +57,7 @@ public abstract class UserIDMapper {
     return (UserIDMapper)ReflectionUtils.newInstance(clazz, conf);
   }
 
+  
   /**
    * @return String username associated with the current process
    */

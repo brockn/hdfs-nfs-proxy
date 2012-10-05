@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -23,13 +23,13 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4.attrs;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class FileSystemIDHandler extends AttributeHandler<FileSystemID> {
 
   @Override
-  public FileSystemID get(NFS4Handler server, Session session,
+  public FileSystemID get(HDFSState hdfsState, Session session,
       FileSystem fs, FileStatus fileStatus) {
     FileSystemID fsSystemID = new FileSystemID();
     fsSystemID.setMajor(0L);

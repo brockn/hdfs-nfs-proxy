@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,7 +19,28 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_ACCESS;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_CLOSE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_COMMIT;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_CREATE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_GETATTR;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_GETFH;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_LOOKUP;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_OPEN;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_OPEN_CONFIRM;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_PUTFH;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_PUTROOTFH;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_READ;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_READDIR;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_REMOVE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_RENAME;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_RENEW;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_RESTOREFH;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_SAVEFH;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_SETATTR;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_SETCLIENTID;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_SETCLIENTID_CONFIRM;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_WRITE;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.handlers.ACCESSHandler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.handlers.CLOSEHandler;

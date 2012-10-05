@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -23,14 +23,14 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4.attrs;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Time;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class MetadataTimeHandler extends AttributeHandler<MetadataTime> {
 
   @Override
-  public MetadataTime get(NFS4Handler server, Session session, FileSystem fs,
+  public MetadataTime get(HDFSState hdfsState, Session session, FileSystem fs,
       FileStatus fileStatus) {
     MetadataTime time = new MetadataTime();
     time.setTime(new Time(fileStatus.getModificationTime()));

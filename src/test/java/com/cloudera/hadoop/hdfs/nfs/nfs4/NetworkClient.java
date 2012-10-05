@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -20,8 +20,10 @@
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
-import static org.junit.Assert.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.LOCALHOST;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_ACCEPT_SUCCESS;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_REPLY_STATE_ACCEPT;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -65,9 +67,9 @@ public class NetworkClient extends BaseClient {
   @Override
   protected CompoundResponse doMakeRequest(CompoundRequest request) throws IOException {
 
-    LOGGER.info("request = " + request);
     RPCBuffer buffer = new RPCBuffer();
     RPCRequest rpcRequest = RPCTestUtil.createRequest();
+    LOGGER.info(rpcRequest.getXidAsHexString() + ": request = " + request);
     rpcRequest.setCredentials((Credentials)TestUtils.newCredentials());
     rpcRequest.write(buffer);
     request.write(buffer);
@@ -78,8 +80,10 @@ public class NetworkClient extends BaseClient {
     buffer = RPCBuffer.from(mInputStream);
     RPCResponse rpcResponse = new RPCResponse();
     rpcResponse.read(buffer);
+    
+    LOGGER.info("Got response for " + rpcResponse.getXidAsHexString());
 
-    assertEquals(rpcRequest.getXid(), rpcResponse.getXid());
+    assertEquals(rpcRequest.getXidAsHexString(), rpcResponse.getXidAsHexString());
     assertEquals(RPC_REPLY_STATE_ACCEPT, rpcResponse.getReplyState());
     assertEquals(RPC_ACCEPT_SUCCESS, rpcResponse.getAcceptState());
 

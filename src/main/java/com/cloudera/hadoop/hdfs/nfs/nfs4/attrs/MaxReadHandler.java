@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,19 +19,19 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.attrs;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_MAX_RWSIZE;
 
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class MaxReadHandler extends AttributeHandler<MaxRead> {
 
   @Override
-  public MaxRead get(NFS4Handler server, Session session,
+  public MaxRead get(HDFSState hdfsState, Session session,
       FileSystem fs, FileStatus fileStatus) throws NFS4Exception {
     MaxRead max = new MaxRead();
     max.setSize(NFS4_MAX_RWSIZE);

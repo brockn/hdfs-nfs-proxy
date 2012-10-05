@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,9 +19,8 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.responses;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
-
-import java.util.Map;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_OPEN;
 
 import com.cloudera.hadoop.hdfs.nfs.Pair;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Bitmap;
@@ -31,8 +30,6 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.Status;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Attribute;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 
 public class OPENResponse extends OperationResponse implements Status {
 
@@ -41,7 +38,6 @@ public class OPENResponse extends OperationResponse implements Status {
   protected ChangeInfo mChangeInfo;
   protected int mResultFlags;
   protected Bitmap mAttrs;
-  protected ImmutableList<Attribute> mAttrValues;
   protected int mDelgationType;
 
   @Override
@@ -53,24 +49,11 @@ public class OPENResponse extends OperationResponse implements Status {
       mChangeInfo = new ChangeInfo();
       mChangeInfo.read(buffer);
       mResultFlags = buffer.readUint32();
-      Pair<Bitmap, ImmutableList<Attribute>> pair = Attribute.readAttrs(buffer);
-      mAttrs = pair.getFirst();
-      mAttrValues = pair.getSecond();
+      mAttrs = Attribute.readAttrsSet(buffer);
       mDelgationType = buffer.readUint32();
     }
   }
 
-  public ImmutableMap<Integer, Attribute> getAttrValues() {
-    Map<Integer, Attribute> rtn = Maps.newHashMap();
-    for(Attribute attr : mAttrValues) {
-      rtn.put(attr.getID(), attr);
-    }
-    return ImmutableMap.copyOf(rtn);
-  }
-
-  public void setAttrValues(ImmutableList<Attribute> attrValues) {
-    this.mAttrValues = attrValues;
-  }
   @Override
   public void write(RPCBuffer buffer) {
     buffer.writeUint32(mStatus);
@@ -78,11 +61,10 @@ public class OPENResponse extends OperationResponse implements Status {
       mStateID.write(buffer);
       mChangeInfo.write(buffer);
       buffer.writeUint32(mResultFlags);
-      if(mAttrs == null && mAttrValues == null) {
+      if(mAttrs == null) {
         mAttrs = new Bitmap();
-        mAttrValues = ImmutableList.of();
       }
-      Attribute.writeAttrs(buffer, mAttrs, mAttrValues);
+      Attribute.writeAttrsSet(buffer, mAttrs);
       buffer.writeUint32(mDelgationType);
     }
   }

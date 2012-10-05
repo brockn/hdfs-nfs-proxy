@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -31,6 +31,7 @@ import org.apache.hadoop.io.IOUtils;
 import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
+import com.google.common.base.Charsets;
 
 /**
  * Class implements the basic RPC protocol. We do not have unsigned integers in
@@ -244,6 +245,10 @@ public class RPCBuffer {
   public int position() {
     return mBuffer.position();
   }
+  
+  public int limit() {
+    return mBuffer.limit();
+  }
 
   /**
    * XDR RFC requires we write data aligned by a unit size. This method aligns
@@ -265,8 +270,8 @@ public class RPCBuffer {
    * write
    */
   public void write(OutputStream out) throws IOException {
-    putInt(0, RPC_LAST_FRAGEMANT | length() - 4);
-    out.write(mBuffer.array(), 0, length());
+    putInt(0, RPC_LAST_FRAGEMANT | limit() - 4);
+    out.write(mBuffer.array(), 0, limit());
   }
 
   public void writeBoolean(boolean bool) {
@@ -296,7 +301,7 @@ public class RPCBuffer {
   }
 
   public void writeString(String s) {
-    byte[] bytes = s.getBytes();
+    byte[] bytes = s.getBytes(Charsets.UTF_8);
     writeInt(bytes.length);
     writeBytes(bytes);
   }

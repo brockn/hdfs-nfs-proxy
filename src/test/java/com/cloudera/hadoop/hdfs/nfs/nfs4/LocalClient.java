@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,7 +19,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.LOCALHOST;
 
 import java.io.IOException;
 
@@ -29,6 +29,7 @@ import com.cloudera.hadoop.hdfs.nfs.TestUtils;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CompoundResponse;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCTestUtil;
+import com.google.common.base.Throwables;
 
 public class LocalClient extends BaseClient {
 
@@ -42,8 +43,12 @@ public class LocalClient extends BaseClient {
 
   @Override
   protected CompoundResponse doMakeRequest(CompoundRequest request) {
-    CompoundResponse response = mServer.process(RPCTestUtil.createRequest(), request, LOCALHOST, "test");
-    return response;
+    try {
+      CompoundResponse response = mServer.process(RPCTestUtil.createRequest(), request, LOCALHOST, "test").get();
+      return response;
+    } catch(Exception e) {
+      throw Throwables.propagate(e);
+    }
   }
 
   @Override

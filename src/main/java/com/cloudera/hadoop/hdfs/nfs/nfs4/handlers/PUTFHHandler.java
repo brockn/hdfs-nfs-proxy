@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,22 +18,22 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
 
 import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.PUTFHRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.PUTFHResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class PUTFHHandler extends OperationRequestHandler<PUTFHRequest, PUTFHResponse> {
 
   protected static final Logger LOGGER = Logger.getLogger(PUTFHHandler.class);
 
   @Override
-  protected PUTFHResponse doHandle(NFS4Handler server, Session session,
+  protected PUTFHResponse doHandle(HDFSState hdfsState, Session session,
       PUTFHRequest request) throws NFS4Exception {
     session.setCurrentFileHandle(request.getFileHandle());
     PUTFHResponse response = createResponse();

@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -64,7 +64,7 @@ class ClientOutputHandler extends Thread {
     try {
       mWorkQueue.put(buffer);
     } catch (InterruptedException e) {
-      throw new RuntimeException(e);
+      Thread.currentThread().interrupt();
     }
   }
 
@@ -81,8 +81,14 @@ class ClientOutputHandler extends Thread {
         buffer = null;
       } catch (IOException e) {
         LOGGER.warn("OutputStreamHandler for " + mClientName + " got error on write", e);
+        try {
+          TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException x) {
+          Thread.currentThread().interrupt();
+        }
       } catch (InterruptedException e) {
         LOGGER.info("OutputStreamHandler for " + mClientName + " interrupted");
+        Thread.currentThread().interrupt();
       } finally {
         if (buffer != null) {
           put(buffer);

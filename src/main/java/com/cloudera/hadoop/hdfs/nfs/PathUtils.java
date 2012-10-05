@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,6 +19,9 @@
  */
 package com.cloudera.hadoop.hdfs.nfs;
 
+import java.io.File;
+import java.io.IOException;
+
 import org.apache.hadoop.fs.Path;
 
 public class PathUtils {
@@ -32,6 +35,52 @@ public class PathUtils {
 
   public static String realPath(Path path) {
     return path.toUri().getPath();
+  }
+  
+  /**
+   * Delete a directory and all its contents.  If
+   * we return false, the directory may be partially-deleted.
+   */
+  public static boolean fullyDelete(File dir) throws IOException {
+    if (!fullyDeleteContents(dir)) {
+      return false;
+    }
+    return dir.delete();
+  }
+
+  /**
+   * Delete the contents of a directory, not the directory itself.  If
+   * we return false, the directory may be partially-deleted.
+   */
+  public static boolean fullyDeleteContents(File dir) throws IOException {
+    boolean deletionSucceeded = true;
+    File contents[] = dir.listFiles();
+    if (contents != null) {
+      for (int i = 0; i < contents.length; i++) {
+        if (contents[i].isFile()) {
+          if (!contents[i].delete()) {
+            deletionSucceeded = false;
+            continue; // continue deletion of other files/dirs under dir
+          }
+        } else {
+          //try deleting the directory
+          // this might be a symlink
+          boolean b = false;
+          b = contents[i].delete();
+          if (b){
+            //this was indeed a symlink or an empty directory
+            continue;
+          }
+          // if not an empty directory or symlink let
+          // fullydelete handle it.
+          if (!fullyDelete(contents[i])) {
+            deletionSucceeded = false;
+            continue; // continue deletion of other files/dirs under dir
+          }
+        }
+      }
+    }
+    return deletionSucceeded;
   }
 
 }

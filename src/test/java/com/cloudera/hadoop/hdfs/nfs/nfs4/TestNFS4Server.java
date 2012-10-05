@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,8 +19,12 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
-import static org.junit.Assert.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.LOCALHOST;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_PROC_NULL;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_ACCEPT_SUCCESS;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_REPLY_STATE_ACCEPT;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -74,67 +78,8 @@ public class TestNFS4Server {
       OutputStream out = socket.getOutputStream();
       InputStream in = socket.getInputStream();
 
+      buffer.flip();
       buffer.write(out);
-
-      buffer = RPCBuffer.from(in);
-      RPCResponse response = new RPCResponse();
-      response.read(buffer);
-      assertEquals(request.getXid(), response.getXid());
-      assertEquals(RPC_REPLY_STATE_ACCEPT, response.getReplyState());
-      assertEquals(RPC_ACCEPT_SUCCESS, response.getAcceptState());
-    } finally {
-      try {
-        socket.close();
-      } catch(Exception ex) {}
-    }
-  }
-
-  /**
-   * Test to ensure most of the time we are able to receive a packet
-   * after disconnect. Why most of the time? There is a race in that
-   * the server will not always throw an exception when trying to write
-   * the packet after we have stopped listening.
-   */
-  @Test
-  public void testDiscconnectReconnect() throws UnknownHostException, IOException {
-    int attempts = 10, maxFailures = 5, failures = 0;
-    for (int i = 0; i < attempts; i++) {
-      try {
-        doDiscconnectReconnect();
-      } catch(Exception ex) {
-        failures++;
-      }
-    }
-    assertTrue("failures = " + failures, failures <= maxFailures);
-  }
-
-  protected void doDiscconnectReconnect() throws UnknownHostException, IOException {
-    assertTrue(mNFS4Server.isAlive());
-    RPCRequest request = RPCTestUtil.createRequest();
-    request.setProcedure(NFS_PROC_NULL);
-    RPCBuffer buffer = new RPCBuffer();
-    request.write(buffer);
-
-    Socket socket = new Socket(LOCALHOST, mPort);
-    socket.setTcpNoDelay(true);
-    socket.setPerformancePreferences(0, 1, 0);
-    socket.setSoTimeout(2000);
-    try {
-      OutputStream out = socket.getOutputStream();
-      InputStream in = socket.getInputStream();
-
-      buffer.write(out);
-      out.flush();
-      in.close();
-      out.close();
-      socket.close();
-
-      socket = new Socket(LOCALHOST, mPort);
-      socket.setTcpNoDelay(true);
-      socket.setPerformancePreferences(0, 1, 0);
-      socket.setSoTimeout(2000);
-      out = socket.getOutputStream();
-      in = socket.getInputStream();
 
       buffer = RPCBuffer.from(in);
       RPCResponse response = new RPCResponse();

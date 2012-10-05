@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,13 +18,74 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import static com.cloudera.hadoop.hdfs.nfs.TestUtils.*;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
-import static org.junit.Assert.*;
+import static com.cloudera.hadoop.hdfs.nfs.TestUtils.copy;
+import static com.cloudera.hadoop.hdfs.nfs.TestUtils.deepEquals;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.LOCALHOST;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_DIR;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_ACL_SUPPORT;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_CASE_INSENSITIVE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_CASE_PRESERVING;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_CHANGE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_CHOWN_RESTRICTED;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_FH_EXPIRE_TYPE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_FILEHANDLE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_FILEID;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_FILES_AVAIL;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_FILES_FREE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_FILES_TOTAL;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_FSID;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_FS_LOCATIONS;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_HIDDEN;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_HOMOGENEOUS;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_LEASE_TIME;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_LINK_SUPPORT;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_MAXFILESIZE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_MAXLINK;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_MAXNAME;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_MAXREAD;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_MAXWRITE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_MIMETYPE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_MODE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_MOUNTED_ON_FILEID;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_NAMED_ATTR;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_NO_TRUNC;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_NUMLINKS;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_OWNER;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_OWNER_GROUP;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_QUOTA_AVAIL_HARD;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_QUOTA_AVAIL_SOFT;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_QUOTA_USED;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_RAWDEV;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_RDATTR_ERROR;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SIZE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SPACE_AVAIL;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SPACE_FREE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SPACE_TOTAL;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SPACE_USED;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SUPPORTED_ATTRS;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SYMLINK_SUPPORT;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SYSTEM;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_ACCESS;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_BACKUP;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_CREATE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_DELTA;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_METADATA;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_MODIFY;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TYPE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_UNIQUE_HANDLES;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_ACCESS_READ;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.log4j.Logger;
 import org.junit.Test;
@@ -51,6 +112,8 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.GETFHResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.OperationResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.PUTROOTFHResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.SETCLIENTIDResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.Client;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.ClientFactory;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
 import com.google.common.collect.ImmutableList;
@@ -129,7 +192,7 @@ public class TestManual {
   }
 
   @Test
-  public void testSETCLIENTID() throws IOException {
+  public void testSETCLIENTID() throws IOException, InterruptedException, ExecutionException {
     NFS4Handler server = new NFS4Handler(TestUtils.setupConf());
     CompoundRequest request = new CompoundRequest();
     request.setCredentials(TestUtils.newCredentials());
@@ -149,7 +212,7 @@ public class TestManual {
     List<OperationRequest> operations = Lists.newArrayList();
     operations.add(setClientIDRequest);
     request.setOperations(operations);
-    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test");
+    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test").get();
     assertEquals(NFS4_OK, response.getStatus());
     SETCLIENTIDResponse setClientIDResponse = (SETCLIENTIDResponse) response.getOperations().get(0);
     assertEquals(NFS4_OK, setClientIDResponse.getStatus());
@@ -158,14 +221,14 @@ public class TestManual {
   }
 
   @Test
-  public void testBasicPUTROOTFH() throws IOException {
+  public void testBasicPUTROOTFH() throws IOException, InterruptedException, ExecutionException {
     NFS4Handler server = new NFS4Handler(TestUtils.setupConf());
     CompoundRequest request = new CompoundRequest();
     request.setCredentials(TestUtils.newCredentials());
     List<OperationRequest> operations = Lists.newArrayList();
     operations.add(new PUTROOTFHRequest());
     request.setOperations(operations);
-    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test");
+    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test").get();
     assertTrue(response.getOperations().size() == 1);
     OperationResponse operationResponse = response.getOperations().get(0);
     assertTrue(operationResponse instanceof PUTROOTFHResponse);
@@ -173,7 +236,7 @@ public class TestManual {
   }
 
   @Test
-  public void testACCESS() throws IOException {
+  public void testACCESS() throws IOException, InterruptedException, ExecutionException {
     NFS4Handler server = new NFS4Handler(TestUtils.setupConf());
     CompoundRequest request = new CompoundRequest();
     request.setCredentials(TestUtils.newCredentials());
@@ -184,7 +247,7 @@ public class TestManual {
     accesssRequest.setAccess(NFS_ACCESS_READ);
     operations.add(accesssRequest);
     request.setOperations(operations);
-    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test");
+    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test").get();
     assertEquals(NFS4_OK, response.getStatus());
     assertTrue(response.getOperations().size() == 3);
     ImmutableList<OperationResponse> operationResponses = response.getOperations();
@@ -208,7 +271,7 @@ public class TestManual {
   }
 
   @Test
-  public void testEndToEnd() throws IOException {
+  public void testEndToEnd() throws IOException, InterruptedException, ExecutionException {
     NFS4Handler server = new NFS4Handler(TestUtils.setupConf());
     CompoundRequest compoundRequest = new CompoundRequest();
     compoundRequest.setCredentials(TestUtils.newCredentials());
@@ -274,7 +337,7 @@ public class TestManual {
     getAttrRequest.setAttrs(requestAttrs);
     operations.add(getAttrRequest);
     compoundRequest.setOperations(operations);
-    CompoundResponse response = server.process(new RPCRequest(), compoundRequest, LOCALHOST, "test");
+    CompoundResponse response = server.process(new RPCRequest(), compoundRequest, LOCALHOST, "test").get();
     assertEquals(NFS4_OK, response.getStatus());
 
     assertTrue(response.getOperations().size() == 3);

@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,30 +18,47 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
 
 import java.io.IOException;
 
 import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CLOSERequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CLOSEResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class CLOSEHandler extends OperationRequestHandler<CLOSERequest, CLOSEResponse> {
 
   protected static final Logger LOGGER = Logger.getLogger(CLOSEHandler.class);
 
   @Override
-  protected CLOSEResponse doHandle(NFS4Handler server, Session session,
+  public boolean wouldBlock(HDFSState hdfsState, Session session, CLOSERequest request) {
+    try {
+      if (session.getCurrentFileHandle() == null) {
+        throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
+      }
+      return hdfsState.closeWouldBlock(session.getCurrentFileHandle());
+    } catch(NFS4Exception e) {
+      LOGGER.warn("Expection handing wouldBlock. Client error will " +
+      		"be returned on call to doHandle", e);
+    } catch(IOException e) {
+      LOGGER.warn("Expection handing wouldBlock. Client error will " +
+          "be returned on call to doHandle", e);
+    }
+    return false;
+  }
+  @Override
+  protected CLOSEResponse doHandle(HDFSState hdfsState, Session session,
       CLOSERequest request) throws NFS4Exception, IOException {
     if (session.getCurrentFileHandle() == null) {
       throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
     }
-    StateID stateID = server.close(session.getSessionID(), request.getStateID(),
+    StateID stateID = hdfsState.close(session.getSessionID(), request.getStateID(),
         request.getSeqID(), session.getCurrentFileHandle());
     CLOSEResponse response = createResponse();
     response.setStateID(stateID);

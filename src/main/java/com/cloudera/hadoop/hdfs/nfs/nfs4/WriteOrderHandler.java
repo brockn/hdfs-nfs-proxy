@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,12 +18,14 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
-import static com.google.common.base.Preconditions.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_PERM;
+import static com.google.common.base.Preconditions.checkState;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -31,10 +33,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.log4j.Logger;
 
-import com.cloudera.hadoop.hdfs.nfs.Bytes;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSOutputStream;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -47,105 +48,119 @@ import com.google.common.collect.Maps;
 public class WriteOrderHandler extends Thread {
 
   protected static final Logger LOGGER = Logger.getLogger(WriteOrderHandler.class);
-  /**
-   * 500,0000 * 8 bytes = 3.8MB
-   */
-  protected static final int MAX_WRITE_IDS = 500000;
-  protected FSDataOutputStream mOutputStream;
-  protected ConcurrentMap<Long, Write> mPendingWrites = Maps.newConcurrentMap();
-  protected AtomicLong mPendingWritesSize = new AtomicLong(0);
-  protected List<Integer> mProcessedWrites = Lists.newArrayList();
-  protected BlockingQueue<Write> mWriteQueue = new LinkedBlockingQueue<Write>();
-  protected IOException mIOException;
-  protected NFS4Exception mNFSException;
-  protected AtomicLong mExpectedLength = new AtomicLong(0);
-  protected AtomicBoolean mClosed = new AtomicBoolean(false);
-
-  public WriteOrderHandler(FSDataOutputStream outputStream) throws IOException {
+  private final HDFSOutputStream mOutputStream;
+  private final String identifer;
+  private final ConcurrentMap<Long, PendingWrite> mPendingWrites = Maps.newConcurrentMap();
+  private final AtomicLong mPendingWritesSize = new AtomicLong(0);
+  private final List<Integer> mProcessedWrites = Lists.newArrayList();
+  private final BlockingQueue<PendingWrite> mWriteQueue = new LinkedBlockingQueue<PendingWrite>();
+  private final AtomicLong mExpectedLength = new AtomicLong(0);
+  private final AtomicBoolean mClosed = new AtomicBoolean(false);
+  private IOException mIOException;
+  private NFS4Exception mNFSException;
+  private volatile boolean run;
+  
+  public WriteOrderHandler(HDFSOutputStream outputStream) throws IOException {
     mOutputStream = outputStream;
     mExpectedLength.set(mOutputStream.getPos());
-  }
-
-  public long getCurrentPos() throws IOException {
-    return mOutputStream.getPos();
+    identifer = UUID.randomUUID().toString();
+    run = true;
   }
 
   @Override
   public void run() {
     try {
-      while (true) {
-        Write write = mWriteQueue.poll(10, TimeUnit.SECONDS);
-        if (write == null) {
-          synchronized (mPendingWrites) {
-            LOGGER.info("Pending Write Offsets: " + new TreeSet<Long>(mPendingWrites.keySet()));
+      while (run) {
+        try {
+          PendingWrite write = mWriteQueue.poll(10, TimeUnit.SECONDS);
+          if (write == null) {
+            synchronized (mPendingWrites) {
+              SortedSet<Long> offsets = new TreeSet<Long>(mPendingWrites.keySet());
+              if(!offsets.isEmpty()) {
+                LOGGER.info("Pending Write Offsets " + offsets.size() + ": first = " + 
+                    offsets.first() +  ", last = " + offsets.last());
+              }
+            }
+          } else {
+            checkWriteState(write);
+            mPendingWrites.put(write.getOffset(), write);
+            mPendingWritesSize.addAndGet(write.getSize());
           }
-        } else {
-          checkWriteState(write);
-          mPendingWrites.put(write.offset, write);
-          mPendingWritesSize.addAndGet(write.size);
-        }
-        if(LOGGER.isDebugEnabled()) {
-          LOGGER.debug("Pending writes " + (mPendingWritesSize.get() / 1024L / 1024L) + "MB, current offset = " + getCurrentPos());
-        }
-        synchronized (mOutputStream) {
-          checkPendingWrites();
+          if(mPendingWritesSize.get() > 0L) {
+            LOGGER.info("Pending writes " + (mPendingWritesSize.get() / 1024L / 1024L) + "MB, " +
+            		"current offset = " + getCurrentPos());          
+          }
+          synchronized (mOutputStream) {
+            checkPendingWrites();
+          }
+        } catch (InterruptedException e) {
+          // this thread is not interruptible
         }
       }
-    } catch (InterruptedException e) {
-      LOGGER.info("Thread moving on due to interrupt");
     } catch (IOException e) {
-      LOGGER.info("Thread quitting due to IO Error", e);
+      LOGGER.error("WriteOrderHandler quitting due to IO Error", e);
       mIOException = e;
     } catch (NFS4Exception e) {
-      LOGGER.info("Thread quitting due NFS Exception", e);
+      LOGGER.error("WriteOrderHandler quitting due NFS Exception", e);
       mNFSException = e;
     }
   }
   // turns out NFS clients will send the same write twice if the write rate is slow
 
-  protected void checkWriteState(Write write) throws NFS4Exception {
-    Write other = mPendingWrites.get(write.offset);
+  protected void checkWriteState(PendingWrite write) throws NFS4Exception {
+    PendingWrite other = mPendingWrites.get(write.getOffset());
     if (other != null && !write.equals(other)) {
       throw new NFS4Exception(NFS4ERR_PERM, "Unable to process write (random write) at "
-          + write.offset
-          + ", sync = " + write.sync
-          + ", length = " + write.length);
+          + write.getOffset()
+          + ", sync = " + write.isSync()
+          + ", length = " + write.getLength());
     }
   }
 
   protected void checkPendingWrites() throws IOException {
-    Write write = null;
-    synchronized (mPendingWrites) {
-      while ((write = mPendingWrites.remove(mOutputStream.getPos())) != null) {
-        mPendingWritesSize.addAndGet(-write.size);
-        doWrite(write);
-      }
+    PendingWrite write = null;
+    while ((write = mPendingWrites.remove(mOutputStream.getPos())) != null) {
+      mPendingWritesSize.addAndGet(-write.getSize());
+      doWrite(write);
     }
   }
 
-  protected void doWrite(Write write) throws IOException {
+  protected void doWrite(PendingWrite write) throws IOException {
     long preWritePos = mOutputStream.getPos();
-    checkState(preWritePos == write.offset, " Offset = " + write.offset + ", pos = " + preWritePos);
-    mOutputStream.write(write.data, write.start, write.length);
-    LOGGER.info("Writing to " + write.name + " " + write.offset + ", "
-        + write.length + ", new offset = " + mOutputStream.getPos() + ", hash = " + write.hashCode);
-    if (write.sync) {
+    checkState(preWritePos == write.getOffset(), " Offset = " + write.getOffset() + ", pos = " + preWritePos);
+    mOutputStream.write(write.getData(), write.getStart(), write.getLength());
+    if(LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Writing to " + write.getName() + " " + write.getOffset() + ", "
+            + write.getLength() + ", new offset = " + mOutputStream.getPos() + ", hash = " + write.hashCode());
+    }
+    if (write.isSync()) {
       mOutputStream.sync();
     }
   }
 
   protected void checkException() throws IOException, NFS4Exception {
     if (mNFSException != null) {
-      throw mNFSException;
+      throw new NFS4Exception(mNFSException.getError(), "Error occured in WriteOrderHandler", mNFSException);
     }
     if (mIOException != null) {
-      throw mIOException;
+      throw new IOException("IO Error occured in WriteOrderHandler", mIOException);
     }
     if (!this.isAlive()) {
       throw new NFS4Exception(NFS4ERR_PERM, "WriteOrderHandler is dead");
     }
   }
-
+  /**
+   * @return unique identifer for this write order handler
+   */
+  public String getIdentifer() {
+    return identifer;
+  }
+  /**
+   * @return current offset of the file
+   */
+  public long getCurrentPos() {
+    return mOutputStream.getPos();
+  }
   /**
    * Block until the outputstream reaches the specified offset.
    *
@@ -154,7 +169,14 @@ public class WriteOrderHandler extends Thread {
    * @throws NFS4Exception thrown if the thread processing writes dies
    */
   public void sync(long offset) throws IOException, NFS4Exception {
-    LOGGER.info("Sync for " + mOutputStream + " and " + offset);
+    String pendingWrites;
+    synchronized (mPendingWrites) {
+      pendingWrites = mPendingWrites.keySet().toString();
+    }
+    if(LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Sync for " + mOutputStream + " and " + offset + 
+          ", pending writes = " + pendingWrites + ", write queue = " + mWriteQueue.size());      
+    }
     while (mOutputStream.getPos() < offset) {
       checkException();
       pause(10L);
@@ -163,7 +185,54 @@ public class WriteOrderHandler extends Thread {
       mOutputStream.sync();
     }
   }
-
+  /**
+   * Check to see if a sync at offset would block
+   * @param offset the sync is waiting for
+   * @return true if the sync call would block
+   * @throws IOException
+   */
+  public boolean syncWouldBlock(long offset) {
+    return synchronousWriteWouldBlock(offset);
+  }
+  /**
+   * Check to see if a write to offset with sync flag would block
+   * @param offset the write occurs at
+   * @return true if the write would block
+   * @throws IOException
+   */
+  public boolean synchronousWriteWouldBlock(long offset) {
+    if(!run) {
+      return false;
+    }
+    if(getCurrentPos() < offset) {
+      return true;
+    }
+    return false;
+  }
+  /**
+   * Check to see if a close() call would block
+   * @return true if a call to close would block
+   * @throws IOException
+   */
+  public boolean closeWouldBlock() throws IOException {
+    if(!run) {
+      return false;
+    }
+    if(LOGGER.isDebugEnabled()) {
+      String pendingWrites;
+      synchronized (mPendingWrites) {
+        pendingWrites = mPendingWrites.keySet().toString();
+      }
+      LOGGER.debug("Close would block for " + mOutputStream + ", expectedLength = " + mExpectedLength.get() + 
+          ", mOutputStream.getPos = " + mOutputStream.getPos() + ", pending writes = " + pendingWrites + 
+          ", write queue = " + mWriteQueue.size());
+    }
+    if(mOutputStream.getPos() < mExpectedLength.get()
+        || !(mPendingWrites.isEmpty() && mWriteQueue.isEmpty())) {
+      return true;
+    }
+    return false;
+  }
   /**
    * Close the underlying stream blocking until all writes have been
    * processed.
@@ -173,9 +242,9 @@ public class WriteOrderHandler extends Thread {
    */
   public void close() throws IOException, NFS4Exception {
     mClosed.set(true);
-    while (mOutputStream.getPos() < mExpectedLength.get()
-        || !(mPendingWrites.isEmpty() && mWriteQueue.isEmpty())) {
-      pause(10L);
+    while (closeWouldBlock()) {
+      checkException();
+      pause(1000L);
       sync(mExpectedLength.get());
     }
     synchronized (mOutputStream) {
@@ -185,7 +254,7 @@ public class WriteOrderHandler extends Thread {
     checkState(mPendingWrites.isEmpty(), "Pending writes for " + mOutputStream + " at "
         + mOutputStream.getPos() + " = " + mPendingWrites);
     LOGGER.info("Closing " + mOutputStream + " at " + mOutputStream.getPos());
-    this.interrupt();
+    run = false;
   }
 
   protected void pause(long ms) throws IOException {
@@ -198,20 +267,13 @@ public class WriteOrderHandler extends Thread {
 
   /**
    * Queues write of the specified bytes for the underlying outputstream.
-   *
-   * @param xid
-   * @param offset
-   * @param sync
-   * @param data
-   * @param start
-   * @param length
-   * @return
+   * @return number of bytes written
    * @throws IOException if file is closed or underlying stream throws
    * IOException or if the thread is interrupted while putting the write on
    * the queue
    * @throws NFS4Exception if random write
    */
-  public int write(String name, int xid, long offset, boolean sync, byte[] data, int start, int length)
+  public int write(PendingWrite write)
       throws IOException, NFS4Exception {
     checkException();
     if (mClosed.get()) {
@@ -222,107 +284,31 @@ public class WriteOrderHandler extends Thread {
       // this happens when writes are retransmitted but not in
       // our response cache. Surprisingly often.
       synchronized (mProcessedWrites) {
-        if (mProcessedWrites.contains(xid)) {
-          LOGGER.info("Write already processed " + xid);
-          return length;
+        if (mProcessedWrites.contains(write.getXid())) {
+          LOGGER.info("Write already processed " + write.getXidAsHexString());
+          return write.getLength();
         }
-        if(mProcessedWrites.size() >= MAX_WRITE_IDS) {
-          mProcessedWrites.remove(0);
-        }
-        mProcessedWrites.add(xid);
-        if (offset < mOutputStream.getPos()) {
+        mProcessedWrites.add(write.getXid());
+        if (write.getOffset() < mOutputStream.getPos()) {
           throw new NFS4Exception(NFS4ERR_PERM, "Unable to process write (random write) at "
-              + offset
-              + ", pos = " + mOutputStream.getPos()
-              + ", sync = " + sync
-              + ", length = " + length);
+              + write.getOffset()
+              + ", pos = " + getCurrentPos()
+              + ", sync = " + write.isSync()
+              + ", length = " + write.getLength());
         }
         synchronized (mExpectedLength) {
-          if (offset > mExpectedLength.get()) {
-            mExpectedLength.set(offset);
+          if (write.getOffset() > mExpectedLength.get()) {
+            mExpectedLength.set(write.getOffset());
           }
         }
-        mWriteQueue.put(new Write(name, xid, offset, sync, data, start, length));
+        mWriteQueue.put(write);
       }
-      if (sync) {
-        sync(offset); // blocks
+      if (write.isSync()) {
+        sync(write.getOffset()); // blocks
       }
-      return length;
+      return write.getLength();
     } catch (InterruptedException e) {
       throw new IOException("Interrupted While Putting Write", e);
-    }
-  }
-
-  protected static class Write {
-
-    String name;
-    int xid;
-    long offset;
-    boolean sync;
-    byte[] data;
-    int start;
-    int length;
-    int hashCode;
-    int size;
-
-    public Write(String name, int xid, long offset, boolean sync, byte[] data, int start, int length) {
-      this.name = name;
-      this.xid = xid;
-      this.offset = offset;
-      this.sync = sync;
-      this.data = data;
-      this.start = start;
-      this.length = length;
-      this.hashCode = hashCode();
-      this.size = getSize();
-    }
-
-    public int getSize() {
-      int size = 4; // obj header     
-      size += name.length() + 4; // string, 4 byte length?
-      size += 4; // xid
-      size += 8; // offset
-      size += 1; // sync
-      size += data.length + 4; // data
-      size += 4; // start
-      size += 4; // length
-      size += 4; // hashcode
-      size += 4; // size
-      return size;
-    }
-    @Override
-    public int hashCode() {
-      final int prime = 31;
-      int result = 1;
-      result = prime * result + (int) (offset ^ (offset >>> 32));
-      result = prime * result + hashBytes(data, start, length);
-      return result;
-    }
-
-    protected static int hashBytes(byte[] bytes, int offset, int length) {
-      int hash = 1;
-      for (int i = offset; i < offset + length; i++) {
-        hash = (31 * hash) + (int) bytes[i];
-      }
-      return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (this == obj) {
-        return true;
-      }
-      if (obj == null) {
-        return false;
-      }
-      if (getClass() != obj.getClass()) {
-        return false;
-      }
-      Write other = (Write) obj;
-      if (offset != other.offset) {
-        return false;
-      }
-      return Bytes.compareTo(data, start, length, other.data, other.start, other.length) == 0;
     }
   }
 }

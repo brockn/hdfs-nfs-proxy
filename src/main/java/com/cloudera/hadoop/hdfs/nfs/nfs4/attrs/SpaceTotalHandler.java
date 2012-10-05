@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -25,16 +25,16 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class SpaceTotalHandler extends AttributeHandler<SpaceTotal> {
-
+  private final FSInfo fsInfo = new FSInfo();
   @Override
-  public SpaceTotal get(NFS4Handler server, Session session,
+  public SpaceTotal get(HDFSState hdfsState, Session session,
       FileSystem fs, FileStatus fileStatus) throws NFS4Exception, IOException {
     SpaceTotal space = new SpaceTotal();
-    space.set(FSInfo.getCapacity(session));
+    space.set(fsInfo.getCapacity(session));
     return space;
   }
 

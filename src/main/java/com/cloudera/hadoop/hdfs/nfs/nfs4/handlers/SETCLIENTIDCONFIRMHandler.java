@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,31 +18,33 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
-import static com.google.common.base.Preconditions.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_CLID_INUSE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_STALE_CLIENTID;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.apache.log4j.Logger;
 
-import com.cloudera.hadoop.hdfs.nfs.nfs4.Client;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.ClientFactory;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData8;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.SETCLIENTIDCONFIRMRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.SETCLIENTIDCONFIRMResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.Client;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.ClientFactory;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class SETCLIENTIDCONFIRMHandler extends OperationRequestHandler<SETCLIENTIDCONFIRMRequest, SETCLIENTIDCONFIRMResponse> {
 
   protected static final Logger LOGGER = Logger.getLogger(SETCLIENTIDCONFIRMHandler.class);
 
   @Override
-  protected SETCLIENTIDCONFIRMResponse doHandle(NFS4Handler server, Session session,
+  protected SETCLIENTIDCONFIRMResponse doHandle(HDFSState hdfsState, Session session,
       SETCLIENTIDCONFIRMRequest request) throws NFS4Exception {
     /*
      * TODO should follow RFC 3530 page ~215
      */
-    ClientFactory clientFactory = server.getClientFactory();
+    ClientFactory clientFactory = hdfsState.getClientFactory();
     Client client = clientFactory.getByShortHand(request.getClientID());
     if (client == null) {
       throw new NFS4Exception(NFS4ERR_STALE_CLIENTID);

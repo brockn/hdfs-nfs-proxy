@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,7 +18,9 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOENT;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -31,11 +33,11 @@ import org.apache.log4j.Logger;
 import com.cloudera.hadoop.hdfs.nfs.Pair;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Bitmap;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Attribute;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.GETATTRRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.GETATTRResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 import com.google.common.collect.ImmutableList;
 
 public class GETATTRHandler extends OperationRequestHandler<GETATTRRequest, GETATTRResponse> {
@@ -43,16 +45,16 @@ public class GETATTRHandler extends OperationRequestHandler<GETATTRRequest, GETA
   protected static final Logger LOGGER = Logger.getLogger(GETATTRHandler.class);
 
   @Override
-  protected GETATTRResponse doHandle(NFS4Handler server, Session session,
+  protected GETATTRResponse doHandle(HDFSState hdfsState, Session session,
       GETATTRRequest request) throws NFS4Exception, IOException {
     if (session.getCurrentFileHandle() == null) {
       throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
     }
-    Path path = server.getPath(session.getCurrentFileHandle());
+    Path path = hdfsState.getPath(session.getCurrentFileHandle());
     try {
       FileSystem fs = session.getFileSystem();
       FileStatus fileStatus = fs.getFileStatus(path);
-      Pair<Bitmap, ImmutableList<Attribute>> attrs = Attribute.getAttrs(server, session,
+      Pair<Bitmap, ImmutableList<Attribute>> attrs = Attribute.getAttrs(hdfsState, session,
           request.getAttrs(), fs, fileStatus);
       GETATTRResponse response = createResponse();
       response.setStatus(NFS4_OK);

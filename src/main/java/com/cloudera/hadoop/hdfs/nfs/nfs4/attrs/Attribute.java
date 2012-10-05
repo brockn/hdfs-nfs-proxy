@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,7 +18,48 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.attrs;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_ACL_SUPPORT;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_CASE_INSENSITIVE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_CASE_PRESERVING;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_CHANGE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_CHOWN_RESTRICTED;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_FH_EXPIRE_TYPE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_FILEHANDLE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_FILEID;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_FILES_AVAIL;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_FILES_FREE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_FILES_TOTAL;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_FSID;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_HOMOGENEOUS;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_LEASE_TIME;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_LINK_SUPPORT;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_MAXFILESIZE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_MAXLINK;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_MAXNAME;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_MAXREAD;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_MAXWRITE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_MODE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_NAMED_ATTR;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_NO_TRUNC;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_NUMLINKS;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_OWNER;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_OWNER_GROUP;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_RAWDEV;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SIZE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SPACE_AVAIL;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SPACE_FREE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SPACE_TOTAL;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SPACE_USED;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SUPPORTED_ATTRS;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SYMLINK_SUPPORT;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_ACCESS;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_ACCESS_SET;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_CREATE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_METADATA;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_MODIFY;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_MODIFY_SET;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TYPE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_UNIQUE_HANDLES;
 
 import java.io.IOException;
 import java.util.List;
@@ -32,9 +73,9 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.Bitmap;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Identifiable;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -57,9 +98,6 @@ public abstract class Attribute implements MessageBase, Identifiable {
     }
   }
 
-  //TODO Brock?? want to breakup this long line into a couple lines of statements that read easier?
-  // Yes this had always been multiple lines for me, not sure how it got into one long line? Did
-  // you run an atuomatic reformater?
   static ImmutableMap<Integer, AttributeHolder> attributes =
       ImmutableMap.<Integer, AttributeHolder>builder()
       .put(NFS4_FATTR4_ACL_SUPPORT, new AttributeHolder(ACLSupport.class, new ACLSupportHandler()))
@@ -133,25 +171,32 @@ public abstract class Attribute implements MessageBase, Identifiable {
       throw new RuntimeException(e);
     }
   }
-
+  public static Bitmap readAttrsSet(RPCBuffer buffer) {
+    Bitmap attrs = new Bitmap();
+    attrs.read(buffer);
+    return attrs;
+  }
+  public static void writeAttrsSet(RPCBuffer buffer, Bitmap attrs) {
+    attrs.write(buffer);
+  }
   public static void writeAttrs(RPCBuffer buffer, Bitmap attrs, ImmutableList<Attribute> attrValues) {
     attrs.write(buffer);
+    int offset = buffer.position();
+    buffer.writeUint32(Integer.MAX_VALUE); // save space
     if (!attrs.isEmpty()) {
-      int offset = buffer.position();
-      buffer.writeUint32(Integer.MAX_VALUE); // save space
       for (Attribute attr : attrValues) {
         attr.write(buffer);
       }
-      buffer.putInt(offset, buffer.position() - offset - 4); // current - start offset - 4 for length
     }
+    buffer.putInt(offset, buffer.position() - offset - 4); // current - start offset - 4 for length
   }
 
   public static Pair<Bitmap, ImmutableList<Attribute>> readAttrs(RPCBuffer buffer) {
     Bitmap attrs = new Bitmap();
     attrs.read(buffer);
     List<Attribute> attrValues = Lists.newArrayList();
+    buffer.skip(4); // XXX length of what we are about to read. We don't currently use this
     if (!attrs.isEmpty()) {
-      buffer.skip(4); // XXX skip the count cause we don't use this?
       int size = attrs.size();
       for (int bitIndex = 0; bitIndex < size; bitIndex++) {
         if (attrs.isSet(bitIndex)) {
@@ -162,7 +207,7 @@ public abstract class Attribute implements MessageBase, Identifiable {
     return new Pair<Bitmap, ImmutableList<Attribute>>(attrs, ImmutableList.copyOf(attrValues));
   }
 
-  public static Pair<Bitmap, ImmutableList<Attribute>> getAttrs(NFS4Handler server, Session session,
+  public static Pair<Bitmap, ImmutableList<Attribute>> getAttrs(HDFSState hdfsState, Session session,
       Bitmap requestedAttrs, FileSystem fs, FileStatus fileStatus) throws NFS4Exception, IOException {
     Bitmap responseAttrs = new Bitmap();
     List<Attribute> attrValues = Lists.newArrayList();
@@ -172,17 +217,17 @@ public abstract class Attribute implements MessageBase, Identifiable {
         if (isSupported(bitIndex)) {
           responseAttrs.set(bitIndex);
           AttributeHandler<Attribute> handler = getHandler(bitIndex);
-          attrValues.add(handler.get(server, session, fs, fileStatus));
+          attrValues.add(handler.get(hdfsState, session, fs, fileStatus));
         } else {
           LOGGER.info("getAttr Dropping attribute " + bitIndex);
-          server.incrementMetric("GETATTR_DROPPED_ATTRS", 1);
+          hdfsState.incrementMetric("GETATTR_DROPPED_ATTRS", 1);
         }
       }
     }
     return new Pair<Bitmap, ImmutableList<Attribute>>(responseAttrs, ImmutableList.copyOf(attrValues));
   }
 
-  public static Bitmap setAttrs(NFS4Handler server, Session session,
+  public static Bitmap setAttrs(HDFSState hdfsState, Session session,
       Bitmap requestedAttrs, ImmutableMap<Integer, Attribute> attrValues, FileSystem fs, FileStatus fileStatus, StateID stateID)
           throws NFS4Exception, IOException {
     Bitmap responseAttrs = new Bitmap();
@@ -190,7 +235,7 @@ public abstract class Attribute implements MessageBase, Identifiable {
     for (int bitIndex = 0; bitIndex < size; bitIndex++) {
       if (requestedAttrs.isSet(bitIndex)) {
         AttributeHandler<Attribute> handler = getHandler(bitIndex);
-        if (handler.set(server, session, fs, fileStatus, stateID, attrValues.get(bitIndex))) {
+        if (handler.set(hdfsState, session, fs, fileStatus, stateID, attrValues.get(bitIndex))) {
           responseAttrs.set(bitIndex);
         }
       }

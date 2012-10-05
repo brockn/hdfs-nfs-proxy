@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,52 +18,120 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_COMMIT_UNSTABLE4;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.ONE_MB;
 
+import java.io.File;
 import java.io.IOException;
 
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.FileBackedWrite;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.MemoryBackedWrite;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData8;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.PendingWrite;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.WRITERequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.WRITEResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSOutputStream;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITEResponse> {
 
   protected static final Logger LOGGER = Logger.getLogger(WRITEHandler.class);
-
   @Override
-  protected WRITEResponse doHandle(NFS4Handler server, Session session,
+  public boolean wouldBlock(HDFSState hdfsState, Session session, WRITERequest request) {
+    try {
+      if (session.getCurrentFileHandle() == null) {
+        throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
+      }
+      FileHandle fileHandle = session.getCurrentFileHandle();
+      Path path = hdfsState.getPath(fileHandle);
+      String file = path.toUri().getPath();
+      HDFSOutputStream out = hdfsState.forWrite(request.getStateID(), session.getFileSystem(), fileHandle, false);
+      WriteOrderHandler writeOrderHandler = hdfsState.getWriteOrderHandler(file, out);
+      boolean sync = request.getStable() != NFS4_COMMIT_UNSTABLE4;
+      if(sync && writeOrderHandler.synchronousWriteWouldBlock(request.getOffset())) {
+        /*
+         * I have observed NFS clients which will send some writes with
+         * a sync flag and some other without a sync flag. I believe this
+         * is when feels the nfs server is responding slow or when
+         * the nfs server sends errors. I know for a fact it will 
+         * will do this during the error condition to try and bubble
+         * the error back up to the writer.
+         * 
+         * However, in the case where we have not received the pre-req writes
+         * we cannot honor the sync flag. This should only occur when the
+         * kernel adds the sync flag to write, not when someone calls fsync
+         * on the stream.
+         * 
+         * We could honor this by queuing this write but it's observed that 
+         * clients (ubuntu 12.10) will stop sending write requests waiting
+         * for the response to the previous requests.
+         */
+        return false;
+      }
+      return false;
+    } catch(NFS4Exception e) {
+      LOGGER.warn("Expection handing wouldBlock. Client error will " +
+          "be returned on call to doHandle", e);
+    } catch(IOException e) {
+      LOGGER.warn("Expection handing wouldBlock. Client error will " +
+          "be returned on call to doHandle", e);
+    }
+    return false;
+  }
+  @Override
+  protected WRITEResponse doHandle(HDFSState hdfsState, Session session,
       WRITERequest request) throws NFS4Exception, IOException {
     if (session.getCurrentFileHandle() == null) {
       throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
     }
 
     FileHandle fileHandle = session.getCurrentFileHandle();
-    Path path = server.getPath(fileHandle);
+    Path path = hdfsState.getPath(fileHandle);
     String file = path.toUri().getPath();
-    FSDataOutputStream out = server.forWrite(request.getStateID(), session.getFileSystem(), fileHandle, false);
+    HDFSOutputStream out = hdfsState.forWrite(request.getStateID(), session.getFileSystem(), fileHandle, false);
 
-    LOGGER.info(session.getSessionID() + " xid = " + session.getXID() + ", write accepted " + file + " " + request.getOffset());
+    LOGGER.info(session.getSessionID() + " xid = " + session.getXIDAsHexString() + 
+        ", write accepted " + file + " " + request.getOffset());
 
-    WriteOrderHandler writeOrderHandler = server.getWriteOrderHandler(file, out);
+    WriteOrderHandler writeOrderHandler = hdfsState.getWriteOrderHandler(file, out);
     boolean sync = request.getStable() != NFS4_COMMIT_UNSTABLE4;
-    int count = writeOrderHandler.write(path.toUri().getPath(), session.getXID(), request.getOffset(),
-        sync, request.getData(), request.getStart(), request.getLength());
-
+    boolean wouldBlock = writeOrderHandler.synchronousWriteWouldBlock(request.getOffset());
+    if(sync  && wouldBlock) {
+      /* 
+       * See comment above. In this case, we cannot honor the sync request
+       */
+      sync = false;
+      LOGGER.info("Attempted synchronous random write " + file + ", offset = " + request.getOffset());
+    }
+    PendingWrite write = null;
+    if(request.getOffset() > out.getPos() + ONE_MB) {
+      File backingFile = hdfsState.getTemporaryFile(writeOrderHandler.getIdentifer(), 
+          String.valueOf(request.getOffset()));
+      write = new FileBackedWrite(backingFile, path.toUri().getPath(), session.getXID(), request.getOffset(),
+          sync, request.getData(), request.getStart(), request.getLength());
+      if(LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Created file backed write at " + write);
+      }
+    } else {
+      write = new MemoryBackedWrite(path.toUri().getPath(), session.getXID(), request.getOffset(),
+          sync, request.getData(), request.getStart(), request.getLength());
+    }
+    int count = writeOrderHandler.write(write);
     WRITEResponse response = createResponse();
     OpaqueData8 verifer = new OpaqueData8();
-    verifer.setData(Bytes.toBytes(server.getStartTime()));
+    verifer.setData(Bytes.toBytes(hdfsState.getStartTime()));
     response.setVerifer(verifer);
-    server.incrementMetric("HDFS_BYTES_WRITE", count);
+    hdfsState.incrementMetric("HDFS_BYTES_WRITE", count);
     response.setCount(count);
     response.setStatus(NFS4_OK);
     return response;

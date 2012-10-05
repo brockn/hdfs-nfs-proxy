@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,7 +18,10 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_INVAL;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_MAX_RWSIZE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
 
 import java.io.IOException;
 
@@ -29,17 +32,17 @@ import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.READRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.READResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class READHandler extends OperationRequestHandler<READRequest, READResponse> {
 
   protected static final Logger LOGGER = Logger.getLogger(READHandler.class);
 
   @Override
-  protected READResponse doHandle(NFS4Handler server, Session session,
+  protected READResponse doHandle(HDFSState hdfsState, Session session,
       READRequest request) throws NFS4Exception, IOException {
     if (session.getCurrentFileHandle() == null) {
       throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
@@ -49,9 +52,9 @@ public class READHandler extends OperationRequestHandler<READRequest, READRespon
       throw new NFS4Exception(NFS4ERR_INVAL);
     }
     FileHandle fileHandle = session.getCurrentFileHandle();
-    Path path = server.getPath(fileHandle);
+    Path path = hdfsState.getPath(fileHandle);
     FileSystem fs = session.getFileSystem();
-    FSDataInputStream inputStream = server.forRead(request.getStateID(), fs, fileHandle);
+    FSDataInputStream inputStream = hdfsState.forRead(request.getStateID(), fs, fileHandle);
     synchronized (inputStream) {
       if (inputStream.getPos() != request.getOffset()) {
         try {
@@ -59,7 +62,7 @@ public class READHandler extends OperationRequestHandler<READRequest, READRespon
         } catch (IOException e) {
           throw new IOException(e.getMessage() + ": " + inputStream.getPos() + ", " + request.getOffset(), e);
         }
-        server.incrementMetric("NFS_RANDOM_READS", 1);
+        hdfsState.incrementMetric("NFS_RANDOM_READS", 1);
       }
       READResponse response = createResponse();
       byte[] data = new byte[size];
@@ -71,14 +74,14 @@ public class READHandler extends OperationRequestHandler<READRequest, READRespon
             + " at pos = " + request.getOffset()
             + ", wanted " + data.length + " and read " + count
             + ", fileLength = " + fileLength);
-        server.incrementMetric("NFS_SHORT_READS", 1);
+        hdfsState.incrementMetric("NFS_SHORT_READS", 1);
       }
       boolean eof = count < 0;
       if (eof) {
         data = new byte[0];
         count = 0;
       }
-      server.incrementMetric("HDFS_BYTES_READ", count);
+      hdfsState.incrementMetric("HDFS_BYTES_READ", count);
       response.setData(data, 0, count);
       response.setEOF(eof);
       response.setStatus(NFS4_OK);

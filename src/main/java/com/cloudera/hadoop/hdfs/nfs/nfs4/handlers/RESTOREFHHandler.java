@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,22 +18,23 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
 
 import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.RESTOREFHRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.RESTOREFHResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class RESTOREFHHandler extends OperationRequestHandler<RESTOREFHRequest, RESTOREFHResponse> {
 
   protected static final Logger LOGGER = Logger.getLogger(RESTOREFHHandler.class);
 
   @Override
-  protected RESTOREFHResponse doHandle(NFS4Handler server, Session session,
+  protected RESTOREFHResponse doHandle(HDFSState hdfsState, Session session,
       RESTOREFHRequest request) throws NFS4Exception {
     if (session.getSavedFileHandle() == null) {
       throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);

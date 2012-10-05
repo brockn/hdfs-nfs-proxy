@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -26,13 +26,25 @@ import java.util.Arrays;
 
 import org.apache.hadoop.io.WritableComparable;
 
-class FileHandleStoreEntry implements WritableComparable<FileHandleStoreEntry> {
+public class FileHandleStoreEntry implements WritableComparable<FileHandleStoreEntry> {
   protected byte[] fileHandle;
   protected String path;
   protected long fileID;
 
   public FileHandleStoreEntry() {
     this(null, null, -1);
+  }
+
+  public byte[] getFileHandle() {
+    return fileHandle;
+  }
+
+  public String getPath() {
+    return path;
+  }
+
+  public long getFileID() {
+    return fileID;
   }
 
   public FileHandleStoreEntry(byte[] fileHandle, String path, long fileID) {

@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -19,6 +19,9 @@
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOENT;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
 
 import java.io.IOException;
 
@@ -29,29 +32,31 @@ import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.ChangeInfo;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.ChangeID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.REMOVERequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.REMOVEResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
+import com.google.common.base.Strings;
 
 public class REMOVEHandler extends OperationRequestHandler<REMOVERequest, REMOVEResponse> {
 
   protected static final Logger LOGGER = Logger.getLogger(REMOVEHandler.class);
 
   @Override
-  protected REMOVEResponse doHandle(NFS4Handler server, Session session,
+  protected REMOVEResponse doHandle(HDFSState hdfsState, Session session,
       REMOVERequest request) throws NFS4Exception, IOException {
     if (session.getCurrentFileHandle() == null) {
       throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
     }
-    if ("".equals(request.getName())) {
+    if (Strings.isNullOrEmpty(request.getName())) {
       throw new NFS4Exception(NFS4ERR_INVAL);
     }
-    Path parentPath = server.getPath(session.getCurrentFileHandle());
+    Path parentPath = hdfsState.getPath(session.getCurrentFileHandle());
     Path path = new Path(parentPath, request.getName());
     FileSystem fs = session.getFileSystem();
-    if (!fs.exists(path)) {
+    
+    if (!hdfsState.fileExists(fs, path)) {
       throw new NFS4Exception(NFS4ERR_NOENT);
     }
     REMOVEResponse response = createResponse();
@@ -61,7 +66,14 @@ public class REMOVEHandler extends OperationRequestHandler<REMOVERequest, REMOVE
     changeIDBefore.setChangeID(parentStatus.getModificationTime());
     changeInfo.setChangeIDBefore(changeIDBefore);
 
-    fs.delete(path, false);
+    // TODO we should handle this better like HDFS does or at leas
+    // cleanup the write order handlers for files which are open
+    // for write. The call below will return false if the file
+    // is open for write. Which could be a long time if the 
+    // server writing to the file dies.
+    if(!hdfsState.delete(fs, path)) {
+      throw new NFS4Exception(NFS4ERR_PERM);
+    }
 
     parentStatus = fs.getFileStatus(parentPath);
     ChangeID changeIDAfter = new ChangeID();

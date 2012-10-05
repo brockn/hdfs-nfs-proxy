@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,7 +19,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.ROOT_USER_UID;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -157,6 +157,7 @@ public class UserIDMapperSystem extends UserIDMapper {
         if(matcher.find()) {
           String name = matcher.group(1);
           postitveCache.put(id, new IDCache<String>(name));
+          reader.close();
           return name;
         }
       }

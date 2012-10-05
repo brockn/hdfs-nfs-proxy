@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,7 +19,9 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.rpc;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 
@@ -69,7 +71,7 @@ public class TestRPCBuffer {
     buffer.writeBoolean(false);
     int i = 0;
     while(i++ < 1000) {
-      buffer.writeLong((long)i);
+      buffer.writeLong(i);
     }
     int pos = buffer.position();
     buffer.flip();

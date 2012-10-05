@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -26,14 +26,14 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 
 import com.cloudera.hadoop.hdfs.nfs.NFSUtils;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class OwnerGroupHandler extends AttributeHandler<OwnerGroup> {
 
   @Override
-  public OwnerGroup get(NFS4Handler server, Session session, FileSystem fs,
+  public OwnerGroup get(HDFSState hdfsState, Session session, FileSystem fs,
       FileStatus fileStatus) {
     OwnerGroup ownerGroup = new OwnerGroup();
     String domain = NFSUtils.getDomain(session.getConfiguration(), session.getClientAddress());
@@ -42,7 +42,7 @@ public class OwnerGroupHandler extends AttributeHandler<OwnerGroup> {
   }
 
   @Override
-  public boolean set(NFS4Handler server, Session session, FileSystem fs, FileStatus fileStatus, StateID stateID, OwnerGroup attr) throws IOException {
+  public boolean set(HDFSState hdfsState, Session session, FileSystem fs, FileStatus fileStatus, StateID stateID, OwnerGroup attr) throws IOException {
     String group = OwnerHandler.removeDomain(attr.getOwnerGroup());
     if(fileStatus.getGroup().equals(group)) {
       fs.setOwner(fileStatus.getPath(), null, group);

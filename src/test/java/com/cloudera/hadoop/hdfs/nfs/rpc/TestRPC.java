@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,10 +19,13 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.rpc;
 
-import static com.cloudera.hadoop.hdfs.nfs.TestUtils.*;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static com.cloudera.hadoop.hdfs.nfs.TestUtils.copy;
+import static com.cloudera.hadoop.hdfs.nfs.TestUtils.deepEquals;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_REJECT_AUTH_ERROR;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_REPLY_STATE_DENIED;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import org.junit.Test;
 

@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,8 +19,9 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.attrs;
 
-import static com.cloudera.hadoop.hdfs.nfs.TestUtils.*;
-import static org.junit.Assert.*;
+import static com.cloudera.hadoop.hdfs.nfs.TestUtils.copy;
+import static com.cloudera.hadoop.hdfs.nfs.TestUtils.deepEquals;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 

@@ -66,9 +66,16 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>r09</version>
-            <!-- consider upgrading vesion -->
+            <version>13.0.1</version>
         </dependency>
+
+
+    <dependency>
+      <groupId>org.easytesting</groupId>
+      <artifactId>fest-reflect</artifactId>
+      <version>1.4</version>
+      <scope>test</scope>
+    </dependency>
         
     </dependencies>
 
@@ -118,7 +125,6 @@
     <build>
         <plugins>
             <plugin>
-        <!-- what is this again ? -->
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>cobertura-maven-plugin</artifactId>
                 <version>2.5.1</version>
@@ -210,6 +216,11 @@
                     </formats>
                 </configuration>
             </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>findbugs-maven-plugin</artifactId>
+            <version>2.5.2</version>
+          </plugin>
         </plugins>
     </reporting>
 

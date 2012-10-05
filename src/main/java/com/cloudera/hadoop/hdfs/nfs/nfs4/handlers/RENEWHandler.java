@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,28 +18,29 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_STALE_CLIENTID;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
 
 import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.Client;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.ClientFactory;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData8;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.RENEWRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.RENEWResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.Client;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.ClientFactory;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class RENEWHandler extends OperationRequestHandler<RENEWRequest, RENEWResponse> {
 
   protected static final Logger LOGGER = Logger.getLogger(RENEWHandler.class);
 
   @Override
-  protected RENEWResponse doHandle(NFS4Handler server, Session session,
+  protected RENEWResponse doHandle(HDFSState hdfsState, Session session,
       RENEWRequest request) throws NFS4Exception {
-    ClientFactory clientFactory = server.getClientFactory();
+    ClientFactory clientFactory = hdfsState.getClientFactory();
     Client client = clientFactory.getByShortHand(request.getClientID());
     if (client == null) {
       throw new NFS4Exception(NFS4ERR_STALE_CLIENTID);
@@ -48,7 +49,7 @@ public class RENEWHandler extends OperationRequestHandler<RENEWRequest, RENEWRes
     client.setRenew(System.currentTimeMillis());
     RENEWResponse response = createResponse();
     OpaqueData8 verifer = new OpaqueData8();
-    verifer.setData(Bytes.toBytes(server.getStartTime()));
+    verifer.setData(Bytes.toBytes(hdfsState.getStartTime()));
     response.setStatus(NFS4_OK);
     return response;
   }

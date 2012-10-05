@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -83,6 +83,10 @@ public class Bitmap implements MessageBase {
   }
   public void set(int bitIndex) {
     mMask.set(bitIndex);
+  }
+  
+  public void clear(int bitIndex) {
+    mMask.clear(bitIndex);
   }
 
   public boolean isSet(int bitIndex) {

@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -42,7 +42,9 @@ public abstract class RPCPacket implements MessageBase {
     this.mXid = buffer.readInt();
     this.mMessageType = buffer.readInt();
   }
-
+  public String getXidAsHexString() {
+    return Integer.toHexString(mXid);
+  }
   public int getXid() {
     return mXid;
   }

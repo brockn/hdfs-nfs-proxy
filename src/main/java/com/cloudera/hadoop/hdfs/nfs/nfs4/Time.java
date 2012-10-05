@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -60,7 +60,7 @@ public class Time implements MessageBase {
 
   public long toMilliseconds() {
     long time = mSeconds * 1000L;
-    time += (long)mNanoSeconds / 1000000L;
+    time += mNanoSeconds / 1000000L;
     return time;
   }
 }

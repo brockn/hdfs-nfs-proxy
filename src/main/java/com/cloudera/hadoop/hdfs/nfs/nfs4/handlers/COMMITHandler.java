@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
@@ -18,7 +18,8 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
 
 import java.io.IOException;
 
@@ -26,24 +27,41 @@ import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Handler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData8;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.COMMITRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.COMMITResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class COMMITHandler extends OperationRequestHandler<COMMITRequest, COMMITResponse> {
 
   protected static final Logger LOGGER = Logger.getLogger(COMMITHandler.class);
-
   @Override
-  protected COMMITResponse doHandle(NFS4Handler server, Session session,
+  public boolean wouldBlock(HDFSState hdfsState, Session session, COMMITRequest request) {
+    try {
+      if (session.getCurrentFileHandle() == null) {
+        throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
+      }
+      WriteOrderHandler writeOrderHandler = hdfsState.forCommit(session.getFileSystem(), session.getCurrentFileHandle());
+      long offset = request.getOffset() + request.getCount();
+      if (offset == 0) {
+        offset = writeOrderHandler.getCurrentPos();
+      }
+      return writeOrderHandler.syncWouldBlock(offset);
+    } catch(NFS4Exception e) {
+      LOGGER.warn("Expection handing wouldBlock. Client error will " +
+          "be returned on call to doHandle", e);
+    }
+    return false;
+  }
+  @Override
+  protected COMMITResponse doHandle(HDFSState hdfsState, Session session,
       COMMITRequest request) throws NFS4Exception, IOException {
     if (session.getCurrentFileHandle() == null) {
       throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
     }
-    WriteOrderHandler writeOrderHandler = server.forCommit(session.getFileSystem(), session.getCurrentFileHandle());
+    WriteOrderHandler writeOrderHandler = hdfsState.forCommit(session.getFileSystem(), session.getCurrentFileHandle());
     long offset = request.getOffset() + request.getCount();
     if (offset == 0) {
       offset = writeOrderHandler.getCurrentPos();
@@ -51,7 +69,7 @@ public class COMMITHandler extends OperationRequestHandler<COMMITRequest, COMMIT
     writeOrderHandler.sync(offset);
     COMMITResponse response = createResponse();
     OpaqueData8 verifer = new OpaqueData8();
-    verifer.setData(Bytes.toBytes(server.getStartTime()));
+    verifer.setData(Bytes.toBytes(hdfsState.getStartTime()));
     response.setVerifer(verifer);
     response.setStatus(NFS4_OK);
     return response;

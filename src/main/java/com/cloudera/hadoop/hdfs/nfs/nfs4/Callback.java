@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 The Apache Software Foundation
+ * Copyright 2012 The Apache Software Foundation
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -40,8 +40,6 @@ public class Callback implements MessageBase {
     buffer.writeString(mAddr);
   }
 
-
-
   public int getCallbackProgram() {
     return mCallbackProgram;
   }
@@ -64,39 +62,5 @@ public class Callback implements MessageBase {
 
   public void setAddr(String mAddr) {
     this.mAddr = mAddr;
-  }
-
-  @Override
-  public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + ((mAddr == null) ? 0 : mAddr.hashCode());
-    result = prime * result + mCallbackProgram;
-    result = prime * result + ((mNetID == null) ? 0 : mNetID.hashCode());
-    return result;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj)
-      return true;
-    if (obj == null)
-      return false;
-    if (getClass() != obj.getClass())
-      return false;
-    Callback other = (Callback) obj;
-    if (mAddr == null) {
-      if (other.mAddr != null)
-        return false;
-    } else if (!mAddr.equals(other.mAddr))
-      return false;
-    if (mCallbackProgram != other.mCallbackProgram)
-      return false;
-    if (mNetID == null) {
-      if (other.mNetID != null)
-        return false;
-    } else if (!mNetID.equals(other.mNetID))
-      return false;
-    return true;
   }
 }
