@@ -40,6 +40,7 @@ public class TestBaseHandler {
   protected FileHandle currentFileHandle = new FileHandle("current".getBytes());
   protected FileHandle savedFileHandle = new FileHandle("saved".getBytes());
   protected FileStatus fileStatus;
+  protected FileStatus notdir, isdir;
 
   @Before
   public void setup() throws Exception {
@@ -51,6 +52,12 @@ public class TestBaseHandler {
     when(session.getFileSystem()).thenReturn(fs);
     when(hdfsState.getPath(currentFileHandle)).thenReturn(new Path("/"));
     when(session.getCurrentFileHandle()).thenReturn(currentFileHandle);
+    
+    notdir = mock(FileStatus.class);
+    when(notdir.isDir()).thenReturn(false);
+    
+    isdir = mock(FileStatus.class);
+    when(isdir.isDir()).thenReturn(true);
   }
 
 }

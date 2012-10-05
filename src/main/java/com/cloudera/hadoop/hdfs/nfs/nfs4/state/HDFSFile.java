@@ -61,13 +61,19 @@ public class HDFSFile {
   public void close() throws IOException {
     if(mOutputStream != null) {
       OpenResource<HDFSOutputStream> res = mOutputStream.getSecond();
-      if(res != null && res.get() != null) {
-        res.get().close();
+      if(res != null) {
+        HDFSOutputStream out = res.get();
+        if(out != null) {
+          out.close();
+        }
       }
     }
     for(OpenResource<FSDataInputStream> res : mInputStreams.values()) {
-      if(res != null && res.get() != null) {
-        res.get().close();
+      if(res != null) {
+        FSDataInputStream in = res.get();
+        if(in != null) {
+          in.close();
+        }
       }
     }
   }
@@ -143,7 +149,7 @@ public class HDFSFile {
   @Override
   public String toString() {
     return "HDFSFile [mPath=" + mPath + ", mFileHandle=" + mFileHandle
-        + ", mFSDataOutputStream=" + mOutputStream + ", mFileID=" + mFileID
+        + ", Pair<StateID, HDFSOutputStream> =" + mOutputStream + ", mFileID=" + mFileID
         + "]";
   }
 

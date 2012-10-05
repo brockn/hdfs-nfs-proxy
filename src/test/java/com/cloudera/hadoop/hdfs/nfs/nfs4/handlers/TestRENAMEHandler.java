@@ -21,19 +21,18 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_EXIST;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_FILE_OPEN;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_INVAL;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_IO;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOENT;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOTDIR;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.FileNotFoundException;
 
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,12 +42,10 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.RENAMERequest;
 
 public class TestRENAMEHandler extends TestBaseHandler {
 
-  RENAMEHandler handler;
-  RENAMERequest request;
-  FileStatus notdir, isdir;
-  
-  Path oldPath = new Path("/old", "a");
-  Path newPath = new Path("/new", "b");
+  private RENAMEHandler handler;
+  private RENAMERequest request;
+  private Path oldPath = new Path("/old", "a");
+  private Path newPath = new Path("/new", "b");
   
   @Before
   public void setup() throws Exception {
@@ -59,12 +56,6 @@ public class TestRENAMEHandler extends TestBaseHandler {
     request.setNewName(newPath.getName());
 
     when(session.getSavedFileHandle()).thenReturn(savedFileHandle);
-
-    notdir = mock(FileStatus.class);
-    when(notdir.isDir()).thenReturn(false);
-    
-    isdir = mock(FileStatus.class);
-    when(isdir.isDir()).thenReturn(true);
     
     when(hdfsState.getPath(currentFileHandle)).thenReturn(newPath.getParent());
     when(hdfsState.getPath(savedFileHandle)).thenReturn(oldPath.getParent());

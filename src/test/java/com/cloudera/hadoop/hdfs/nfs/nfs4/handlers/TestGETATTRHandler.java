@@ -37,8 +37,8 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.GETATTRRequest;
 
 public class TestGETATTRHandler extends TestBaseHandler {
 
-  GETATTRHandler handler;
-  GETATTRRequest request;
+  private GETATTRHandler handler;
+  private GETATTRRequest request;
 
   @Before
   public void setup() throws Exception {

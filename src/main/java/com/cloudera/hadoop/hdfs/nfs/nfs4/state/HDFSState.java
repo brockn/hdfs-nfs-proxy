@@ -215,6 +215,22 @@ public class HDFSState {
     
   }
   /**
+   * Deletes a file from fs. If the file is open for writing,
+   * the file will not be deleted.
+   * @param fs
+   * @param path
+   * @return
+   * @throws IOException
+   */
+  public synchronized boolean delete(FileSystem fs, Path path) 
+      throws IOException {
+    HDFSFile fileHolder = mPathMap.get(realPath(path));
+    if (fileHolder != null && fileHolder.isOpenForWrite()) {
+      return false;
+    }    
+    return fs.delete(path, false);
+  }
+  /**
    * Files which are in the process of being created need to exist from a NFS
    * perspective even if they do not exist from an HDFS perspective. This
    * method intercepts requests for files that are open and calls
