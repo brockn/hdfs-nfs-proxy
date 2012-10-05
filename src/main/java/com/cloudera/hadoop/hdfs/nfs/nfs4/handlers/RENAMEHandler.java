@@ -43,7 +43,7 @@ import com.google.common.base.Strings;
 
 public class RENAMEHandler extends OperationRequestHandler<RENAMERequest, RENAMEResponse> {
 
-  protected static final Logger LOGGER = Logger.getLogger(TestRENAMEHandler.class);
+  protected static final Logger LOGGER = Logger.getLogger(RENAMEHandler.class);
 
   @Override
   protected RENAMEResponse doHandle(HDFSState hdfsState, Session session,
