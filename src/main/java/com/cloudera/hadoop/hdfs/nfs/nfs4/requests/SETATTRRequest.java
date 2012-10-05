@@ -86,4 +86,10 @@ public class SETATTRRequest extends OperationRequest {
     this.mAttrValues = ImmutableList.copyOf(attributes);
   }
 
+  @Override
+  public String toString() {
+    return "SETATTRRequest [mStateID=" + mStateID + ", mAttrs=" + mAttrs
+        + ", mAttrValues=" + mAttrValues + "]";
+  }
+
 }
