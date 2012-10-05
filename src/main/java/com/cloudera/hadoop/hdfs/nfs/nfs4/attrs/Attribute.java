@@ -172,6 +172,9 @@ public abstract class Attribute implements MessageBase, Identifiable {
     }
   }
 
+  public static void writeAttrsSet(RPCBuffer buffer, Bitmap attrs) {
+    attrs.write(buffer);
+  }
   public static void writeAttrs(RPCBuffer buffer, Bitmap attrs, ImmutableList<Attribute> attrValues) {
     attrs.write(buffer);
     int offset = buffer.position();
@@ -180,8 +183,8 @@ public abstract class Attribute implements MessageBase, Identifiable {
       for (Attribute attr : attrValues) {
         attr.write(buffer);
       }
-      buffer.putInt(offset, buffer.position() - offset - 4); // current - start offset - 4 for length
     }
+    buffer.putInt(offset, buffer.position() - offset - 4); // current - start offset - 4 for length
   }
 
   public static Pair<Bitmap, ImmutableList<Attribute>> readAttrs(RPCBuffer buffer) {
