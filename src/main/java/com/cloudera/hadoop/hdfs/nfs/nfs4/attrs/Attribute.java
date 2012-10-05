@@ -171,7 +171,11 @@ public abstract class Attribute implements MessageBase, Identifiable {
       throw new RuntimeException(e);
     }
   }
-
+  public static Bitmap readAttrsSet(RPCBuffer buffer) {
+    Bitmap attrs = new Bitmap();
+    attrs.read(buffer);
+    return attrs;
+  }
   public static void writeAttrsSet(RPCBuffer buffer, Bitmap attrs) {
     attrs.write(buffer);
   }

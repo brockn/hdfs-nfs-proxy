@@ -49,8 +49,7 @@ public class OPENResponse extends OperationResponse implements Status {
       mChangeInfo = new ChangeInfo();
       mChangeInfo.read(buffer);
       mResultFlags = buffer.readUint32();
-      Pair<Bitmap, ImmutableList<Attribute>> pair = Attribute.readAttrs(buffer);
-      mAttrs = pair.getFirst();
+      mAttrs = Attribute.readAttrsSet(buffer);
       mDelgationType = buffer.readUint32();
     }
   }
