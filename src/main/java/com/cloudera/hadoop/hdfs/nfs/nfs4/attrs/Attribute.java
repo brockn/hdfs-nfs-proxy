@@ -174,9 +174,9 @@ public abstract class Attribute implements MessageBase, Identifiable {
 
   public static void writeAttrs(RPCBuffer buffer, Bitmap attrs, ImmutableList<Attribute> attrValues) {
     attrs.write(buffer);
+    int offset = buffer.position();
+    buffer.writeUint32(Integer.MAX_VALUE); // save space
     if (!attrs.isEmpty()) {
-      int offset = buffer.position();
-      buffer.writeUint32(Integer.MAX_VALUE); // save space
       for (Attribute attr : attrValues) {
         attr.write(buffer);
       }
@@ -188,8 +188,8 @@ public abstract class Attribute implements MessageBase, Identifiable {
     Bitmap attrs = new Bitmap();
     attrs.read(buffer);
     List<Attribute> attrValues = Lists.newArrayList();
+    buffer.skip(4); // XXX length of what we are about to read. We don't currently use this
     if (!attrs.isEmpty()) {
-      buffer.skip(4); // XXX skip the count cause we don't use this?
       int size = attrs.size();
       for (int bitIndex = 0; bitIndex < size; bitIndex++) {
         if (attrs.isSet(bitIndex)) {
