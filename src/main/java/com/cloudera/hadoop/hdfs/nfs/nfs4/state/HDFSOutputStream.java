@@ -29,7 +29,7 @@ public class HDFSOutputStream extends OutputStream {
 
   private final FSDataOutputStream outputStream;
   private final String filename;
-  private FileHandle fileHandle;
+  private final FileHandle fileHandle;
   private long position;
   private long lastOperation;
   
@@ -39,6 +39,7 @@ public class HDFSOutputStream extends OutputStream {
     this.filename = filename;
     this.fileHandle = fileHandle;
     this.position = 0L;
+    this.lastOperation = 0L;
   }
   public void write(byte b[]) throws IOException {
     write(b, 0, b.length);
