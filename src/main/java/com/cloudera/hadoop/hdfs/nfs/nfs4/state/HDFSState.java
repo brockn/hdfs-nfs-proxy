@@ -185,14 +185,11 @@ public class HDFSState {
               try {
                 synchronized (HDFSState.this) {
                   HDFSFile hdfsFile = mFileHandleMap.get(out.getFileHandle());
-                  if(hdfsFile.isOpenForRead()) {
+                  if(hdfsFile.isOpenForWrite()) {
                     OpenResource<HDFSOutputStream> res = hdfsFile.getHDFSOutputStream();
-                    if(res != null) {
-                      res.close();
-                    }
-                  } else {
-                    mFileHandleMap.remove(out.getFileHandle());
-                    hdfsFile.close();
+                    Preconditions.checkState(res != null, "resource is null");
+                    Preconditions.checkState(res.get() == out, "resource is not equal to outputstream");
+                    hdfsFile.closeOutputStream(res.getStateID());
                   }
                 }
               } catch (Exception e) {
@@ -309,7 +306,7 @@ public class HDFSState {
       fileHolder = mFileHandleMap.get(fileHandle);
       if (fileHolder != null) {
         if (fileHolder.isOpenForWrite()) {
-          file = fileHolder.getHDFSOutputStream();
+          file = fileHolder.getHDFSOutputStreamForWrite();
           synchronized (mWriteOrderHandlerMap) {
             writeOrderHandler = mWriteOrderHandlerMap.get(file.get());
           }
@@ -336,43 +333,48 @@ public class HDFSState {
    */
   public StateID close(String sessionID, StateID stateID, int seqID,
       FileHandle fileHandle) throws NFS4Exception, IOException {
-    HDFSFile fileHolder = null;
+    HDFSFile hdfsFile = null;
     WriteOrderHandler writeOrderHandler = null;
     OpenResource<?> file = null;
     synchronized (this) {
-      fileHolder = mFileHandleMap.get(fileHandle);
-      if (fileHolder != null) {
-        if (fileHolder.isOpenForWrite()) {
-          LOGGER.info(sessionID + " Closing " + fileHolder.getPath()
-              + " for write");
-          file = fileHolder.getHDFSOutputStream();
-        } else {
-          LOGGER.info(sessionID + " Closing " + fileHolder.getPath()
-              + " for read");
-          file = fileHolder.getFSDataInputStream(stateID);
-        }
-        if (file == null) {
-          throw new NFS4Exception(NFS4ERR_OLD_STATEID);
-        }
-        if (!file.isOwnedBy(stateID)) {
-          throw new NFS4Exception(NFS4ERR_FILE_OPEN);
-        }
-        file.setSequenceID(seqID);
-        synchronized (mWriteOrderHandlerMap) {
-          writeOrderHandler = mWriteOrderHandlerMap.remove(file.get());
-        }
-      } else {
+      hdfsFile = mFileHandleMap.get(fileHandle);
+      if (hdfsFile == null) {
         throw new NFS4Exception(NFS4ERR_STALE);
+      }
+      if (hdfsFile.isOpenForWrite()) {
+        LOGGER.info(sessionID + " Closing " + hdfsFile.getPath()
+            + " for write");
+        file = hdfsFile.getHDFSOutputStream();
+      } else {
+        LOGGER.info(sessionID + " Closing " + hdfsFile.getPath()
+            + " for read");
+        file = hdfsFile.getFSDataInputStream(stateID);
+      }
+      if (file == null) {
+        throw new NFS4Exception(NFS4ERR_OLD_STATEID);
+      }
+      if (!file.isOwnedBy(stateID)) {
+        throw new NFS4Exception(NFS4ERR_FILE_OPEN);
+      }
+      file.setSequenceID(seqID);
+      synchronized (mWriteOrderHandlerMap) {
+        writeOrderHandler = mWriteOrderHandlerMap.remove(file.get());
       }
     }
     if (writeOrderHandler != null) {
       writeOrderHandler.close(); // blocks
       LOGGER.info(sessionID + " Closed WriteOrderHandler for "
-          + fileHolder.getPath());
+          + hdfsFile.getPath());
       cleanup(writeOrderHandler);
     }
     synchronized (this) {
-      file.close();
+      if(hdfsFile.isOpenForRead()) {
+        hdfsFile.closeInputStream(stateID);        
+      } else if(hdfsFile.isOpenForWrite()) {
+        hdfsFile.closeOutputStream(stateID);
+      } else {
+        LOGGER.warn("File " + hdfsFile + " is not open for read or write.");
+      }
       mMetrics.incrementMetric("FILES_CLOSED", 1);
       return file.getStateID();
     }
@@ -394,7 +396,7 @@ public class HDFSState {
     OpenResource<?> file = null;
     if (fileHolder != null) {
       if (fileHolder.isOpenForWrite()) {
-        file = fileHolder.getHDFSOutputStream();
+        file = fileHolder.getHDFSOutputStreamForWrite();
       } else {
         file = fileHolder.getFSDataInputStream(stateID);
       }
@@ -502,7 +504,7 @@ public class HDFSState {
       FileHandle fileHandle) throws NFS4Exception {
     HDFSFile fileHolder = mFileHandleMap.get(fileHandle);
     if (fileHolder != null) {
-      OpenResource<HDFSOutputStream> file = fileHolder.getHDFSOutputStream();
+      OpenResource<HDFSOutputStream> file = fileHolder.getHDFSOutputStreamForWrite();
       if (file != null) {
         synchronized (mWriteOrderHandlerMap) {
           if (mWriteOrderHandlerMap.containsKey(file.get())) {
@@ -529,7 +531,7 @@ public class HDFSState {
           throws NFS4Exception, IOException {
     HDFSFile fileHolder = mFileHandleMap.get(fileHandle);
     if (fileHolder != null) {
-      OpenResource<HDFSOutputStream> file = fileHolder.getHDFSOutputStream();
+      OpenResource<HDFSOutputStream> file = fileHolder.getHDFSOutputStreamForWrite();
       if (file != null) {
         if (file.isOwnedBy(stateID)) {
           return file.get();
@@ -629,7 +631,7 @@ public class HDFSState {
   public long getFileSize(FileStatus status) throws NFS4Exception {
     HDFSFile fileHolder = mPathMap.get(realPath(status.getPath()));
     if (fileHolder != null) {
-      OpenResource<HDFSOutputStream> file = fileHolder.getHDFSOutputStream();
+      OpenResource<HDFSOutputStream> file = fileHolder.getHDFSOutputStreamForWrite();
       if (file != null) {
         HDFSOutputStream out = file.get();
         return out.getPos();

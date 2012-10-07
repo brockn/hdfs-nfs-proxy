@@ -18,11 +18,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.state;
 
-import static com.google.common.base.Preconditions.checkState;
-
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Map;
 
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -37,12 +33,11 @@ import com.google.common.collect.Maps;
  */
 public class HDFSFile {
 
-
-  protected final FileHandle mFileHandle;
-  protected final String mPath;
-  protected final long mFileID;
-  protected final Map<StateID, OpenResource<FSDataInputStream>> mInputStreams = Maps.newHashMap();
-  protected Pair<StateID, OpenResource<HDFSOutputStream>> mOutputStream;
+  private final FileHandle mFileHandle;
+  private final String mPath;
+  private final long mFileID;
+  private final Map<StateID, OpenResource<FSDataInputStream>> mInputStreams = Maps.newHashMap();
+  private Pair<StateID, OpenResource<HDFSOutputStream>> mOutputStream;
 
   public HDFSFile(FileHandle fileHandle, String path, long fileID) {
     this.mFileHandle = fileHandle;
@@ -50,33 +45,6 @@ public class HDFSFile {
     this.mFileID = fileID;
   }
 
-  public String getPath() {
-    return mPath;
-  }
-
-  public FileHandle getFileHandle() {
-    return mFileHandle;
-  }
-
-  public void close() throws IOException {
-    if(mOutputStream != null) {
-      OpenResource<HDFSOutputStream> res = mOutputStream.getSecond();
-      if(res != null) {
-        HDFSOutputStream out = res.get();
-        if(out != null) {
-          out.close();
-        }
-      }
-    }
-    for(OpenResource<FSDataInputStream> res : mInputStreams.values()) {
-      if(res != null) {
-        FSDataInputStream in = res.get();
-        if(in != null) {
-          in.close();
-        }
-      }
-    }
-  }
   public OpenResource<FSDataInputStream> getFSDataInputStream(StateID stateID) {
     if (mInputStreams.containsKey(stateID)) {
       OpenResource<FSDataInputStream> file = mInputStreams.get(stateID);
@@ -88,7 +56,7 @@ public class HDFSFile {
 
   public void putFSDataInputStream(StateID stateID,
       FSDataInputStream fsDataInputStream) {
-    mInputStreams.put(stateID, new OpenResource<FSDataInputStream>(this, stateID,
+    mInputStreams.put(stateID, new OpenResource<FSDataInputStream>(stateID,
         fsDataInputStream));
   }
 
@@ -101,10 +69,15 @@ public class HDFSFile {
   }
 
   public boolean isOpenForWrite() {
-    return getHDFSOutputStream() != null;
+    return getHDFSOutputStreamForWrite() != null;
   }
-
   public OpenResource<HDFSOutputStream> getHDFSOutputStream() {
+    if (mOutputStream != null) {
+      return mOutputStream.getSecond();
+    }
+    return null;
+  }
+  public OpenResource<HDFSOutputStream> getHDFSOutputStreamForWrite() {
     if (mOutputStream != null) {
       OpenResource<HDFSOutputStream> file = mOutputStream.getSecond();
       file.setTimestamp(System.currentTimeMillis());
@@ -113,37 +86,31 @@ public class HDFSFile {
     return null;
   }
 
-  public void removeResource(Object resource, StateID stateID) {
-    if (resource instanceof InputStream) {
-      mInputStreams.remove(stateID);
-    } else if (resource instanceof OutputStream) {
-      if (mOutputStream != null) {
-        checkState(stateID.equals(mOutputStream.getFirst()), "stateID "
-            + stateID + " does not own file");
-      }
+  public void closeInputStream(StateID stateID) throws IOException {
+    OpenResource<?> resource = mInputStreams.remove(stateID);
+    if(resource != null) {
+      resource.close();
+    }
+  }
+  public void closeOutputStream(StateID stateID) throws IOException {
+    if(mOutputStream != null && mOutputStream.getFirst().equals(stateID)) {
+      mOutputStream.getSecond().close();
       mOutputStream = null;
     }
   }
-
   public void setHDFSOutputStream(StateID stateID,
       HDFSOutputStream fsDataOutputStream) {
-    mOutputStream = Pair.of(stateID, new OpenResource<HDFSOutputStream>(this,
-        stateID, fsDataOutputStream));
+    mOutputStream = Pair.of(stateID, new OpenResource<HDFSOutputStream>(stateID, fsDataOutputStream));
+  }
+  public String getPath() {
+    return mPath;
   }
 
+  public FileHandle getFileHandle() {
+    return mFileHandle;
+  }
   public long getFileID() {
     return mFileID;
-  }
-
-  @Override
-  public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result
-        + ((mFileHandle == null) ? 0 : mFileHandle.hashCode());
-    result = prime * result + (int) (mFileID ^ (mFileID >>> 32));
-    result = prime * result + ((mPath == null) ? 0 : mPath.hashCode());
-    return result;
   }
 
   @Override
@@ -151,37 +118,5 @@ public class HDFSFile {
     return "HDFSFile [mPath=" + mPath + ", mFileHandle=" + mFileHandle
         + ", Pair<StateID, HDFSOutputStream> =" + mOutputStream + ", mFileID=" + mFileID
         + "]";
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj) {
-      return true;
-    }
-    if (obj == null) {
-      return false;
-    }
-    if (getClass() != obj.getClass()) {
-      return false;
-    }
-    HDFSFile other = (HDFSFile) obj;
-    if (mFileHandle == null) {
-      if (other.mFileHandle != null) {
-        return false;
-      }
-    } else if (!mFileHandle.equals(other.mFileHandle)) {
-      return false;
-    }
-    if (mFileID != other.mFileID) {
-      return false;
-    }
-    if (mPath == null) {
-      if (other.mPath != null) {
-        return false;
-      }
-    } else if (!mPath.equals(other.mPath)) {
-      return false;
-    }
-    return true;
   }
 }
