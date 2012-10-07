@@ -54,6 +54,19 @@ public class Metrics {
     counter.addAndGet(count);
   }
   
+  public long getMetric(String name) {
+    name = name.toUpperCase();
+    AtomicLong counter;
+    synchronized (mMetrics) {
+      counter = mMetrics.get(name);
+      if (counter == null) {
+        counter = new AtomicLong(0);
+        mMetrics.put(name, counter);
+      }
+    }
+    return counter.get();
+  }
+  
   protected static class MetricsPrinter extends Thread {
 
     Map<String, AtomicLong> mMetrics;

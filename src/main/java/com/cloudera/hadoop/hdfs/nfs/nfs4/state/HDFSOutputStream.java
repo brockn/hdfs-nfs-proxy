@@ -72,4 +72,8 @@ public class HDFSOutputStream extends OutputStream {
     return "HDFSOutputStream [outputStream=" + outputStream + ", filename="
         + filename + ", position=" + position + "]";
   }
+  @Override
+  public void close() throws IOException {
+    outputStream.close();
+  }
 }
