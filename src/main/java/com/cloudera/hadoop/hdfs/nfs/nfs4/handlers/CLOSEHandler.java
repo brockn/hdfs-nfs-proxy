@@ -39,13 +39,9 @@ public class CLOSEHandler extends OperationRequestHandler<CLOSERequest, CLOSERes
   @Override
   public boolean wouldBlock(HDFSState hdfsState, Session session, CLOSERequest request) {
     try {
-      if (session.getCurrentFileHandle() == null) {
-        throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
+      if(session.getCurrentFileHandle() != null) {
+        return hdfsState.closeWouldBlock(session.getCurrentFileHandle());
       }
-      return hdfsState.closeWouldBlock(session.getCurrentFileHandle());
-    } catch(NFS4Exception e) {
-      LOGGER.warn("Expection handing wouldBlock. Client error will " +
-      		"be returned on call to doHandle", e);
     } catch(IOException e) {
       LOGGER.warn("Expection handing wouldBlock. Client error will " +
           "be returned on call to doHandle", e);
