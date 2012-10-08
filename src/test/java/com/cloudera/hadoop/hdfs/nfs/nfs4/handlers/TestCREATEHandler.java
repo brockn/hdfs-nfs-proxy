@@ -19,49 +19,89 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_STALE_CLIENTID;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_EXIST;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_INVAL;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_IO;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOTSUPP;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_STALE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_DIR;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_REG;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
+import org.apache.hadoop.fs.Path;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.cloudera.hadoop.hdfs.nfs.nfs4.ClientID;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.Bitmap;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Status;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.RENEWRequest;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.state.Client;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.state.ClientFactory;
-import com.google.common.base.Charsets;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Attribute;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CREATERequest;
+import com.google.common.collect.ImmutableList;
 
 public class TestCREATEHandler extends TestBaseHandler {
 
-  private RENEWHandler handler;
-  private RENEWRequest request;
+  private CREATEHandler handler;
+  private CREATERequest request;
+  private Path parent;
+  private Path child;
 
   @Before
   public void setup() throws Exception {
     super.setup();
-    handler = new RENEWHandler();
-    request = new RENEWRequest();
-    ClientFactory clientFactory = new ClientFactory();
-    when(hdfsState.getClientFactory()).thenReturn(clientFactory);
+    handler = new CREATEHandler();
+    request = new CREATERequest();
+    request.setType(NFS4_DIR);
+    request.setAttrs(new Bitmap());
+    ImmutableList<Attribute> attrValues = ImmutableList.of();
+    request.setAttrValues(attrValues);
+    parent = new Path("a");
+    child = new Path(parent, "b");
+    request.setName(child.getName());
+    
+    when(hdfsState.getPath(currentFileHandle)).thenReturn(parent);
+    when(fs.exists(parent)).thenReturn(true);
+    when(fs.mkdirs(child)).thenReturn(true);
   }
-
   @Test
-  public void testUnknownClientID() throws Exception {
-    request.setClientID(Long.MAX_VALUE);
+  public void testInvalidNameEmpty() throws Exception {
+    request.setName("");
     Status response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_STALE_CLIENTID, response.getStatus());
+    assertEquals(NFS4ERR_INVAL, response.getStatus());
   }
   @Test
-  public void testKnownClientID() throws Exception {
-    ClientFactory clientFactory = hdfsState.getClientFactory();
-    ClientID clientID = new ClientID();
-    clientID.setOpaqueID(new OpaqueData("id".getBytes(Charsets.UTF_8)));
-    Client client = clientFactory.createIfNotExist(clientID);
-    request.setClientID(client.getShorthandID());
+  public void testInvalidNameNull() throws Exception {
+    request.setName(null);
+    Status response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_INVAL, response.getStatus());
+  }
+  @Test
+  public void testCreateNotDir() throws Exception {
+    request.setType(NFS4_REG);
+    Status response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_NOTSUPP, response.getStatus());
+  }
+  @Test
+  public void testParentDoesNotExist() throws Exception {
+    when(fs.exists(parent)).thenReturn(false);
+    Status response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_STALE, response.getStatus());
+  }
+  @Test
+  public void testAlreadyExists() throws Exception {
+    when(fs.exists(child)).thenReturn(true);
+    Status response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_EXIST, response.getStatus());
+  }
+  @Test
+  public void testMkdirFails() throws Exception {
+    when(fs.mkdirs(child)).thenReturn(false);
+    Status response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_IO, response.getStatus());
+  }
+  @Test
+  public void testSuccess() throws Exception {
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4_OK, response.getStatus());
   }

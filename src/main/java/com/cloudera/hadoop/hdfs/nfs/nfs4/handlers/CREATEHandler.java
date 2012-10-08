@@ -41,6 +41,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Attribute;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CREATERequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CREATEResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 
 public class CREATEHandler extends OperationRequestHandler<CREATERequest, CREATEResponse> {
@@ -56,7 +57,7 @@ public class CREATEHandler extends OperationRequestHandler<CREATERequest, CREATE
     if (request.getType() != NFS4_DIR) {
       throw new UnsupportedOperationException("Create files of  type " + request.getType() + " is not supported.");
     }
-    if ("".equals(request.getName())) {
+    if (Strings.isNullOrEmpty(request.getName())) {
       throw new NFS4Exception(NFS4ERR_INVAL);
     }
     Path parent = hdfsState.getPath(session.getCurrentFileHandle());
