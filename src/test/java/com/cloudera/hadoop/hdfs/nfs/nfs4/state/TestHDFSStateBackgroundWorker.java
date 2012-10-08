@@ -104,7 +104,7 @@ public class TestHDFSStateBackgroundWorker {
     synchronized (writerOrderHandlerMap) {
       writerOrderHandlerMap.put(out, writeOrderHandler);
     }
-    Thread.sleep(maxInactivity * 2);
+    Thread.sleep(maxInactivity * 4);
     synchronized (writerOrderHandlerMap) {
       Assert.assertFalse(writerOrderHandlerMap.containsKey(out));
     }

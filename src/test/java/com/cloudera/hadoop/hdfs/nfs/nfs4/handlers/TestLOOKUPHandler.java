@@ -69,7 +69,7 @@ public class TestLOOKUPHandler extends TestBaseHandler {
   public void testExists() throws Exception {
     when(hdfsState.fileExists(fs, file)).thenReturn(true);
     Status response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_INVAL, response.getStatus());
+    assertEquals(NFS4_OK, response.getStatus());
   }
 
 }
