@@ -21,6 +21,7 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_PERM;
 import static com.google.common.base.Preconditions.checkState;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.SortedSet;
@@ -35,7 +36,9 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 
+import com.cloudera.hadoop.hdfs.nfs.PathUtils;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSOutputStream;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -50,6 +53,7 @@ public class WriteOrderHandler extends Thread {
   protected static final Logger LOGGER = Logger.getLogger(WriteOrderHandler.class);
   private final HDFSOutputStream mOutputStream;
   private final String identifer;
+  private final File[] mTempDirs;
   private final ConcurrentMap<Long, PendingWrite> mPendingWrites = Maps.newConcurrentMap();
   private final AtomicLong mPendingWritesSize = new AtomicLong(0);
   private final List<Integer> mProcessedWrites = Lists.newArrayList();
@@ -60,7 +64,8 @@ public class WriteOrderHandler extends Thread {
   private NFS4Exception mNFSException;
   private volatile boolean run;
   
-  public WriteOrderHandler(HDFSOutputStream outputStream) throws IOException {
+  public WriteOrderHandler(File[] tempDirs, HDFSOutputStream outputStream) throws IOException {
+    mTempDirs = tempDirs;
     mOutputStream = outputStream;
     mExpectedLength.set(mOutputStream.getPos());
     identifer = UUID.randomUUID().toString();
@@ -233,6 +238,9 @@ public class WriteOrderHandler extends Thread {
     }
     return false;
   }
+  public void close() throws IOException, NFS4Exception {
+    close(false);
+  }
   /**
    * Close the underlying stream blocking until all writes have been
    * processed.
@@ -240,21 +248,45 @@ public class WriteOrderHandler extends Thread {
    * @throws IOException thrown if the underlying stream throws an IOException
    * @throws NFS4Exception thrown if the thread processing writes dies
    */
-  public void close() throws IOException, NFS4Exception {
+  public void close(boolean force) throws IOException, NFS4Exception {
     mClosed.set(true);
-    while (closeWouldBlock()) {
-      checkException();
-      pause(1000L);
-      sync(mExpectedLength.get());
+    if(!force) {
+      while (closeWouldBlock()) {
+        checkException();
+        pause(1000L);
+        sync(mExpectedLength.get());
+      }      
     }
     synchronized (mOutputStream) {
       mOutputStream.sync();
       mOutputStream.close();
     }
+    for(File tempDir : mTempDirs) {
+      File dir = new File(tempDir, identifer);
+      try {
+        PathUtils.fullyDelete(dir);
+      } catch (IOException e) {
+        LOGGER.warn("Unexpected error cleaning up " + dir, e);
+      }
+    }
     checkState(mPendingWrites.isEmpty(), "Pending writes for " + mOutputStream + " at "
         + mOutputStream.getPos() + " = " + mPendingWrites);
     LOGGER.info("Closing " + mOutputStream + " at " + mOutputStream.getPos());
     run = false;
+  }
+
+  public File getTemporaryFile(String name) throws IOException {
+    int hashCode = name.hashCode() & Integer.MAX_VALUE;
+    int fileIndex = hashCode % mTempDirs.length;
+    File base = mTempDirs[fileIndex];
+    int bucketIndex = hashCode % 512;
+    File dir = new File(base, Joiner.on(File.separator).join(identifer, bucketIndex));
+    if(!dir.isDirectory()) {
+      if(!(dir.mkdirs() || dir.isDirectory())) {
+        throw new IOException("Unable to create " + dir);
+      }
+    }
+    return new File(dir, name);
   }
 
   protected void pause(long ms) throws IOException {

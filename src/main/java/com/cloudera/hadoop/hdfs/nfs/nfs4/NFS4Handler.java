@@ -19,8 +19,9 @@
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_SERVERFAULT;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_WRONGSEC;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 
@@ -28,6 +29,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.log4j.Logger;
 
+import com.cloudera.hadoop.hdfs.nfs.PathUtils;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CompoundResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
@@ -35,6 +37,7 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCHandler;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
 import com.cloudera.hadoop.hdfs.nfs.security.AuthenticatedCredentials;
 import com.cloudera.hadoop.hdfs.nfs.security.Credentials;
+import com.google.common.io.Files;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -48,6 +51,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   private final Metrics mMetrics;
   private final AsyncTaskExecutor<CompoundResponse> executor;
   private final HDFSState mHDFSState;
+  private final String[] mTempDirs;
   
   /**
    * Create a handler object with a default configuration object
@@ -66,11 +70,20 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   public NFS4Handler(Configuration configuration) throws IOException {
     mConfiguration = configuration;
     mMetrics = new Metrics();
-    mHDFSState = new HDFSState(mConfiguration, mMetrics);    
+    mTempDirs = configuration.getStrings(TEMP_DIRECTORIES, Files.createTempDir().getAbsolutePath());
+    FileHandleStore fileHandleStore = FileHandleStore.get(configuration);
+    mHDFSState = new HDFSState(fileHandleStore, mTempDirs, mMetrics);    
     executor = new AsyncTaskExecutor<CompoundResponse>();
   }
   public void shutdown() throws IOException {
     mHDFSState.close();
+    for(String tempDir : mTempDirs) {
+      try {
+        PathUtils.fullyDelete(new File(tempDir));
+      } catch (IOException e) {
+        LOGGER.warn("Error deleting " + tempDir, e);
+      }
+    }
   }
 
   /**

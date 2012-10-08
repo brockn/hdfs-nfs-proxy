@@ -25,21 +25,17 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_ISDIR;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_OLD_STATEID;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_PERM;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_STALE;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.TEMP_DIRECTORIES;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -57,11 +53,9 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
 import com.google.common.base.Charsets;
-import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
-import com.google.common.io.Files;
 
 public class HDFSState {
   protected static final Logger LOGGER = Logger.getLogger(HDFSState.class);
@@ -70,11 +64,11 @@ public class HDFSState {
   /**
    * getFileHandle is not synchronized on this as such a concurrent map is used
    */
-  private final Map<String, HDFSFile> mPathMap = Maps.newConcurrentMap();
+  private final ConcurrentMap<String, HDFSFile> mPathMap = Maps.newConcurrentMap();
   /**
    * getPath is not synchronized on this as such a concurrent map is used
    */
-  private final Map<FileHandle, HDFSFile> mFileHandleMap = Maps.newConcurrentMap();
+  private final ConcurrentMap<FileHandle, HDFSFile> mFileHandleMap = Maps.newConcurrentMap();
   private final long mStartTime = System.currentTimeMillis();
   private final ClientFactory mClientFactory = new ClientFactory();
   /**
@@ -82,28 +76,24 @@ public class HDFSState {
    */
   private final Map<HDFSOutputStream, WriteOrderHandler> mWriteOrderHandlerMap = Maps.newHashMap();
   private final FileHandleStore mFileHandleStore;
-  private final Configuration mConfiguration;
   private final Metrics mMetrics;
   private final File[] mTempDirs;
+  private final HDFSStateBackgroundWorker mHDFSStateBackgroundWorker;
   
-  public HDFSState(Configuration configuration, Metrics metrics) throws IOException {
-    mConfiguration = configuration;
-    mMetrics = metrics;
-    mFileHandleStore = FileHandleStore.get(mConfiguration);
-
-    String[] tempDirs = mConfiguration.getStrings(TEMP_DIRECTORIES);
-    if(tempDirs == null) {
-      mTempDirs = new File[1];
-      mTempDirs[0] = Files.createTempDir();
-    } else {
-      mTempDirs = new File[tempDirs.length];
-      for (int i = 0; i < tempDirs.length; i++) {
-        mTempDirs[i] = new File(tempDirs[i]);
-        Preconditions.checkState(mTempDirs[i].isDirectory(), "Path " + mTempDirs[i] + 
-            " is not a directory");
-      }
+  public HDFSState(FileHandleStore fileHandleStore, String[] tempDirs, Metrics metrics) throws IOException {
+    mFileHandleStore = fileHandleStore;
+    mTempDirs = new File[tempDirs.length];
+    for (int i = 0; i < tempDirs.length; i++) {
+      mTempDirs[i] = new File(tempDirs[i]);
+      Preconditions.checkState(mTempDirs[i].isDirectory(), "Path " + mTempDirs[i] + 
+          " is not a directory");
     }
-    
+    mMetrics = metrics;
+    mHDFSStateBackgroundWorker = new HDFSStateBackgroundWorker(mWriteOrderHandlerMap, 
+        mFileHandleMap, 60L * 1000L, 60L * 1000L * 30L);
+    mHDFSStateBackgroundWorker.setDaemon(true);
+    mHDFSStateBackgroundWorker.start();
+
     for(File tempDir : mTempDirs) {
       try {
         if(tempDir.isDirectory()) {
@@ -146,63 +136,6 @@ public class HDFSState {
         }
       }
     });
-    
-    Thread backgroundWorker = new Thread() {
-      public void run() {
-        while(true) {
-          try {
-            TimeUnit.MINUTES.sleep(1L);
-          } catch (InterruptedException e) {
-            // not interruptible
-          }
-          Set<HDFSOutputStream> keys;
-          synchronized (mWriteOrderHandlerMap) {
-            keys = new HashSet<HDFSOutputStream>(mWriteOrderHandlerMap.keySet());
-          }
-          for(HDFSOutputStream out : keys) {
-            if(LOGGER.isDebugEnabled()) {
-              LOGGER.debug("Performing activity check on " + out);
-            }
-            long elapsed = System.currentTimeMillis() - out.getLastOperation();
-            long elapsedMinutes = TimeUnit.MINUTES.convert(elapsed, TimeUnit.MILLISECONDS);
-            if(elapsedMinutes > 60L) {
-              LOGGER.warn("File " + out + " has not been written to for " + elapsedMinutes + " minutes");
-            } else if(elapsedMinutes > 1440L) {
-              LOGGER.error("File " + out + " has not been written to for " + elapsedMinutes + 
-                  " minutes. Closing the file.");
-              WriteOrderHandler writeOrderHandler;
-              synchronized (mWriteOrderHandlerMap) {
-                writeOrderHandler = mWriteOrderHandlerMap.remove(out);
-              }
-              if(writeOrderHandler != null) {
-                try {
-                  writeOrderHandler.close();
-                } catch (Exception e) {
-                  LOGGER.error("Error thrown trying to close " + out, e);
-                }
-                cleanup(writeOrderHandler);
-              }
-              try {
-                synchronized (HDFSState.this) {
-                  HDFSFile hdfsFile = mFileHandleMap.get(out.getFileHandle());
-                  if(hdfsFile.isOpenForWrite()) {
-                    OpenResource<HDFSOutputStream> res = hdfsFile.getHDFSOutputStream();
-                    Preconditions.checkState(res != null, "resource is null");
-                    Preconditions.checkState(res.get() == out, "resource is not equal to outputstream");
-                    hdfsFile.closeOutputStream(res.getStateID());
-                  }
-                }
-              } catch (Exception e) {
-                LOGGER.error("Error thrown trying to close " + out, e);
-              }
-            }
-          }
-        }
-      }
-    };
-    backgroundWorker.setName("HDFSState-BackgroundWorker");
-    backgroundWorker.setDaemon(true);
-    backgroundWorker.start();
     
     for (FileHandleStoreEntry entry : mFileHandleStore.getAll()) {
       FileHandle fileHandle = new FileHandle(entry.getFileHandle());
@@ -365,7 +298,6 @@ public class HDFSState {
       writeOrderHandler.close(); // blocks
       LOGGER.info(sessionID + " Closed WriteOrderHandler for "
           + hdfsFile.getPath());
-      cleanup(writeOrderHandler);
     }
     synchronized (this) {
       if(hdfsFile.isOpenForRead()) {
@@ -482,7 +414,7 @@ public class HDFSState {
     synchronized (mWriteOrderHandlerMap) {
       writeOrderHandler = mWriteOrderHandlerMap.get(out);
       if (writeOrderHandler == null) {
-        writeOrderHandler = new WriteOrderHandler(out);
+        writeOrderHandler = new WriteOrderHandler(mTempDirs, out);
         writeOrderHandler.setDaemon(true);
         writeOrderHandler.setName("WriteOrderHandler-" + name);
         writeOrderHandler.start();
@@ -675,28 +607,5 @@ public class HDFSState {
    */
   public long getStartTime() {
     return mStartTime;
-  }
-  private void cleanup(WriteOrderHandler writeOrderHandler) {
-    for(File tempDir : mTempDirs) {
-      File dir = new File(tempDir, writeOrderHandler.getIdentifer());
-      try {
-        PathUtils.fullyDelete(dir);
-      } catch (IOException e) {
-        LOGGER.warn("Unexpected error cleaning up " + dir, e);
-      }
-    }
-  }
-  public File getTemporaryFile(String identifer, String name) throws IOException {
-    int hashCode = name.hashCode() & Integer.MAX_VALUE;
-    int fileIndex = hashCode % mTempDirs.length;
-    File base = mTempDirs[fileIndex];
-    int bucketIndex = hashCode % 512;
-    File dir = new File(base, Joiner.on(File.separator).join(identifer, bucketIndex));
-    if(!dir.isDirectory()) {
-      if(!(dir.mkdirs() || dir.isDirectory())) {
-        throw new IOException("Unable to create " + dir);
-      }
-    }
-    return new File(dir, name);
   }
 }

@@ -29,30 +29,33 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.File;
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.cloudera.hadoop.hdfs.nfs.PathUtils;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MemoryBackedWrite;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.MemoryFileHandleStore;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Metrics;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData12;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
 import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 
 public class TestHDFSState {
 
-  private Configuration configuration;
   private Metrics metrics;
   private FileSystem fs;
   private FileStatus fileStatus;
@@ -64,12 +67,14 @@ public class TestHDFSState {
   private FSDataInputStream in;
   private Path dir;
   private FileHandle dirFileHandle;
+  private String[] tempDirs;
   
   @Before
   public void setup() throws IOException {
-    configuration = new Configuration();
-    metrics = new Metrics();   
-    hdfsState = new HDFSState(configuration, metrics);    
+    metrics = new Metrics();
+    tempDirs = new String[1];
+    tempDirs[0] = Files.createTempDir().getAbsolutePath();
+    hdfsState = new HDFSState(new MemoryFileHandleStore(), tempDirs, metrics);    
     stateID1 = new StateID();
     OpaqueData12 opaque = new OpaqueData12();
     opaque.setData("1".getBytes(Charsets.UTF_8));
@@ -90,7 +95,14 @@ public class TestHDFSState {
     when(fs.open(any(Path.class))).thenReturn(in);
     dirFileHandle = hdfsState.createFileHandle(dir);
   }
-  
+  @After
+  public void teardown() throws Exception {
+    if(tempDirs != null) {
+      for(String tempDir : tempDirs) {
+        PathUtils.fullyDelete(new File(tempDir));
+      }
+    }
+  }
   @Test
   public void testDeleteNotOpenForWrite() throws Exception {
     when(fs.delete(file, false)).thenReturn(true);

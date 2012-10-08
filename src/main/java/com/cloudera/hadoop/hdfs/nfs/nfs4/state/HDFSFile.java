@@ -19,7 +19,9 @@
 package com.cloudera.hadoop.hdfs.nfs.nfs4.state;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.hadoop.fs.FSDataInputStream;
 
@@ -45,7 +47,7 @@ public class HDFSFile {
     this.mFileID = fileID;
   }
 
-  public OpenResource<FSDataInputStream> getFSDataInputStream(StateID stateID) {
+  public synchronized OpenResource<FSDataInputStream> getFSDataInputStream(StateID stateID) {
     if (mInputStreams.containsKey(stateID)) {
       OpenResource<FSDataInputStream> file = mInputStreams.get(stateID);
       file.setTimestamp(System.currentTimeMillis());
@@ -54,30 +56,30 @@ public class HDFSFile {
     return null;
   }
 
-  public void putFSDataInputStream(StateID stateID,
+  public synchronized void putFSDataInputStream(StateID stateID,
       FSDataInputStream fsDataInputStream) {
     mInputStreams.put(stateID, new OpenResource<FSDataInputStream>(stateID,
         fsDataInputStream));
   }
 
-  public boolean isOpen() {
+  public synchronized boolean isOpen() {
     return isOpenForWrite() || isOpenForRead();
   }
 
-  public boolean isOpenForRead() {
+  public synchronized boolean isOpenForRead() {
     return !mInputStreams.isEmpty();
   }
 
-  public boolean isOpenForWrite() {
+  public synchronized boolean isOpenForWrite() {
     return getHDFSOutputStreamForWrite() != null;
   }
-  public OpenResource<HDFSOutputStream> getHDFSOutputStream() {
+  public synchronized OpenResource<HDFSOutputStream> getHDFSOutputStream() {
     if (mOutputStream != null) {
       return mOutputStream.getSecond();
     }
     return null;
   }
-  public OpenResource<HDFSOutputStream> getHDFSOutputStreamForWrite() {
+  public synchronized OpenResource<HDFSOutputStream> getHDFSOutputStreamForWrite() {
     if (mOutputStream != null) {
       OpenResource<HDFSOutputStream> file = mOutputStream.getSecond();
       file.setTimestamp(System.currentTimeMillis());
@@ -86,20 +88,40 @@ public class HDFSFile {
     return null;
   }
 
-  public void closeInputStream(StateID stateID) throws IOException {
+  public synchronized void closeResourcesInactiveSince(long inactiveSince) 
+      throws IOException {
+    if (mOutputStream != null) {
+      OpenResource<?> resource = mOutputStream.getSecond();
+      if(resource.getTimestamp() < inactiveSince) {
+        mOutputStream = null;
+        resource.close();
+      }
+    }
+    Set<StateID> keys = new HashSet<StateID>(mInputStreams.keySet());
+    for(StateID stateID : keys) {
+      OpenResource<?> resource = mInputStreams.get(stateID);
+      if(resource.getTimestamp() < inactiveSince) {
+        mInputStreams.remove(stateID);
+        resource.close();
+      }
+    }
+  }
+  public synchronized void closeInputStream(StateID stateID) throws IOException {
     OpenResource<?> resource = mInputStreams.remove(stateID);
     if(resource != null) {
       resource.close();
     }
   }
-  public void closeOutputStream(StateID stateID) throws IOException {
-    if(mOutputStream != null && mOutputStream.getFirst().equals(stateID)) {
-      mOutputStream.getSecond().close();
-      mOutputStream = null;
+  public synchronized void closeOutputStream(StateID stateID) throws IOException {
+    if(mOutputStream != null) {
+      OpenResource<HDFSOutputStream> res = mOutputStream.getSecond();
+      if(stateID.equals(mOutputStream.getFirst())) {
+        mOutputStream = null;
+        res.close();
+      }
     }
   }
-  public void setHDFSOutputStream(StateID stateID,
-      HDFSOutputStream fsDataOutputStream) {
+  public synchronized void setHDFSOutputStream(StateID stateID, HDFSOutputStream fsDataOutputStream) {
     mOutputStream = Pair.of(stateID, new OpenResource<HDFSOutputStream>(stateID, fsDataOutputStream));
   }
   public String getPath() {
@@ -114,7 +136,7 @@ public class HDFSFile {
   }
 
   @Override
-  public String toString() {
+  public synchronized String toString() {
     return "HDFSFile [mPath=" + mPath + ", mFileHandle=" + mFileHandle
         + ", Pair<StateID, HDFSOutputStream> =" + mOutputStream + ", mFileID=" + mFileID
         + "]";

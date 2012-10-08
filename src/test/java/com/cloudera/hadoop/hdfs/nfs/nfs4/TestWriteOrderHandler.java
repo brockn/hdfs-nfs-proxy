@@ -32,6 +32,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -46,6 +47,7 @@ import org.mockito.stubbing.Answer;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSOutputStream;
 import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 
 public class TestWriteOrderHandler {
 
@@ -53,11 +55,14 @@ public class TestWriteOrderHandler {
   WriteOrderHandler mWriteOrderHandler;
   final AtomicInteger xid = new AtomicInteger(0);
   final byte[] buffer = new byte[1000];
+  private File[] tempDirs;
 
   @Before
   public void setup() throws IOException {
+    tempDirs = new File[1];
+    tempDirs[0] = Files.createTempDir();
     mOutputStream = mock(HDFSOutputStream.class);
-    mWriteOrderHandler = new WriteOrderHandler(mOutputStream);
+    mWriteOrderHandler = new WriteOrderHandler(tempDirs, mOutputStream);
     mWriteOrderHandler.setDaemon(true);
     mWriteOrderHandler.setName("WriteOrderHandler");
     mWriteOrderHandler.start();

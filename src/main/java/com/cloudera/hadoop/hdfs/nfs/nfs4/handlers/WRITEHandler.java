@@ -115,8 +115,7 @@ public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITERes
     }
     PendingWrite write = null;
     if(request.getOffset() > out.getPos() + ONE_MB) {
-      File backingFile = hdfsState.getTemporaryFile(writeOrderHandler.getIdentifer(), 
-          String.valueOf(request.getOffset()));
+      File backingFile = writeOrderHandler.getTemporaryFile(String.valueOf(request.getOffset()));
       write = new FileBackedWrite(backingFile, path.toUri().getPath(), session.getXID(), request.getOffset(),
           sync, request.getData(), request.getStart(), request.getLength());
       if(LOGGER.isDebugEnabled()) {
