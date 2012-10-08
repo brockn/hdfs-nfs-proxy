@@ -38,21 +38,18 @@ public class COMMITHandler extends OperationRequestHandler<COMMITRequest, COMMIT
   protected static final Logger LOGGER = Logger.getLogger(COMMITHandler.class);
   @Override
   public boolean wouldBlock(HDFSState hdfsState, Session session, COMMITRequest request) {
-    try {
-      if (session.getCurrentFileHandle() == null) {
-        throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
-      }
-      WriteOrderHandler writeOrderHandler = hdfsState.forCommit(session.getFileSystem(), session.getCurrentFileHandle());
-      long offset = request.getOffset() + request.getCount();
-      if (offset == 0) {
-        offset = writeOrderHandler.getCurrentPos();
-      }
-      return writeOrderHandler.syncWouldBlock(offset);
-    } catch(NFS4Exception e) {
-      LOGGER.warn("Expection handing wouldBlock. Client error will " +
-          "be returned on call to doHandle", e);
+    if (session.getCurrentFileHandle() == null) {
+      return false;
     }
-    return false;
+    WriteOrderHandler writeOrderHandler = hdfsState.getWriteOrderHandler(session.getCurrentFileHandle());
+    if(writeOrderHandler == null) {
+      return false;
+    }
+    long offset = request.getOffset() + request.getCount();
+    if (offset == 0) {
+      offset = writeOrderHandler.getCurrentPos();
+    }
+    return writeOrderHandler.syncWouldBlock(offset);
   }
   @Override
   protected COMMITResponse doHandle(HDFSState hdfsState, Session session,
@@ -60,7 +57,10 @@ public class COMMITHandler extends OperationRequestHandler<COMMITRequest, COMMIT
     if (session.getCurrentFileHandle() == null) {
       throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
     }
-    WriteOrderHandler writeOrderHandler = hdfsState.forCommit(session.getFileSystem(), session.getCurrentFileHandle());
+    WriteOrderHandler writeOrderHandler = hdfsState.getWriteOrderHandler(session.getCurrentFileHandle());
+    if(writeOrderHandler == null) {
+      throw new NFS4Exception(NFS4ERR_STALE);
+    }
     long offset = request.getOffset() + request.getCount();
     if (offset == 0) {
       offset = writeOrderHandler.getCurrentPos();

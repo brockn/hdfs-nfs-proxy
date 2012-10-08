@@ -37,7 +37,6 @@ import org.junit.Test;
 
 import com.cloudera.hadoop.hdfs.nfs.PathUtils;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.MemoryBackedWrite;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MemoryFileHandleStore;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Metrics;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
@@ -212,51 +211,34 @@ public class TestHDFSState {
     when(fileStatus.getLen()).thenReturn(123L);
     Assert.assertEquals(123L, hdfsState.getFileSize(fileStatus));
   }
-  
-  @Test
-  public void testForCommitFileNotOpen() throws Exception {
-    try {
-      hdfsState.forCommit(fs, fileFileHandle);
-      Assert.fail();
-    } catch (NFS4Exception e) {
-      Assert.assertEquals(NFS4ERR_STALE, e.getError());
-    }
-  }
-  
-  @Test
-  public void testForCommitUnknownFileHandle() throws Exception {
-    try {
-      hdfsState.forCommit(fs, new FileHandle());
-      Assert.fail();
-    } catch (NFS4Exception e) {
-      Assert.assertEquals(NFS4ERR_STALE, e.getError());
-    }
-  }
-  
-  @Test
-  public void testForCommitOpenFile() throws Exception {
-    HDFSOutputStream out = hdfsState.forWrite(stateID1, fs, fileFileHandle, false);  
-    Assert.assertEquals(0, out.getPos());
-    WriteOrderHandler writeOrderHandler1 = hdfsState.getWriteOrderHandler("test", out);
-    WriteOrderHandler writeOrderHandler2 = hdfsState.forCommit(fs, fileFileHandle);
-    Assert.assertSame(writeOrderHandler1, writeOrderHandler2);
-    MemoryBackedWrite write = new MemoryBackedWrite("test", 1, 0, false, new byte[512], 0, 512);
-    writeOrderHandler2.write(write);
-    Thread.sleep(1000L);
-    Assert.assertEquals(512, out.getPos());
-  }
+
   @Test
   public void testGetWriteOrderHandler() throws Exception {
     HDFSOutputStream out1 = hdfsState.forWrite(stateID1, fs, fileFileHandle, false);  
-    WriteOrderHandler writeOrderHandler1 = hdfsState.getWriteOrderHandler("test", out1);
-    WriteOrderHandler writeOrderHandler2 = hdfsState.getWriteOrderHandler("test", out1);
+    WriteOrderHandler writeOrderHandler1 = hdfsState.getOrCreateWriteOrderHandler("test", out1);
+    WriteOrderHandler writeOrderHandler2 = hdfsState.getOrCreateWriteOrderHandler("test", out1);
     Assert.assertSame(writeOrderHandler1, writeOrderHandler2);
     FileHandle fileFileHandle2 = fileFileHandle = hdfsState.createFileHandle(new Path("file2"));;
     HDFSOutputStream out2 = hdfsState.forWrite(stateID1, fs, fileFileHandle2, false); 
-    WriteOrderHandler writeOrderHandler3 = hdfsState.getWriteOrderHandler("test", out2);
+    WriteOrderHandler writeOrderHandler3 = hdfsState.getOrCreateWriteOrderHandler("test", out2);
     Assert.assertNotSame(writeOrderHandler1, writeOrderHandler3);
   }
-  
+  @Test
+  public void testGetWriteOrderHandlerUnknownFileHandle() throws Exception {
+    Assert.assertNull(hdfsState.getWriteOrderHandler(new FileHandle()));
+  }
+  @Test
+  public void testGetWriteOrderHandlerNotOpenForWrite() throws Exception {
+    Assert.assertNull(hdfsState.getWriteOrderHandler(fileFileHandle));
+  }
+  @Test
+  public void testGetWriteOrderHandlerByFileHandle() throws Exception {
+    HDFSOutputStream out1 = hdfsState.forWrite(stateID1, fs, fileFileHandle, false);  
+    WriteOrderHandler writeOrderHandler1 = hdfsState.getOrCreateWriteOrderHandler("test", out1);
+    WriteOrderHandler writeOrderHandler2 = hdfsState.getWriteOrderHandler(fileFileHandle);
+    Assert.assertSame(writeOrderHandler1, writeOrderHandler2);
+  }
+
   @Test
   public void testForReadUnknownFileHandle() throws Exception {
     try {
@@ -385,35 +367,6 @@ public class TestHDFSState {
     StateID stateID = hdfsState.close("test", stateID1, 2, fileFileHandle);
     Assert.assertEquals(stateID1, stateID);
     verify(out).close();
-  }
-  @Test
-  public void testCloseWouldBlockUnknownFileHandle() throws Exception {
-    Assert.assertFalse(hdfsState.closeWouldBlock(new FileHandle()));
-  }
-  @Test
-  public void testCloseWouldBlockFileOpenForRead() throws Exception {
-    Assert.assertSame(in, hdfsState.forRead(stateID1, fs, fileFileHandle));
-    Assert.assertFalse(hdfsState.closeWouldBlock(fileFileHandle));
-  }
-  @Test
-  public void testCloseWouldBlockFileNotOpen() throws Exception {
-    Assert.assertFalse(hdfsState.closeWouldBlock(fileFileHandle));
-  }
-  @Test
-  public void testCloseWouldBlockShouldNotBlock() throws Exception {
-    HDFSOutputStream out = hdfsState.forWrite(stateID1, fs, fileFileHandle, false);
-    WriteOrderHandler writeOrderHandler = hdfsState.getWriteOrderHandler("test", out);
-    MemoryBackedWrite write = new MemoryBackedWrite("test", 1, 0, false, new byte[512], 0, 512);
-    writeOrderHandler.write(write);
-    Assert.assertFalse(hdfsState.closeWouldBlock(fileFileHandle));
-  }
-  @Test
-  public void testCloseWouldBlockShouldBlock() throws Exception {
-    HDFSOutputStream out = hdfsState.forWrite(stateID1, fs, fileFileHandle, false);
-    WriteOrderHandler writeOrderHandler = hdfsState.getWriteOrderHandler("test", out);
-    MemoryBackedWrite write = new MemoryBackedWrite("test", 1, 1, false, new byte[512], 0, 512);
-    writeOrderHandler.write(write);
-    Assert.assertTrue(hdfsState.closeWouldBlock(fileFileHandle));
   }
   @Test
   public void testGetFileIDKnownFile() throws Exception {

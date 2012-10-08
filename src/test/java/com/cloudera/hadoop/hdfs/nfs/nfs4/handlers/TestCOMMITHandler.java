@@ -27,7 +27,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Status;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.COMMITRequest;
@@ -45,7 +44,7 @@ public class TestCOMMITHandler extends TestBaseHandler {
     request = new COMMITRequest();
     
     writeOrderHandler = mock(WriteOrderHandler.class);
-    when(hdfsState.forCommit(fs, currentFileHandle)).thenReturn(writeOrderHandler);
+    when(hdfsState.getWriteOrderHandler(currentFileHandle)).thenReturn(writeOrderHandler);
   }
   @Test
   public void testZeroOffset() throws Exception {
@@ -60,11 +59,6 @@ public class TestCOMMITHandler extends TestBaseHandler {
     Status response = handler.handle(hdfsState, session, request);
     Assert.assertEquals(NFS4_OK, response.getStatus());
     verify(writeOrderHandler, times(1)).sync(52L);
-  }
-  @Test
-  public void testWouldBlockNFS4Exception() throws Exception {
-    when(hdfsState.forCommit(fs, currentFileHandle)).thenThrow(new NFS4Exception(1));
-    Assert.assertFalse(handler.wouldBlock(hdfsState, session, request));
   }
   @Test
   public void testWouldBlock() throws Exception {

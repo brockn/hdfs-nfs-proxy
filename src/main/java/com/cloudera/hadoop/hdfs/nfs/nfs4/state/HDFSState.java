@@ -220,32 +220,7 @@ public class HDFSState {
     }
     throw new NFS4Exception(NFS4ERR_STALE, "Path " + realPath(path));
   }
-  /**
-   * Check to see if a close to the file handle would block
-   * @param fileHandle
-   * @return true if a close to fileHandle would block
-   * @throws IOException
-   */
-  public boolean closeWouldBlock(FileHandle fileHandle) throws IOException {
-    HDFSFile fileHolder = null;
-    WriteOrderHandler writeOrderHandler = null;
-    OpenResource<?> file = null;
-    synchronized (this) {
-      fileHolder = mFileHandleMap.get(fileHandle);
-      if (fileHolder != null) {
-        if (fileHolder.isOpenForWrite()) {
-          file = fileHolder.getHDFSOutputStreamForWrite();
-          synchronized (mWriteOrderHandlerMap) {
-            writeOrderHandler = mWriteOrderHandlerMap.get(file.get());
-          }
-        }
-      }
-    }
-    if(writeOrderHandler != null) {
-      return writeOrderHandler.closeWouldBlock();
-    }
-    return false;
-  }
+
   /**
    * Close the resources allocated in the server, block until the writes for
    * this file have been processed and close the underlying stream. No lock is
@@ -403,7 +378,7 @@ public class HDFSState {
    * @throws IOException of the output stream throws an IO Exception while
    * creating the WriteOrderHandler.
    */
-  public WriteOrderHandler getWriteOrderHandler(String name,
+  public WriteOrderHandler getOrCreateWriteOrderHandler(String name,
       HDFSOutputStream out) throws IOException {
     WriteOrderHandler writeOrderHandler;
     synchronized (mWriteOrderHandlerMap) {
@@ -419,16 +394,7 @@ public class HDFSState {
     return writeOrderHandler;
   }
 
-  /**
-   * Get the WriteOrderHandler for a commit operation.
-   *
-   * @param fs
-   * @param fileHandle
-   * @return WriteOrderHandler
-   * @throws NFS4Exception if the file handle is stale
-   */
-  public synchronized WriteOrderHandler forCommit(FileSystem fs,
-      FileHandle fileHandle) throws NFS4Exception {
+  public synchronized WriteOrderHandler getWriteOrderHandler(FileHandle fileHandle) {
     HDFSFile fileHolder = mFileHandleMap.get(fileHandle);
     if (fileHolder != null) {
       OpenResource<HDFSOutputStream> file = fileHolder.getHDFSOutputStreamForWrite();
@@ -440,9 +406,9 @@ public class HDFSState {
         }
       }
     }
-    throw new NFS4Exception(NFS4ERR_STALE);
+    return null;
   }
-
+  
   /**
    *
    * @param stateID

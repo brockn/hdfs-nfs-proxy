@@ -126,6 +126,6 @@ public class TestHDFSStateBackgroundWorker {
       fileHandleMap.put(fileHandle, hdfsFile);
     }
     Thread.sleep(interval * 2);
-    verify(hdfsFile).closeResourcesInactiveSince(any(Long.class));
+    verify(hdfsFile, atLeastOnce()).closeResourcesInactiveSince(any(Long.class));
   }
 }

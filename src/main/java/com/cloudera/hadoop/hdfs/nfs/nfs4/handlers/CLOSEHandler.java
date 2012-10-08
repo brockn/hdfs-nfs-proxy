@@ -27,6 +27,7 @@ import org.apache.log4j.Logger;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CLOSERequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CLOSEResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
@@ -39,7 +40,10 @@ public class CLOSEHandler extends OperationRequestHandler<CLOSERequest, CLOSERes
   public boolean wouldBlock(HDFSState hdfsState, Session session, CLOSERequest request) {
     try {
       if(session.getCurrentFileHandle() != null) {
-        return hdfsState.closeWouldBlock(session.getCurrentFileHandle());
+        WriteOrderHandler writeOrderHanlder = hdfsState.getWriteOrderHandler(session.getCurrentFileHandle());
+        if(writeOrderHanlder != null) {
+          return writeOrderHanlder.closeWouldBlock();          
+        }
       }
     } catch(IOException e) {
       LOGGER.warn("Expection handing wouldBlock. Client error will " +

@@ -45,44 +45,23 @@ public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITERes
   protected static final Logger LOGGER = Logger.getLogger(WRITEHandler.class);
   @Override
   public boolean wouldBlock(HDFSState hdfsState, Session session, WRITERequest request) {
-    try {
-      if (session.getCurrentFileHandle() == null) {
-        throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
-      }
-      FileHandle fileHandle = session.getCurrentFileHandle();
-      Path path = hdfsState.getPath(fileHandle);
-      String file = path.toUri().getPath();
-      HDFSOutputStream out = hdfsState.forWrite(request.getStateID(), session.getFileSystem(), fileHandle, false);
-      WriteOrderHandler writeOrderHandler = hdfsState.getWriteOrderHandler(file, out);
-      boolean sync = request.getStable() != NFS4_COMMIT_UNSTABLE4;
-      if(sync && writeOrderHandler.synchronousWriteWouldBlock(request.getOffset())) {
-        /*
-         * I have observed NFS clients which will send some writes with
-         * a sync flag and some other without a sync flag. I believe this
-         * is when feels the nfs server is responding slow or when
-         * the nfs server sends errors. I know for a fact it will 
-         * will do this during the error condition to try and bubble
-         * the error back up to the writer.
-         * 
-         * However, in the case where we have not received the pre-req writes
-         * we cannot honor the sync flag. This should only occur when the
-         * kernel adds the sync flag to write, not when someone calls fsync
-         * on the stream.
-         * 
-         * We could honor this by queuing this write but it's observed that 
-         * clients (ubuntu 12.10) will stop sending write requests waiting
-         * for the response to the previous requests.
-         */
-        return false;
-      }
-      return false;
-    } catch(NFS4Exception e) {
-      LOGGER.warn("Expection handing wouldBlock. Client error will " +
-          "be returned on call to doHandle", e);
-    } catch(IOException e) {
-      LOGGER.warn("Expection handing wouldBlock. Client error will " +
-          "be returned on call to doHandle", e);
-    }
+    /*
+     * I have observed NFS clients which will send some writes with
+     * a sync flag and some other without a sync flag. I believe this
+     * is when feels the nfs server is responding slow or when
+     * the nfs server sends errors. I know for a fact it will 
+     * will do this during the error condition to try and bubble
+     * the error back up to the writer.
+     * 
+     * However, in the case where we have not received the pre-req writes
+     * we cannot honor the sync flag. This should only occur when the
+     * kernel adds the sync flag to write, not when someone calls fsync
+     * on the stream.
+     * 
+     * We could honor this by queuing this write but it's observed that 
+     * clients (ubuntu 12.10) will stop sending write requests waiting
+     * for the response to the previous requests.
+     */
     return false;
   }
   @Override
@@ -100,9 +79,9 @@ public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITERes
     LOGGER.info(session.getSessionID() + " xid = " + session.getXIDAsHexString() + 
         ", write accepted " + file + " " + request.getOffset());
 
-    WriteOrderHandler writeOrderHandler = hdfsState.getWriteOrderHandler(file, out);
+    WriteOrderHandler writeOrderHandler = hdfsState.getOrCreateWriteOrderHandler(file, out);
     boolean sync = request.getStable() != NFS4_COMMIT_UNSTABLE4;
-    boolean wouldBlock = writeOrderHandler.synchronousWriteWouldBlock(request.getOffset());
+    boolean wouldBlock = writeOrderHandler.writeWouldBlock(request.getOffset());
     if(sync  && wouldBlock) {
       /* 
        * See comment above. In this case, we cannot honor the sync request

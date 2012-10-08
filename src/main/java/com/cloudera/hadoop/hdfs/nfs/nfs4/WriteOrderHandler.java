@@ -59,23 +59,24 @@ public class WriteOrderHandler extends Thread {
   private final List<Integer> mProcessedWrites = Lists.newArrayList();
   private final BlockingQueue<PendingWrite> mWriteQueue = new LinkedBlockingQueue<PendingWrite>();
   private final AtomicLong mExpectedLength = new AtomicLong(0);
-  private final AtomicBoolean mClosed = new AtomicBoolean(false);
+  private volatile boolean mbClosed;
   private IOException mIOException;
   private NFS4Exception mNFSException;
-  private volatile boolean run;
+  private volatile boolean mbRun;
   
   public WriteOrderHandler(File[] tempDirs, HDFSOutputStream outputStream) throws IOException {
     mTempDirs = tempDirs;
     mOutputStream = outputStream;
     mExpectedLength.set(mOutputStream.getPos());
     identifer = UUID.randomUUID().toString();
-    run = true;
+    mbRun = true;
+    mbClosed = false;
   }
 
   @Override
   public void run() {
     try {
-      while (run) {
+      while (mbRun) {
         try {
           PendingWrite write = mWriteQueue.poll(10, TimeUnit.SECONDS);
           if (write == null) {
@@ -108,10 +109,14 @@ public class WriteOrderHandler extends Thread {
     } catch (NFS4Exception e) {
       LOGGER.error("WriteOrderHandler quitting due NFS Exception", e);
       mNFSException = e;
+    } finally {
+      mbRun = false;
     }
   }
+  private boolean isRunningAndOpen() {
+    return mbRun && !mbClosed;
+  }
   // turns out NFS clients will send the same write twice if the write rate is slow
-
   protected void checkWriteState(PendingWrite write) throws NFS4Exception {
     PendingWrite other = mPendingWrites.get(write.getOffset());
     if (other != null && !write.equals(other)) {
@@ -150,7 +155,7 @@ public class WriteOrderHandler extends Thread {
     if (mIOException != null) {
       throw new IOException("IO Error occured in WriteOrderHandler", mIOException);
     }
-    if (!this.isAlive()) {
+    if (!isRunningAndOpen()) {
       throw new NFS4Exception(NFS4ERR_PERM, "WriteOrderHandler is dead");
     }
   }
@@ -174,6 +179,7 @@ public class WriteOrderHandler extends Thread {
    * @throws NFS4Exception thrown if the thread processing writes dies
    */
   public void sync(long offset) throws IOException, NFS4Exception {
+    checkException();
     String pendingWrites;
     synchronized (mPendingWrites) {
       pendingWrites = mPendingWrites.keySet().toString();
@@ -197,7 +203,7 @@ public class WriteOrderHandler extends Thread {
    * @throws IOException
    */
   public boolean syncWouldBlock(long offset) {
-    return synchronousWriteWouldBlock(offset);
+    return writeWouldBlock(offset);
   }
   /**
    * Check to see if a write to offset with sync flag would block
@@ -205,8 +211,8 @@ public class WriteOrderHandler extends Thread {
    * @return true if the write would block
    * @throws IOException
    */
-  public boolean synchronousWriteWouldBlock(long offset) {
-    if(!run) {
+  public boolean writeWouldBlock(long offset) {
+    if(!isRunningAndOpen()) {
       return false;
     }
     if(getCurrentPos() < offset) {
@@ -220,7 +226,7 @@ public class WriteOrderHandler extends Thread {
    * @throws IOException
    */
   public boolean closeWouldBlock() throws IOException {
-    if(!run) {
+    if(!isRunningAndOpen()) {
       return false;
     }
     if(LOGGER.isDebugEnabled()) {
@@ -238,6 +244,9 @@ public class WriteOrderHandler extends Thread {
     }
     return false;
   }
+  public boolean isOpen() {
+    return !mbClosed;
+  }
   public void close() throws IOException, NFS4Exception {
     close(false);
   }
@@ -249,30 +258,38 @@ public class WriteOrderHandler extends Thread {
    * @throws NFS4Exception thrown if the thread processing writes dies
    */
   public void close(boolean force) throws IOException, NFS4Exception {
-    mClosed.set(true);
-    if(!force) {
-      while (closeWouldBlock()) {
-        checkException();
-        pause(1000L);
-        sync(mExpectedLength.get());
-      }      
-    }
-    synchronized (mOutputStream) {
-      mOutputStream.sync();
-      mOutputStream.close();
-    }
-    for(File tempDir : mTempDirs) {
-      File dir = new File(tempDir, identifer);
-      try {
-        PathUtils.fullyDelete(dir);
-      } catch (IOException e) {
-        LOGGER.warn("Unexpected error cleaning up " + dir, e);
+    try {
+      synchronized (this) {
+        if (mbClosed) {
+          throw new IOException("File closed");
+        }
+        mbClosed = true;      
       }
+      if(!force) {
+        while (closeWouldBlock()) {
+          checkException();
+          pause(1000L);
+          sync(mExpectedLength.get());
+        }      
+      }
+      synchronized (mOutputStream) {
+        mOutputStream.sync();
+        mOutputStream.close();
+      }
+      for(File tempDir : mTempDirs) {
+        File dir = new File(tempDir, identifer);
+        try {
+          PathUtils.fullyDelete(dir);
+        } catch (IOException e) {
+          LOGGER.warn("Unexpected error cleaning up " + dir, e);
+        }
+      }
+      checkState(mPendingWrites.isEmpty(), "Pending writes for " + mOutputStream + " at "
+          + mOutputStream.getPos() + " = " + mPendingWrites);
+      LOGGER.info("Closing " + mOutputStream + " at " + mOutputStream.getPos());
+    } finally {
+      mbRun = false;      
     }
-    checkState(mPendingWrites.isEmpty(), "Pending writes for " + mOutputStream + " at "
-        + mOutputStream.getPos() + " = " + mPendingWrites);
-    LOGGER.info("Closing " + mOutputStream + " at " + mOutputStream.getPos());
-    run = false;
   }
 
   public File getTemporaryFile(String name) throws IOException {
@@ -308,9 +325,6 @@ public class WriteOrderHandler extends Thread {
   public int write(PendingWrite write)
       throws IOException, NFS4Exception {
     checkException();
-    if (mClosed.get()) {
-      throw new IOException("File closed");
-    }
     try {
       // check to ensure we haven't already processed this write
       // this happens when writes are retransmitted but not in
@@ -340,7 +354,8 @@ public class WriteOrderHandler extends Thread {
       }
       return write.getLength();
     } catch (InterruptedException e) {
-      throw new IOException("Interrupted While Putting Write", e);
+      Thread.currentThread().interrupt();
+      throw new IOException("Interrupted while putting write", e);
     }
   }
 }

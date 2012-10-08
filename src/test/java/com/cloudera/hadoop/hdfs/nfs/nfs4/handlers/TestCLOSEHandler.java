@@ -32,6 +32,7 @@ import org.junit.Test;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CLOSERequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CLOSEResponse;
 
@@ -39,12 +40,15 @@ public class TestCLOSEHandler extends TestBaseHandler {
 
   private CLOSEHandler handler;
   private CLOSERequest request;
+  private WriteOrderHandler writeOrderHandler;
   
   @Before
   public void setup() throws Exception {
     super.setup();
     handler = new CLOSEHandler();
     request = new CLOSERequest();
+    writeOrderHandler = mock(WriteOrderHandler.class);
+    when(hdfsState.getWriteOrderHandler(currentFileHandle)).thenReturn(writeOrderHandler);
   }
   @Test
   public void testSuccess() throws Exception {
@@ -57,17 +61,17 @@ public class TestCLOSEHandler extends TestBaseHandler {
   }
   @Test
   public void testWouldBlockIOException() throws Exception {
-    when(hdfsState.closeWouldBlock(currentFileHandle)).thenThrow(new IOException());
+    when(writeOrderHandler.closeWouldBlock()).thenThrow(new IOException());
     Assert.assertFalse(handler.wouldBlock(hdfsState, session, request));
   }
   @Test
   public void testWouldBlock() throws Exception {
-    when(hdfsState.closeWouldBlock(currentFileHandle)).thenReturn(true);
+    when(writeOrderHandler.closeWouldBlock()).thenReturn(true);
     Assert.assertTrue(handler.wouldBlock(hdfsState, session, request));
   }
   @Test
   public void testWouldNotBlock() throws Exception {
-    when(hdfsState.closeWouldBlock(currentFileHandle)).thenReturn(false);
+    when(writeOrderHandler.closeWouldBlock()).thenReturn(false);
     Assert.assertFalse(handler.wouldBlock(hdfsState, session, request));
   }
 }

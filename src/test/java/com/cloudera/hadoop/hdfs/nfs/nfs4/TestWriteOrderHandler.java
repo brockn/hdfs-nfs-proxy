@@ -62,7 +62,10 @@ public class TestWriteOrderHandler {
 
   @After
   public void teardown() throws IOException, NFS4Exception {
-    mWriteOrderHandler.close();
+    if(mWriteOrderHandler.isOpen()) {
+      mWriteOrderHandler.close();
+    }
+    mWriteOrderHandler = null;
   }
 
   @Test
@@ -123,7 +126,7 @@ public class TestWriteOrderHandler {
     }
   }
 
-  @Test(expected=IOException.class)
+  @Test(expected=NFS4Exception.class)
   public void testCannotWriteToWhenClosed() throws IOException, NFS4Exception {
     mWriteOrderHandler.close();
     mWriteOrderHandler.write(new MemoryBackedWrite("a file", xid.incrementAndGet(), 0, false, buffer, 0, buffer.length));
@@ -158,9 +161,10 @@ public class TestWriteOrderHandler {
     mWriteOrderHandler.write(new MemoryBackedWrite("a file", xid.incrementAndGet(), 0, true, buffer, 0, buffer.length));
   }
   @Test
-  public void testRetransmit() throws IOException, NFS4Exception {
+  public void testRetransmit() throws Exception {
     int id = xid.incrementAndGet();
     int length = mWriteOrderHandler.write(new MemoryBackedWrite("a file", id, 0, true, buffer, 0, buffer.length));
     assertEquals(length, mWriteOrderHandler.write(new MemoryBackedWrite("a file", id, 0, true, buffer, 0, buffer.length)));
+    Thread.sleep(100L);
   }
 }

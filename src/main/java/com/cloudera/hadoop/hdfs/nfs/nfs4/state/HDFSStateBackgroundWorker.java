@@ -58,9 +58,28 @@ public class HDFSStateBackgroundWorker extends Thread {
         // not interruptible
       }
       long minimumLastOperationTime = System.currentTimeMillis() - mMaxInactivityMS;      
-
       /*
-       * First handle write order handlers since they might be using the streams
+       * We must close inactive streams first so that because in WRITEHandler we use
+       *  the stream to get the WriteOrderHandler and if we remove the handler first
+       *  it's possible a handler for the stream which we are about the close would be
+       *  started. Clearly we need to cleanup this design.
+       */
+      Set<FileHandle> fileHandles;
+      synchronized (mFileHandleMap) {
+        fileHandles = new HashSet<FileHandle>(mFileHandleMap.keySet());
+      }
+      for(FileHandle fileHandle : fileHandles) {
+        HDFSFile file = mFileHandleMap.get(fileHandle);
+        if(file != null && file.isOpen()) {
+          try {
+            file.closeResourcesInactiveSince(minimumLastOperationTime);
+          } catch(Exception ex) {
+            LOGGER.error("Error thrown trying to close inactive resources in " +file, ex);
+          }
+        }
+      }
+      /*
+       * Now remove write order handlers
        */
       Set<HDFSOutputStream> hdfsOutputStreams;
       synchronized (mWriteOrderHandlerMap) {
@@ -81,23 +100,6 @@ public class HDFSStateBackgroundWorker extends Thread {
             }
           }          
         }        
-      }
-      /*
-       * Next handle the streams themselves.
-       */
-      Set<FileHandle> fileHandles;
-      synchronized (mFileHandleMap) {
-        fileHandles = new HashSet<FileHandle>(mFileHandleMap.keySet());
-      }
-      for(FileHandle fileHandle : fileHandles) {
-        HDFSFile file = mFileHandleMap.get(fileHandle);
-        if(file != null && file.isOpen()) {
-          try {
-            file.closeResourcesInactiveSince(minimumLastOperationTime);
-          } catch(Exception ex) {
-            LOGGER.error("Error thrown trying to close inactive resources in " +file, ex);
-          }
-        }
       }
     }
   }
