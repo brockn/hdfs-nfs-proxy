@@ -30,13 +30,14 @@ import org.junit.Before;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
+import com.google.common.base.Charsets;
 
 public class TestBaseHandler {
 
   protected HDFSState hdfsState;
   protected Session session;
   protected FileSystem fs;
-  protected FileHandle currentFileHandle = new FileHandle("current".getBytes());
+  protected FileHandle currentFileHandle = new FileHandle("current".getBytes(Charsets.UTF_8));
   protected FileHandle savedFileHandle = new FileHandle("saved".getBytes());
   protected FileStatus fileStatus;
   protected FileStatus notdir, isdir;

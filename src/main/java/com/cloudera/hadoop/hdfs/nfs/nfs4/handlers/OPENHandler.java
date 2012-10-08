@@ -37,6 +37,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.OPENRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.OPENResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSOutputStream;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
+import com.google.common.base.Strings;
 
 public class OPENHandler extends OperationRequestHandler<OPENRequest, OPENResponse> {
 
@@ -47,6 +48,9 @@ public class OPENHandler extends OperationRequestHandler<OPENRequest, OPENRespon
       OPENRequest request) throws NFS4Exception, IOException, UnsupportedOperationException {
     if (session.getCurrentFileHandle() == null) {
       throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
+    }
+    if (Strings.isNullOrEmpty(request.getName())) {
+      throw new NFS4Exception(NFS4ERR_INVAL);
     }
     switch (request.getAccess()) {
       case NFS4_OPEN4_SHARE_ACCESS_READ:
@@ -82,12 +86,7 @@ public class OPENHandler extends OperationRequestHandler<OPENRequest, OPENRespon
     changeInfo.setChangeIDAfter(changeID);
     changeInfo.setAtomic(true);
     response.setChangeID(changeInfo);
-    response.setResultFlags(NFS4_OPEN4_RESULT_CONFIRM); // TODO do we really need confirm step?
-    //    if(request.getAttrs() != null) {
-    //      Pair<Bitmap, ImmutableList<Attribute>> pair = Attribute.getAttrs(server, session, request.getAttrs(), fs, fileStatus);
-    //      response.setAttrs(pair.getFirst());
-    //      response.setAttrValues(pair.getSecond());
-    //    }
+    response.setResultFlags(NFS4_OPEN4_RESULT_CONFIRM);
     response.setDelgationType(NFS4_CLAIM_NULL);
     response.setStatus(NFS4_OK);
     return response;
@@ -115,13 +114,12 @@ public class OPENHandler extends OperationRequestHandler<OPENRequest, OPENRespon
     changeInfo.setChangeIDAfter(changeID);
     changeInfo.setAtomic(true);
     response.setChangeID(changeInfo);
-    response.setResultFlags(NFS4_OPEN4_RESULT_CONFIRM); // TODO do we really need confirm step?
-    // TODO should be setattr or getattr here? Need to read RFC
+    response.setResultFlags(NFS4_OPEN4_RESULT_CONFIRM);
+    // the request below is SETATTR returning what was actually set
     if (request.getAttrs() != null) {
       //      Attribute.setAttrs(server, session, request.getAttrs(), request.getAttrValues(), fs, fileStatus, stateID);
       //      Pair<Bitmap, ImmutableList<Attribute>> pair = Attribute.getAttrs(server, session, request.getAttrs(), fs, fileStatus);
       //      response.setAttrs(pair.getFirst());
-      //      response.setAttrValues(pair.getSecond());
     }
     response.setDelgationType(NFS4_CLAIM_NULL);
     response.setStatus(NFS4_OK);
