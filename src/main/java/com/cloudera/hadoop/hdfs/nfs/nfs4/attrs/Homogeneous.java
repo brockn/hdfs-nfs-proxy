@@ -19,7 +19,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.attrs;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_HOMOGENEOUS;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 public class Homogeneous extends BooleanAttribute {
   public Homogeneous() {
     super();

@@ -18,9 +18,9 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 import java.lang.reflect.Method;
 

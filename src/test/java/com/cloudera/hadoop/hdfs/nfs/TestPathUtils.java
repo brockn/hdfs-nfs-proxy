@@ -18,7 +18,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import org.apache.hadoop.fs.Path;
 import org.junit.Test;

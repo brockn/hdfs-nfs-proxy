@@ -19,7 +19,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.ROOT_USER_UID;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;

@@ -18,8 +18,8 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_PERM;
-import static com.google.common.base.Preconditions.checkState;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.google.common.base.Preconditions.*;
 
 import java.io.File;
 import java.io.IOException;

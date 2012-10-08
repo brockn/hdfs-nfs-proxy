@@ -19,27 +19,8 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import static com.cloudera.hadoop.hdfs.nfs.TestUtils.copy;
-import static com.cloudera.hadoop.hdfs.nfs.TestUtils.deepEquals;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_CHANGE;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_FILEID;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_FSID;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_LEASE_TIME;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_MAXFILESIZE;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_MAXREAD;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_MAXWRITE;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_MODE;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_NUMLINKS;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_OWNER;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_OWNER_GROUP;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_RAWDEV;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SIZE;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SPACE_USED;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SUPPORTED_ATTRS;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_ACCESS;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_METADATA;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TIME_MODIFY;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_TYPE;
+import static com.cloudera.hadoop.hdfs.nfs.TestUtils.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import org.junit.Test;
 

@@ -19,9 +19,8 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.attrs;
 
-import static com.cloudera.hadoop.hdfs.nfs.TestUtils.copy;
-import static com.cloudera.hadoop.hdfs.nfs.TestUtils.deepEquals;
-import static org.junit.Assert.assertEquals;
+import static com.cloudera.hadoop.hdfs.nfs.TestUtils.*;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 

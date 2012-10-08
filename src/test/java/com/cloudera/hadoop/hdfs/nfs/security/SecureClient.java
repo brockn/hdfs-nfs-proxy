@@ -20,18 +20,9 @@
 
 package com.cloudera.hadoop.hdfs.nfs.security;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.LOCALHOST;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPCSEC_GSS_DATA;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPCSEC_GSS_INIT;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPCSEC_GSS_SERVICE_NONE;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPCSEC_GSS_SERVICE_PRIVACY;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPCSEC_GSS_VERSION;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_ACCEPT_SUCCESS;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_REPLY_STATE_ACCEPT;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_VERSION;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.junit.Assert.assertEquals;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static com.google.common.base.Preconditions.*;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.io.InputStream;

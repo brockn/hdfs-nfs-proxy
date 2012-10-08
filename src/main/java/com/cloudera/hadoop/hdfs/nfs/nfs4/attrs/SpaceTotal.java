@@ -19,7 +19,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.attrs;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_SPACE_TOTAL;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class SpaceTotal extends Attribute {

@@ -19,8 +19,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.USER_ID_MAPPER_CACHE;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.USER_ID_MAPPER_CLASS;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -18,14 +18,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOTSUPP;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_CLAIM_NULL;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OPEN4_CREATE;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OPEN4_RESULT_CONFIRM;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OPEN4_SHARE_ACCESS_READ;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OPEN4_SHARE_ACCESS_WRITE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.io.IOException;
 

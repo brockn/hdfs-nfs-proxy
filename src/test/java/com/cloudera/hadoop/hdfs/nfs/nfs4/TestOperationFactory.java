@@ -18,7 +18,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.util.Set;
 

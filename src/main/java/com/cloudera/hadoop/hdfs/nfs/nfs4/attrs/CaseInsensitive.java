@@ -19,7 +19,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.attrs;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_CASE_INSENSITIVE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 public class CaseInsensitive extends BooleanAttribute {
   public CaseInsensitive() {
     super();

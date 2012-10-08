@@ -19,11 +19,8 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.requests;
 
-import static com.cloudera.hadoop.hdfs.nfs.PathUtils.checkPath;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_CLAIM_NULL;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_CREATE_EXCLUSIVE4;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OPEN4_CREATE;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_OPEN;
+import static com.cloudera.hadoop.hdfs.nfs.PathUtils.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import com.cloudera.hadoop.hdfs.nfs.Pair;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Bitmap;

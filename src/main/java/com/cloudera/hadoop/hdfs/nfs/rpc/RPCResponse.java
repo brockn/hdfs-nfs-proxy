@@ -18,11 +18,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.rpc;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_ACCEPT_STATE_ACCEPT;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_MESSAGE_TYPE_REPLY;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_REJECT_AUTH_ERROR;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_REPLY_STATE_ACCEPT;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_REPLY_STATE_DENIED;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import org.apache.log4j.Logger;
 

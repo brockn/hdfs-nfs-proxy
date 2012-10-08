@@ -18,7 +18,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.security;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_PERM;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import org.apache.log4j.Logger;
 import org.ietf.jgss.GSSContext;

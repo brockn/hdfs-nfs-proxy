@@ -18,12 +18,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_INVAL;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_IO;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOENT;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOTSUPP;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_PERM;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_SERVERFAULT;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;

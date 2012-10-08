@@ -18,13 +18,8 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.state;
 
-import static com.cloudera.hadoop.hdfs.nfs.PathUtils.realPath;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_DENIED;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_FILE_OPEN;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_ISDIR;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_OLD_STATEID;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_PERM;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_STALE;
+import static com.cloudera.hadoop.hdfs.nfs.PathUtils.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.io.File;
 import java.io.IOException;

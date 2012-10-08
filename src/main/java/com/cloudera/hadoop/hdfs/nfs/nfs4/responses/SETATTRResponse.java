@@ -19,7 +19,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.responses;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_SETATTR;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Bitmap;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Status;

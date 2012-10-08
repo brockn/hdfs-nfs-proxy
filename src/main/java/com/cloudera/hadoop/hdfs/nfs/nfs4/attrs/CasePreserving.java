@@ -19,7 +19,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.attrs;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_CASE_PRESERVING;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 public class CasePreserving extends BooleanAttribute {
   public CasePreserving() {
     super();

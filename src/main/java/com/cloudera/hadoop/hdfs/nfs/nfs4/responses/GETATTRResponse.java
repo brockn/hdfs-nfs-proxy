@@ -19,8 +19,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.responses;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_GETATTR;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.util.List;
 import java.util.Map;

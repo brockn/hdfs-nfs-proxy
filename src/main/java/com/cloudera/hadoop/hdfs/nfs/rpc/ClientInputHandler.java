@@ -18,18 +18,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.rpc;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_PROC_COMPOUND;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_PROC_NULL;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_ACCEPT_SUCCESS;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_ACCEPT_SYSTEM_ERR;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_AUTH_STATUS_TOOWEAK;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_MAX_PENDING_REQUESTS;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_REJECT_AUTH_ERROR;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_REJECT_MISMATCH;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_REPLY_STATE_ACCEPT;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_REPLY_STATE_DENIED;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_RETRANSMIT_PENALTY_THRESHOLD;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_VERSION;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.io.EOFException;
 import java.io.InputStream;

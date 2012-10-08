@@ -20,8 +20,7 @@
 package com.cloudera.hadoop.hdfs.nfs.nfs4.attrs;
 
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_DIR;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_REG;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;

@@ -18,8 +18,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.state;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 import java.util.UUID;
 

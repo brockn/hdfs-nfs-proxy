@@ -19,16 +19,9 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_EXIST;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_INVAL;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_IO;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOTSUPP;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_STALE;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_DIR;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_REG;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.when;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 import org.apache.hadoop.fs.Path;
 import org.junit.Before;

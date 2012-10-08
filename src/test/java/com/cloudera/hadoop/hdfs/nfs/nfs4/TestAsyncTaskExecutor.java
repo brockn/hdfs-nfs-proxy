@@ -18,7 +18,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import static org.fest.reflect.core.Reflection.field;
+import static org.fest.reflect.core.Reflection.*;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;

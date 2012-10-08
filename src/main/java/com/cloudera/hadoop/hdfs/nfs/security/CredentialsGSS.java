@@ -19,8 +19,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.security;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPCSEC_GSS_VERSION;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_AUTH_GSS;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;

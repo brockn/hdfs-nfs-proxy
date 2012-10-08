@@ -19,8 +19,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
 import org.apache.hadoop.fs.FileStatus;

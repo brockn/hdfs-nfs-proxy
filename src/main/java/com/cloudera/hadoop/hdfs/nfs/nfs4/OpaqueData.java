@@ -19,7 +19,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OPAQUE_LIMIT;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.util.Arrays;
 

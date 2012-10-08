@@ -18,12 +18,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_BAD_COOKIE;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOTDIR;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_TOOSMALL;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_COOKIE_OFFSET;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.io.IOException;
 import java.util.Arrays;

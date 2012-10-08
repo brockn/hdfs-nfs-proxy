@@ -19,7 +19,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.attrs;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_FATTR4_FILES_FREE;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class FilesFree extends Attribute {

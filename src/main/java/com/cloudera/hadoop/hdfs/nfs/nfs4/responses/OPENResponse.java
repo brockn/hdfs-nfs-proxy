@@ -19,17 +19,14 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.responses;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_OPEN;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
-import com.cloudera.hadoop.hdfs.nfs.Pair;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Bitmap;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.ChangeInfo;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Status;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Attribute;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
-import com.google.common.collect.ImmutableList;
 
 public class OPENResponse extends OperationResponse implements Status {
 

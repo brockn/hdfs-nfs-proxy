@@ -18,9 +18,8 @@
  */
 package com.cloudera.hadoop.hdfs.nfs;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_FILEHANDLE_STORE_FILE;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.USER_ID_MAPPER_CLASS;
-import static org.junit.Assert.assertEquals;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
+import static org.junit.Assert.*;
 
 import java.io.BufferedOutputStream;
 import java.io.File;

@@ -19,7 +19,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.requests;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OP_OPEN_CONFIRM;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;

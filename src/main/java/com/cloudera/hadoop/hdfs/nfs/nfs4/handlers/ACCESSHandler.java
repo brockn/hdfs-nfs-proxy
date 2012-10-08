@@ -18,15 +18,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_NOFILEHANDLE;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4ERR_SERVERFAULT;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_ACCESS_DELETE;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_ACCESS_EXECUTE;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_ACCESS_EXTEND;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_ACCESS_LOOKUP;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_ACCESS_MODIFY;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS_ACCESS_READ;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;

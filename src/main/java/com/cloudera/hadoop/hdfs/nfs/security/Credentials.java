@@ -18,9 +18,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.security;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_AUTH_GSS;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_AUTH_NULL;
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.RPC_AUTH_UNIX;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
