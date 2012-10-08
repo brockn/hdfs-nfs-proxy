@@ -55,6 +55,15 @@ public class TestUtils {
     tmpDirPath = System.getProperty("java.io.tmpdir");
     tmpDirPathForTest = tmpDirPath + File.separator
         + "TestDir" + (new Date()).getTime();
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      public void run() {
+        try {
+          PathUtils.fullyDelete(new File(tmpDirPathForTest));
+        } catch (IOException e) {
+
+        }
+      }
+    });
   }
 
   public static Configuration setupConf() throws IOException {

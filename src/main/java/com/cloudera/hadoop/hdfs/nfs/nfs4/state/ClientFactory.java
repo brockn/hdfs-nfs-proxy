@@ -38,7 +38,7 @@ public class ClientFactory {
   }
   public synchronized Client createIfNotExist(ClientID clientID) {
     if(mClientMap.containsKey(clientID.getOpaqueID())) {
-      return mClientMap.get(clientID.getOpaqueID());
+      return null;
     }
     Client client = new Client(clientID);
     mClientMap.put(clientID.getOpaqueID(), client);

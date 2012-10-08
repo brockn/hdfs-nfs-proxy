@@ -24,6 +24,8 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.NFS4_OK;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
+import java.util.UUID;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -59,7 +61,7 @@ public class TestRENEWHandler extends TestBaseHandler {
   public void testKnownClientID() throws Exception {
     ClientFactory clientFactory = hdfsState.getClientFactory();
     ClientID clientID = new ClientID();
-    clientID.setOpaqueID(new OpaqueData("id".getBytes(Charsets.UTF_8)));
+    clientID.setOpaqueID(new OpaqueData(UUID.randomUUID().toString().getBytes(Charsets.UTF_8)));
     Client client = clientFactory.createIfNotExist(clientID);
     request.setClientID(client.getShorthandID());
     Status response = handler.handle(hdfsState, session, request);
