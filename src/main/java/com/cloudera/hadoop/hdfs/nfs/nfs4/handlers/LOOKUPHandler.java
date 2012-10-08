@@ -35,6 +35,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.LOOKUPRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.LOOKUPResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
+import com.google.common.base.Strings;
 
 public class LOOKUPHandler extends OperationRequestHandler<LOOKUPRequest, LOOKUPResponse> {
 
@@ -46,7 +47,7 @@ public class LOOKUPHandler extends OperationRequestHandler<LOOKUPRequest, LOOKUP
     if (session.getCurrentFileHandle() == null) {
       throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
     }
-    if ("".equals(request.getName())) {
+    if (Strings.isNullOrEmpty(request.getName())) {
       throw new NFS4Exception(NFS4ERR_INVAL);
     }
     Path parentPath = hdfsState.getPath(session.getCurrentFileHandle());
