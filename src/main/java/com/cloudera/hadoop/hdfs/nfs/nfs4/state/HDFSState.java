@@ -75,7 +75,8 @@ public class HDFSState {
   private final File[] mTempDirs;
   private final HDFSStateBackgroundWorker mHDFSStateBackgroundWorker;
   
-  public HDFSState(FileHandleStore fileHandleStore, String[] tempDirs, Metrics metrics) throws IOException {
+  public HDFSState(FileHandleStore fileHandleStore, String[] tempDirs, Metrics metrics, 
+      long maxInactiveOpenFileTime) throws IOException {
     mFileHandleStore = fileHandleStore;
     mTempDirs = new File[tempDirs.length];
     for (int i = 0; i < tempDirs.length; i++) {
@@ -85,7 +86,7 @@ public class HDFSState {
     }
     mMetrics = metrics;
     mHDFSStateBackgroundWorker = new HDFSStateBackgroundWorker(mWriteOrderHandlerMap, 
-        mFileHandleMap, 60L * 1000L, 60L * 1000L * 30L);
+        mFileHandleMap, 60L * 1000L, maxInactiveOpenFileTime);
     mHDFSStateBackgroundWorker.setDaemon(true);
     mHDFSStateBackgroundWorker.start();
 

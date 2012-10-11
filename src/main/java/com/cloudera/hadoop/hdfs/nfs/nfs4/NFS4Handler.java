@@ -23,6 +23,7 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -70,8 +71,11 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     mConfiguration = configuration;
     mMetrics = new Metrics();
     mTempDirs = configuration.getStrings(TEMP_DIRECTORIES, Files.createTempDir().getAbsolutePath());
-    FileHandleStore fileHandleStore = FileHandleStore.get(configuration);
-    mHDFSState = new HDFSState(fileHandleStore, mTempDirs, mMetrics);    
+    FileHandleStore fileHandleStore = FileHandleStore.get(configuration);    
+    long maxInactiveOpenFileTime = configuration.getInt(MAX_OPEN_FILE_INACTIVITY_PERIOD, 
+        DEFAULT_MAX_OPEN_FILE_INACTIVITY_PERIOD);
+    maxInactiveOpenFileTime = TimeUnit.MILLISECONDS.convert(maxInactiveOpenFileTime, TimeUnit.MINUTES);
+    mHDFSState = new HDFSState(fileHandleStore, mTempDirs, mMetrics, maxInactiveOpenFileTime);    
     executor = new AsyncTaskExecutor<CompoundResponse>();
   }
   public void shutdown() throws IOException {

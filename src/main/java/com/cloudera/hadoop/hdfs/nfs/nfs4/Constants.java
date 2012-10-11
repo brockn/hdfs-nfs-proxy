@@ -374,5 +374,9 @@ public class Constants {
   public static final String RPC_RETRANSMIT_PENALTY_THRESHOLD = "hdfs.nfs.rpcworker.restransmit.penalty.threshold";
 
   public static final String TEMP_DIRECTORIES = "hdfs.nfs.temp.dirs";
+  
+  public static final String MAX_OPEN_FILE_INACTIVITY_PERIOD = "hdfs.nfs.temp.dirs";
+  
+  public static final int DEFAULT_MAX_OPEN_FILE_INACTIVITY_PERIOD = 30;
 
 }

@@ -66,7 +66,7 @@ public class TestHDFSState {
     metrics = new Metrics();
     tempDirs = new String[1];
     tempDirs[0] = Files.createTempDir().getAbsolutePath();
-    hdfsState = new HDFSState(new MemoryFileHandleStore(), tempDirs, metrics);    
+    hdfsState = new HDFSState(new MemoryFileHandleStore(), tempDirs, metrics, 30);    
     stateID1 = new StateID();
     OpaqueData12 opaque = new OpaqueData12();
     opaque.setData("1".getBytes(Charsets.UTF_8));
