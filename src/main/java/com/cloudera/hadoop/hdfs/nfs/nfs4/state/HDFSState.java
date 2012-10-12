@@ -68,7 +68,7 @@ public class HDFSState {
   /**
    * Synchronized on the map itself
    */
-  private final Map<HDFSOutputStream, WriteOrderHandler> mWriteOrderHandlerMap = Maps.newHashMap();
+  private final Map<FileHandle, WriteOrderHandler> mWriteOrderHandlerMap = Maps.newHashMap();
   private final FileHandleStore mFileHandleStore;
   private final Metrics mMetrics;
   private final File[] mTempDirs;
@@ -261,7 +261,7 @@ public class HDFSState {
       }
       file.setSequenceID(seqID);
       synchronized (mWriteOrderHandlerMap) {
-        writeOrderHandler = mWriteOrderHandlerMap.remove(file.get());
+        writeOrderHandler = mWriteOrderHandlerMap.remove(fileHandle);
       }
     }
     if (writeOrderHandler != null) {
@@ -378,32 +378,32 @@ public class HDFSState {
    * @throws IOException of the output stream throws an IO Exception while
    * creating the WriteOrderHandler.
    */
-  public WriteOrderHandler getOrCreateWriteOrderHandler(String name,
-      HDFSOutputStream out) throws IOException {
+  public WriteOrderHandler getOrCreateWriteOrderHandler(FileHandle fileHandle) 
+      throws IOException, NFS4Exception {
     WriteOrderHandler writeOrderHandler;
     synchronized (mWriteOrderHandlerMap) {
-      writeOrderHandler = mWriteOrderHandlerMap.get(out);
+      writeOrderHandler = getWriteOrderHandler(fileHandle);
       if (writeOrderHandler == null) {
-        writeOrderHandler = new WriteOrderHandler(mTempDirs, out);
+        HDFSFile hdfsFile = mFileHandleMap.get(fileHandle);
+        if (hdfsFile == null) {
+          throw new NFS4Exception(NFS4ERR_STALE);
+        }
+        OpenResource<HDFSOutputStream> file = hdfsFile.getHDFSOutputStream();
+        Preconditions.checkState(file != null);
+        writeOrderHandler = new WriteOrderHandler(mTempDirs, file.get());
         writeOrderHandler.setDaemon(true);
-        writeOrderHandler.setName("WriteOrderHandler-" + name);
+        writeOrderHandler.setName("WriteOrderHandler-" + getPath(fileHandle));
         writeOrderHandler.start();
-        mWriteOrderHandlerMap.put(out, writeOrderHandler);
+        mWriteOrderHandlerMap.put(fileHandle, writeOrderHandler);
       }
     }
     return writeOrderHandler;
   }
 
-  public synchronized WriteOrderHandler getWriteOrderHandler(FileHandle fileHandle) {
-    HDFSFile fileHolder = mFileHandleMap.get(fileHandle);
-    if (fileHolder != null) {
-      OpenResource<HDFSOutputStream> file = fileHolder.getHDFSOutputStreamForWrite();
-      if (file != null) {
-        synchronized (mWriteOrderHandlerMap) {
-          if (mWriteOrderHandlerMap.containsKey(file.get())) {
-            return mWriteOrderHandlerMap.get(file.get());
-          }
-        }
+  public WriteOrderHandler getWriteOrderHandler(FileHandle fileHandle) {
+    synchronized (mWriteOrderHandlerMap) {
+      if (mWriteOrderHandlerMap.containsKey(fileHandle)) {
+        return mWriteOrderHandlerMap.get(fileHandle);
       }
     }
     return null;

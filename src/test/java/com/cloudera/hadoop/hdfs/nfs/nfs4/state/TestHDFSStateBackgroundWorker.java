@@ -33,12 +33,13 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
 public class TestHDFSStateBackgroundWorker {
 
-  private Map<HDFSOutputStream, WriteOrderHandler> writerOrderHandlerMap;
+  private Map<FileHandle, WriteOrderHandler> writerOrderHandlerMap;
   private  ConcurrentMap<FileHandle, HDFSFile> fileHandleMap;
   private HDFSStateBackgroundWorker worker;
   
@@ -58,7 +59,9 @@ public class TestHDFSStateBackgroundWorker {
     writeOrderHandler = mock(WriteOrderHandler.class);
     fileHandle = new FileHandle("fh".getBytes(Charsets.UTF_8));
     hdfsFile = mock(HDFSFile.class);
-    
+    fileHandleMap.put(fileHandle, hdfsFile);
+    when(hdfsFile.getHDFSOutputStream()).
+      thenReturn(new OpenResource<HDFSOutputStream>(new StateID(), out));
     interval = 5L;
     maxInactivity = 10L;
     worker = new HDFSStateBackgroundWorker(writerOrderHandlerMap, fileHandleMap, interval, maxInactivity);
@@ -90,11 +93,11 @@ public class TestHDFSStateBackgroundWorker {
       }
     });
     synchronized (writerOrderHandlerMap) {
-      writerOrderHandlerMap.put(out, writeOrderHandler);
+      writerOrderHandlerMap.put(fileHandle, writeOrderHandler);
     }
     Thread.sleep(maxInactivity * 2);
     synchronized (writerOrderHandlerMap) {
-      Assert.assertTrue(writerOrderHandlerMap.containsKey(out));
+      Assert.assertTrue(writerOrderHandlerMap.containsKey(fileHandle));
     }
     verify(writeOrderHandler, never()).close(true);
   }
@@ -102,11 +105,11 @@ public class TestHDFSStateBackgroundWorker {
   public void testDoesRemoveInactiveWriters() throws Exception {
     when(out.getLastOperation()).thenReturn(System.currentTimeMillis());
     synchronized (writerOrderHandlerMap) {
-      writerOrderHandlerMap.put(out, writeOrderHandler);
+      writerOrderHandlerMap.put(fileHandle, writeOrderHandler);
     }
     Thread.sleep(maxInactivity * 4);
     synchronized (writerOrderHandlerMap) {
-      Assert.assertFalse(writerOrderHandlerMap.containsKey(out));
+      Assert.assertFalse(writerOrderHandlerMap.containsKey(fileHandle));
     }
     verify(writeOrderHandler).close(true);
   }

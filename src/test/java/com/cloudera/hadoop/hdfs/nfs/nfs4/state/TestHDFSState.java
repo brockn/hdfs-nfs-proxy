@@ -214,13 +214,13 @@ public class TestHDFSState {
 
   @Test
   public void testGetWriteOrderHandler() throws Exception {
-    HDFSOutputStream out1 = hdfsState.forWrite(stateID1, fs, fileFileHandle, false);  
-    WriteOrderHandler writeOrderHandler1 = hdfsState.getOrCreateWriteOrderHandler("test", out1);
-    WriteOrderHandler writeOrderHandler2 = hdfsState.getOrCreateWriteOrderHandler("test", out1);
+    hdfsState.forWrite(stateID1, fs, fileFileHandle, false);  
+    WriteOrderHandler writeOrderHandler1 = hdfsState.getOrCreateWriteOrderHandler(fileFileHandle);
+    WriteOrderHandler writeOrderHandler2 = hdfsState.getOrCreateWriteOrderHandler(fileFileHandle);
     Assert.assertSame(writeOrderHandler1, writeOrderHandler2);
     FileHandle fileFileHandle2 = fileFileHandle = hdfsState.createFileHandle(new Path("file2"));;
-    HDFSOutputStream out2 = hdfsState.forWrite(stateID1, fs, fileFileHandle2, false); 
-    WriteOrderHandler writeOrderHandler3 = hdfsState.getOrCreateWriteOrderHandler("test", out2);
+    hdfsState.forWrite(stateID1, fs, fileFileHandle2, false); 
+    WriteOrderHandler writeOrderHandler3 = hdfsState.getOrCreateWriteOrderHandler(fileFileHandle);
     Assert.assertNotSame(writeOrderHandler1, writeOrderHandler3);
   }
   @Test
@@ -233,8 +233,8 @@ public class TestHDFSState {
   }
   @Test
   public void testGetWriteOrderHandlerByFileHandle() throws Exception {
-    HDFSOutputStream out1 = hdfsState.forWrite(stateID1, fs, fileFileHandle, false);  
-    WriteOrderHandler writeOrderHandler1 = hdfsState.getOrCreateWriteOrderHandler("test", out1);
+    hdfsState.forWrite(stateID1, fs, fileFileHandle, false);  
+    WriteOrderHandler writeOrderHandler1 = hdfsState.getOrCreateWriteOrderHandler(fileFileHandle);
     WriteOrderHandler writeOrderHandler2 = hdfsState.getWriteOrderHandler(fileFileHandle);
     Assert.assertSame(writeOrderHandler1, writeOrderHandler2);
   }

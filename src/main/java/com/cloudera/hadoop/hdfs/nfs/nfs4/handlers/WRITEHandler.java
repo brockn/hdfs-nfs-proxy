@@ -79,7 +79,7 @@ public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITERes
     LOGGER.info(session.getSessionID() + " xid = " + session.getXIDAsHexString() + 
         ", write accepted " + file + " " + request.getOffset());
 
-    WriteOrderHandler writeOrderHandler = hdfsState.getOrCreateWriteOrderHandler(file, out);
+    WriteOrderHandler writeOrderHandler = hdfsState.getOrCreateWriteOrderHandler(session.getCurrentFileHandle());
     boolean sync = request.getStable() != NFS4_COMMIT_UNSTABLE4;
     boolean wouldBlock = writeOrderHandler.writeWouldBlock(request.getOffset());
     if(sync  && wouldBlock) {

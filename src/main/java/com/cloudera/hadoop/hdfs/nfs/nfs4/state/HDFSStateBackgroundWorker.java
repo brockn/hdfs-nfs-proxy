@@ -28,17 +28,18 @@ import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
+import com.google.common.base.Preconditions;
 
 public class HDFSStateBackgroundWorker extends Thread {
   protected static final Logger LOGGER = Logger.getLogger(HDFSStateBackgroundWorker.class);
   
   private final ConcurrentMap<FileHandle, HDFSFile> mFileHandleMap;
-  private final Map<HDFSOutputStream, WriteOrderHandler> mWriteOrderHandlerMap;
+  private final Map<FileHandle, WriteOrderHandler> mWriteOrderHandlerMap;
   private final long mIntervalMS;
   private final long mMaxInactivityMS;
   private volatile boolean run;
   
-  public HDFSStateBackgroundWorker(Map<HDFSOutputStream, WriteOrderHandler> writeOrderHandlerMap,
+  public HDFSStateBackgroundWorker(Map<FileHandle, WriteOrderHandler> writeOrderHandlerMap,
       ConcurrentMap<FileHandle, HDFSFile> fileHandleMap, long intervalMS, long maxInactivityMS) {
     mWriteOrderHandlerMap = writeOrderHandlerMap;
     mFileHandleMap = fileHandleMap;
@@ -81,25 +82,31 @@ public class HDFSStateBackgroundWorker extends Thread {
       /*
        * Now remove write order handlers
        */
-      Set<HDFSOutputStream> hdfsOutputStreams;
       synchronized (mWriteOrderHandlerMap) {
-        hdfsOutputStreams = new HashSet<HDFSOutputStream>(mWriteOrderHandlerMap.keySet());
+        fileHandles = new HashSet<FileHandle>(mWriteOrderHandlerMap.keySet());
       }
-      for(HDFSOutputStream out : hdfsOutputStreams) {
-        if(out.getLastOperation() < minimumLastOperationTime) {
-          LOGGER.error("File " + out + " has not been used since " + out.getLastOperation());
-          WriteOrderHandler writeOrderHandler;
-          synchronized (mWriteOrderHandlerMap) {
-            writeOrderHandler = mWriteOrderHandlerMap.remove(out);
-          }
-          if(writeOrderHandler != null) {
-            try {
-              writeOrderHandler.close(true);
-            } catch (Exception e) {
-              LOGGER.error("Error thrown trying to close " + out, e);
+      for(FileHandle fileHandle : fileHandles) {
+        HDFSFile file = mFileHandleMap.get(fileHandle);
+        Preconditions.checkState(file != null);
+        OpenResource<HDFSOutputStream> resource = file.getHDFSOutputStream();
+        System.out.println(file + " " + resource);
+        if(resource != null) {
+          HDFSOutputStream out = resource.get();
+          if(out.getLastOperation() < minimumLastOperationTime) {
+            LOGGER.error("File " + out + " has not been used since " + out.getLastOperation());
+            WriteOrderHandler writeOrderHandler;
+            synchronized (mWriteOrderHandlerMap) {
+              writeOrderHandler = mWriteOrderHandlerMap.remove(fileHandle);
             }
-          }          
-        }        
+            if(writeOrderHandler != null) {
+              try {
+                writeOrderHandler.close(true);
+              } catch (Exception e) {
+                LOGGER.error("Error thrown trying to close " + out, e);
+              }
+            }
+          }
+        }
       }
     }
   }

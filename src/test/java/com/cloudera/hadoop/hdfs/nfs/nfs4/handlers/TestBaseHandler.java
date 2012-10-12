@@ -22,13 +22,17 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.permission.FsPermission;
 import org.junit.Before;
 
+import com.cloudera.hadoop.hdfs.nfs.TestUtils;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 import com.google.common.base.Charsets;
 
@@ -40,7 +44,9 @@ public class TestBaseHandler {
   protected FileHandle currentFileHandle = new FileHandle("current".getBytes(Charsets.UTF_8));
   protected FileHandle savedFileHandle = new FileHandle("saved".getBytes());
   protected FileStatus fileStatus;
+  protected FsPermission filePermissions;
   protected FileStatus notdir, isdir;
+  protected Configuration configuration;
 
   @Before
   public void setup() throws Exception {
@@ -48,16 +54,24 @@ public class TestBaseHandler {
     session = mock(Session.class);
     fs = mock(FileSystem.class);
     fileStatus = mock(FileStatus.class);
+    filePermissions = mock(FsPermission.class);
+    configuration = new Configuration();
+    when(fileStatus.getPermission()).thenReturn(filePermissions);
     when(fs.getFileStatus(any(Path.class))).thenReturn(fileStatus);
     when(session.getFileSystem()).thenReturn(fs);
     when(hdfsState.getPath(currentFileHandle)).thenReturn(new Path("/"));
     when(session.getCurrentFileHandle()).thenReturn(currentFileHandle);
-    
+    when(session.getConfiguration()).thenReturn(configuration);
     notdir = mock(FileStatus.class);
     when(notdir.isDir()).thenReturn(false);
     
     isdir = mock(FileStatus.class);
     when(isdir.isDir()).thenReturn(true);
+    
+    CompoundRequest compoundRequest = new CompoundRequest();
+    when(session.getCompoundRequest()).thenReturn(compoundRequest);
+    compoundRequest.setCredentials(TestUtils.newCredentials());
+
   }
 
 }
