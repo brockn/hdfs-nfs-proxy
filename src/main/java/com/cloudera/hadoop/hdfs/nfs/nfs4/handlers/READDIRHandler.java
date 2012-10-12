@@ -78,8 +78,9 @@ public class READDIRHandler extends OperationRequestHandler<READDIRRequest, READ
       cookie++;
     }
     long requestVerifer = Bytes.toLong(request.getCookieVerifer().getData());
-    if ((requestVerifer > 0 && verifer != requestVerifer)
-        || (cookie > 0 && cookie > (fileStati.length + NFS4_COOKIE_OFFSET))) {
+    if ((requestVerifer != 0 && verifer != requestVerifer)
+        || (cookie != 0 && (cookie > (fileStati.length + NFS4_COOKIE_OFFSET) ||
+            cookie < NFS4_COOKIE_OFFSET))) {
       LOGGER.warn("BAD COOKIE verifier = " + verifer + ", request.getVerifier() = "
           + requestVerifer + ", cookie = " + cookie + ", dirLength = " + fileStati.length);
       throw new NFS4Exception(NFS4ERR_BAD_COOKIE);

@@ -150,8 +150,9 @@ public class TestWriteOrderHandler {
   }
 
   @Test
-  public void testSyncIsCalledForSyncWrite() throws IOException, NFS4Exception {
+  public void testSyncIsCalledForSyncWrite() throws Exception {
     mWriteOrderHandler.write(new MemoryBackedWrite("a file", xid.incrementAndGet(), 0, true, buffer, 0, buffer.length));
+    Thread.sleep(100L);
     verify(mOutputStream, atLeastOnce()).sync();
   }
 

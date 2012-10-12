@@ -31,7 +31,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -252,7 +251,7 @@ public class HDFSState {
       } else {
         LOGGER.info(sessionID + " Closing " + hdfsFile.getPath()
             + " for read");
-        file = hdfsFile.getFSDataInputStream(stateID);
+        file = hdfsFile.getInputStream(stateID);
       }
       if (file == null) {
         throw new NFS4Exception(NFS4ERR_OLD_STATEID);
@@ -301,7 +300,7 @@ public class HDFSState {
       if (fileHolder.isOpenForWrite()) {
         file = fileHolder.getHDFSOutputStreamForWrite();
       } else {
-        file = fileHolder.getFSDataInputStream(stateID);
+        file = fileHolder.getInputStream(stateID);
       }
       if (file == null) {
         throw new NFS4Exception(NFS4ERR_OLD_STATEID);
@@ -342,7 +341,7 @@ public class HDFSState {
    * not confirmed or the file handle is stale.
    * @throws IOException if the file open throws an IOException
    */
-  public synchronized FSDataInputStream forRead(StateID stateID, FileSystem fs,
+  public synchronized HDFSInputStream forRead(StateID stateID, FileSystem fs,
       FileHandle fileHandle) throws NFS4Exception, IOException {
     HDFSFile fileHolder = mFileHandleMap.get(fileHandle);
     if (fileHolder != null) {
@@ -351,7 +350,7 @@ public class HDFSState {
         // should be _LOCK?
       }
       Path path = new Path(fileHolder.getPath());
-      OpenResource<FSDataInputStream> file = fileHolder.getFSDataInputStream(stateID);
+      OpenResource<HDFSInputStream> file = fileHolder.getInputStream(stateID);
       if (file != null) {
         if (!file.isConfirmed()) {
           throw new NFS4Exception(NFS4ERR_DENIED);
@@ -362,9 +361,9 @@ public class HDFSState {
       if (status.isDir()) {
         throw new NFS4Exception(NFS4ERR_ISDIR);
       }
-      FSDataInputStream in = fs.open(path);
+      HDFSInputStream in = new HDFSInputStream(fs.open(path));
       mMetrics.incrementMetric("FILES_OPENED_READ", 1);
-      fileHolder.putFSDataInputStream(stateID, in);
+      fileHolder.putInputStream(stateID, in);
       return in;
     }
     throw new NFS4Exception(NFS4ERR_STALE);

@@ -56,7 +56,7 @@ public class TestHDFSState {
   private Path file;
   private FileHandle fileFileHandle;
   private FSDataOutputStream out;
-  private FSDataInputStream in;
+  private FSDataInputStream fsInputStream;
   private Path dir;
   private FileHandle dirFileHandle;
   private String[] tempDirs;
@@ -79,12 +79,12 @@ public class TestHDFSState {
     fileStatus = mock(FileStatus.class);
     when(fs.getFileStatus(any(Path.class))).thenReturn(fileStatus);
     out = mock(FSDataOutputStream.class);
-    in = mock(FSDataInputStream.class);
+    fsInputStream = mock(FSDataInputStream.class);
     file = new Path("file");
     dir = new Path("dir");
     fileFileHandle = hdfsState.createFileHandle(file);
     when(fs.create(any(Path.class), any(Boolean.class))).thenReturn(out);
-    when(fs.open(any(Path.class))).thenReturn(in);
+    when(fs.open(any(Path.class))).thenReturn(fsInputStream);
     dirFileHandle = hdfsState.createFileHandle(dir);
   }
   @After
@@ -270,7 +270,8 @@ public class TestHDFSState {
   }
   @Test
   public void testForReadUncomfired() throws Exception {
-    Assert.assertSame(in, hdfsState.forRead(stateID1, fs, fileFileHandle));
+    Assert.assertSame(fsInputStream, 
+        hdfsState.forRead(stateID1, fs, fileFileHandle).getFSDataInputStream());
     try {
       hdfsState.forRead(stateID1, fs, fileFileHandle);
       Assert.fail();
@@ -280,9 +281,11 @@ public class TestHDFSState {
   }
   @Test
   public void testForRead() throws Exception {
-    Assert.assertSame(in, hdfsState.forRead(stateID1, fs, fileFileHandle));
+    Assert.assertSame(fsInputStream, 
+        hdfsState.forRead(stateID1, fs, fileFileHandle).getFSDataInputStream());
     StateID stateIDConfimed = hdfsState.confirm(stateID1, 1, fileFileHandle);
-    Assert.assertSame(in, hdfsState.forRead(stateIDConfimed, fs, fileFileHandle));
+    Assert.assertSame(fsInputStream,
+        hdfsState.forRead(stateIDConfimed, fs, fileFileHandle).getFSDataInputStream());
   }
   @Test
   public void testConfirmUnKnownFileHandle() throws Exception {
@@ -319,7 +322,8 @@ public class TestHDFSState {
   }
   @Test
   public void testIsFileOpenRead() throws Exception {
-    Assert.assertSame(in, hdfsState.forRead(stateID1, fs, fileFileHandle));
+    Assert.assertSame(fsInputStream, 
+        hdfsState.forRead(stateID1, fs, fileFileHandle).getFSDataInputStream());
     Assert.assertTrue(hdfsState.isFileOpen(file));
   }
   @Test
@@ -356,10 +360,11 @@ public class TestHDFSState {
   }
   @Test
   public void testCloseRead() throws Exception {
-    Assert.assertSame(in, hdfsState.forRead(stateID1, fs, fileFileHandle));
+    Assert.assertSame(fsInputStream,
+        hdfsState.forRead(stateID1, fs, fileFileHandle).getFSDataInputStream());
     StateID stateID = hdfsState.close("test", stateID1, 2, fileFileHandle);
     Assert.assertEquals(stateID1, stateID);
-    verify(in).close();
+    verify(fsInputStream).close();
   }
   @Test
   public void testClose() throws Exception {

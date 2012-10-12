@@ -22,7 +22,6 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.io.IOException;
 
-import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -32,6 +31,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.READRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.READResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSInputStream;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class READHandler extends OperationRequestHandler<READRequest, READResponse> {
@@ -51,7 +51,7 @@ public class READHandler extends OperationRequestHandler<READRequest, READRespon
     FileHandle fileHandle = session.getCurrentFileHandle();
     Path path = hdfsState.getPath(fileHandle);
     FileSystem fs = session.getFileSystem();
-    FSDataInputStream inputStream = hdfsState.forRead(request.getStateID(), fs, fileHandle);
+    HDFSInputStream inputStream = hdfsState.forRead(request.getStateID(), fs, fileHandle);
     synchronized (inputStream) {
       if (inputStream.getPos() != request.getOffset()) {
         try {

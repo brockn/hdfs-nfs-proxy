@@ -22,7 +22,6 @@ import static org.mockito.Mockito.*;
 
 import java.util.UUID;
 
-import org.apache.hadoop.fs.FSDataInputStream;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,7 +41,7 @@ public class TestHDFSFile {
   private StateID stateID;
   
   private HDFSOutputStream out;
-  private FSDataInputStream in;
+  private HDFSInputStream in;
   
   @Before
   public void setup() throws Exception {
@@ -57,7 +56,7 @@ public class TestHDFSFile {
     stateID.setData(opaque);
     
     out = mock(HDFSOutputStream.class);
-    in = mock(FSDataInputStream.class);
+    in = mock(HDFSInputStream.class);
   }
   
   @Test
@@ -67,7 +66,7 @@ public class TestHDFSFile {
     Assert.assertSame(fileID, hdfsFile.getFileID());
     Assert.assertNull(hdfsFile.getHDFSOutputStream());
     Assert.assertNull(hdfsFile.getHDFSOutputStreamForWrite());
-    Assert.assertNull(hdfsFile.getFSDataInputStream(new StateID()));
+    Assert.assertNull(hdfsFile.getInputStream(new StateID()));
     hdfsFile.toString();
   }
   @Test
@@ -91,8 +90,8 @@ public class TestHDFSFile {
   
   @Test
   public void testInputStream() throws Exception {
-    hdfsFile.putFSDataInputStream(stateID, in);
-    Assert.assertSame(in, hdfsFile.getFSDataInputStream(stateID).get());
+    hdfsFile.putInputStream(stateID, in);
+    Assert.assertSame(in, hdfsFile.getInputStream(stateID).get());
     Assert.assertTrue(hdfsFile.isOpen());
     Assert.assertTrue(hdfsFile.isOpenForRead());
     Assert.assertFalse(hdfsFile.isOpenForWrite());
@@ -102,12 +101,12 @@ public class TestHDFSFile {
   
   @Test
   public void testTimestamp() throws Exception {
-    hdfsFile.putFSDataInputStream(stateID, in);
+    hdfsFile.putInputStream(stateID, in);
     hdfsFile.setHDFSOutputStream(stateID, out);
-    long inputLastUsedBefore = hdfsFile.getFSDataInputStream(stateID).getTimestamp();
+    long inputLastUsedBefore = hdfsFile.getInputStream(stateID).getTimestamp();
     long outputLastUsedBefore = hdfsFile.getHDFSOutputStreamForWrite().getTimestamp();
     Thread.sleep(1001L);
-    long inputLastUsedAfter = hdfsFile.getFSDataInputStream(stateID).getTimestamp();
+    long inputLastUsedAfter = hdfsFile.getInputStream(stateID).getTimestamp();
     long outputLastUsedAfter = hdfsFile.getHDFSOutputStreamForWrite().getTimestamp();
     Assert.assertTrue(inputLastUsedAfter - inputLastUsedBefore >= 1000);
     Assert.assertTrue(outputLastUsedAfter - outputLastUsedBefore >= 1000);

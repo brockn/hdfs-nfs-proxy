@@ -23,8 +23,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.hadoop.fs.FSDataInputStream;
-
 import com.cloudera.hadoop.hdfs.nfs.Pair;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
@@ -38,7 +36,7 @@ public class HDFSFile {
   private final FileHandle mFileHandle;
   private final String mPath;
   private final long mFileID;
-  private final Map<StateID, OpenResource<FSDataInputStream>> mInputStreams = Maps.newHashMap();
+  private final Map<StateID, OpenResource<HDFSInputStream>> mInputStreams = Maps.newHashMap();
   private Pair<StateID, OpenResource<HDFSOutputStream>> mOutputStream;
 
   public HDFSFile(FileHandle fileHandle, String path, long fileID) {
@@ -47,19 +45,19 @@ public class HDFSFile {
     this.mFileID = fileID;
   }
 
-  public synchronized OpenResource<FSDataInputStream> getFSDataInputStream(StateID stateID) {
+  public synchronized OpenResource<HDFSInputStream> getInputStream(StateID stateID) {
     if (mInputStreams.containsKey(stateID)) {
-      OpenResource<FSDataInputStream> file = mInputStreams.get(stateID);
+      OpenResource<HDFSInputStream> file = mInputStreams.get(stateID);
       file.setTimestamp(System.currentTimeMillis());
       return file;
     }
     return null;
   }
 
-  public synchronized void putFSDataInputStream(StateID stateID,
-      FSDataInputStream fsDataInputStream) {
-    mInputStreams.put(stateID, new OpenResource<FSDataInputStream>(stateID,
-        fsDataInputStream));
+  public synchronized void putInputStream(StateID stateID,
+      HDFSInputStream inputStream) {
+    mInputStreams.put(stateID, new OpenResource<HDFSInputStream>(stateID,
+        inputStream));
   }
 
   public synchronized boolean isOpen() {
@@ -121,8 +119,8 @@ public class HDFSFile {
       }
     }
   }
-  public synchronized void setHDFSOutputStream(StateID stateID, HDFSOutputStream fsDataOutputStream) {
-    mOutputStream = Pair.of(stateID, new OpenResource<HDFSOutputStream>(stateID, fsDataOutputStream));
+  public synchronized void setHDFSOutputStream(StateID stateID, HDFSOutputStream outputStream) {
+    mOutputStream = Pair.of(stateID, new OpenResource<HDFSOutputStream>(stateID, outputStream));
   }
   public String getPath() {
     return mPath;

@@ -21,30 +21,32 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import static org.junit.Assert.*;
-import junit.framework.Assert;
+import static org.mockito.Mockito.*;
 
 import org.junit.Before;
 import org.junit.Test;
 
-import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.GETFHRequest;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.GETFHResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.RESTOREFHRequest;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.RESTOREFHResponse;
 
-public class TestGETFHHandler extends TestBaseHandler {
+public class TestRESTOREFHHandler extends TestBaseHandler {
 
-  private GETFHHandler handler;
-  private GETFHRequest request;
+  private RESTOREFHHandler handler;
+  private RESTOREFHRequest request;
 
   @Before
   public void setup() throws Exception {
     super.setup();
-    handler = new GETFHHandler();
-    request = new GETFHRequest();
+    handler = new RESTOREFHHandler();
+    request = new RESTOREFHRequest();
   }
 
   @Test
   public void testFunctionality() throws Exception {
-    GETFHResponse response = handler.handle(hdfsState, session, request);
+    when(session.getSavedFileHandle()).thenReturn(savedFileHandle);
+    session.setSavedFileHandle(savedFileHandle);
+    RESTOREFHResponse response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4_OK, response.getStatus());
-    Assert.assertEquals(session.getCurrentFileHandle(), response.getFileHandle());
+    verify(session).setCurrentFileHandle(savedFileHandle);
   }
 }

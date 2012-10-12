@@ -21,30 +21,36 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import static org.junit.Assert.*;
-import junit.framework.Assert;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
 
-import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.GETFHRequest;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.GETFHResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.Bitmap;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.Status;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.Attribute;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.SETATTRRequest;
 
-public class TestGETFHHandler extends TestBaseHandler {
+public class TestSETATTRHandler extends TestBaseHandler {
 
-  private GETFHHandler handler;
-  private GETFHRequest request;
+  private SETATTRHandler handler;
+  private SETATTRRequest request;
 
   @Before
   public void setup() throws Exception {
     super.setup();
-    handler = new GETFHHandler();
-    request = new GETFHRequest();
+    handler = new SETATTRHandler();
+    request = new SETATTRRequest();
+    request.setAttrs(new Bitmap());
+    List<Attribute> values = new ArrayList<Attribute>();
+    request.setAttrValues(values);
   }
 
   @Test
-  public void testFunctionality() throws Exception {
-    GETFHResponse response = handler.handle(hdfsState, session, request);
+  public void testSuccess() throws Exception {
+    Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4_OK, response.getStatus());
-    Assert.assertEquals(session.getCurrentFileHandle(), response.getFileHandle());
   }
 }
