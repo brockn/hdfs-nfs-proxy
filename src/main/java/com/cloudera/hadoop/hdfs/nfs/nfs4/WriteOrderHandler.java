@@ -228,17 +228,17 @@ public class WriteOrderHandler extends Thread {
     if(!isRunningAndOpen()) {
       return false;
     }
-    if(LOGGER.isDebugEnabled()) {
-      String pendingWrites;
-      synchronized (mPendingWrites) {
-        pendingWrites = mPendingWrites.keySet().toString();
-      }
-      LOGGER.debug("Close would block for " + mOutputStream + ", expectedLength = " + mExpectedLength.get() + 
-          ", mOutputStream.getPos = " + mOutputStream.getPos() + ", pending writes = " + pendingWrites + 
-          ", write queue = " + mWriteQueue.size());
-    }
     if(mOutputStream.getPos() < mExpectedLength.get()
         || !(mPendingWrites.isEmpty() && mWriteQueue.isEmpty())) {
+      if(LOGGER.isDebugEnabled()) {
+        String pendingWrites;
+        synchronized (mPendingWrites) {
+          pendingWrites = mPendingWrites.keySet().toString();
+        }
+        LOGGER.debug("Close would block for " + mOutputStream + ", expectedLength = " + mExpectedLength.get() + 
+            ", mOutputStream.getPos = " + mOutputStream.getPos() + ", pending writes = " + pendingWrites + 
+            ", write queue = " + mWriteQueue.size());
+      }
       return true;
     }
     return false;
@@ -342,8 +342,8 @@ public class WriteOrderHandler extends Thread {
               + ", length = " + write.getLength());
         }
         synchronized (mExpectedLength) {
-          if (write.getOffset() > mExpectedLength.get()) {
-            mExpectedLength.set(write.getOffset());
+          if (write.getOffset() + write.getLength() > mExpectedLength.get()) {
+            mExpectedLength.set(write.getOffset() + write.getLength());
           }
         }
         mWriteQueue.put(write);

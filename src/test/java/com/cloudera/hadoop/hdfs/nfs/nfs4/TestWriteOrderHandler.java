@@ -23,6 +23,7 @@ import static com.google.common.base.Preconditions.*;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
+import static org.fest.reflect.core.Reflection.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -167,5 +168,13 @@ public class TestWriteOrderHandler {
     int length = mWriteOrderHandler.write(new MemoryBackedWrite("a file", id, 0, true, buffer, 0, buffer.length));
     assertEquals(length, mWriteOrderHandler.write(new MemoryBackedWrite("a file", id, 0, true, buffer, 0, buffer.length)));
     Thread.sleep(100L);
+  }
+  @Test
+  public void testExpectedLength() throws Exception {
+    AtomicLong expectedLength = field("mExpectedLength").ofType(AtomicLong.class).in(mWriteOrderHandler).get();
+    assertEquals(0, expectedLength.get());
+    int id = xid.incrementAndGet();
+    int length = mWriteOrderHandler.write(new MemoryBackedWrite("a file", id, 0, true, buffer, 0, buffer.length));
+    assertEquals(length, expectedLength.get());
   }
 }
