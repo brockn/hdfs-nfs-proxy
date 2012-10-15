@@ -40,10 +40,20 @@ public class AsyncTaskExecutor<T> {
   
   public AsyncTaskExecutor() {
     queue = new DelayQueue();
+    /* 
+     * We must override newTaskFor to prevent a cast class exception here:
+     * 
+     * java.lang.ClassCastException: java.util.concurrent.FutureTask cannot be cast to java.util.concurrent.Delayed
+     *  at java.util.concurrent.DelayQueue.offer(DelayQueue.java:39)
+     *  at java.util.concurrent.ThreadPoolExecutor.execute(ThreadPoolExecutor.java:653)
+     *  at java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:78)
+     *  at com.cloudera.hadoop.hdfs.nfs.nfs4.AsyncTaskExecutor.schedule(AsyncTaskExecutor.java:50)
+     */
     executor = new ThreadPoolExecutor(10, 500, 5L, TimeUnit.SECONDS, 
         queue, new ThreadFactoryBuilder().setDaemon(true).
         setNameFormat("AsyncTaskExecutor-" + instanceCounter.incrementAndGet() + "-%d")
         .build()) {
+      @SuppressWarnings("hiding")
       protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
         if(runnable instanceof DelayedRunnable) {
           return (FutureTask<T>)runnable;
