@@ -142,6 +142,20 @@ public class Bytes {
     return new IllegalArgumentException(reason);
   }
 
+  /**
+   * Convert an int value to a byte array
+   * @param val value
+   * @return the byte array
+   */
+  public static byte[] toBytes(int val) {
+    byte [] b = new byte[4];
+    for(int i = 3; i > 0; i--) {
+      b[i] = (byte) val;
+      val >>>= 8;
+    }
+    b[0] = (byte) val;
+    return b;
+  }
   
   /**
    * Converts a byte array to an int value
@@ -289,6 +303,6 @@ public class Bytes {
       sb.append(HEX_CHARS[v & 0xF]);
       sb.append(" ");
     }
-    return sb.toString();
+    return sb.toString().trim();
   }
 }

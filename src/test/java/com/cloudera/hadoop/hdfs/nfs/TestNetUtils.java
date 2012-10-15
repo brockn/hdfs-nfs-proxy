@@ -75,4 +75,9 @@ public class TestNetUtils {
     when(address.getCanonicalHostName()).thenReturn(hostname); 
     Assert.assertEquals("unknown", NetUtils.getDomain(conf, address));
   }
+  @Test
+  public void testGetDomainOnlyDomain() {
+    when(address.getCanonicalHostName()).thenReturn("." + hostname); 
+    Assert.assertEquals("unknown", NetUtils.getDomain(conf, address));
+  }
 }

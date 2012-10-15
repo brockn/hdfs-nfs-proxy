@@ -20,8 +20,13 @@ package com.cloudera.hadoop.hdfs.nfs;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
+
 import org.apache.hadoop.fs.Path;
+import org.junit.Assert;
 import org.junit.Test;
+
+import com.google.common.io.Files;
 
 public class TestPathUtils {
 
@@ -34,4 +39,26 @@ public class TestPathUtils {
   public void testRealPath() {
     assertEquals(PathUtils.realPath(new Path("file:///")), "/");
   }
+  @Test
+  public void testFullyDelete() throws Exception {
+    File baseDir = Files.createTempDir();
+    File a = new File(baseDir, "a");
+    File b = new File(a, "b");
+    Files.createParentDirs(b);
+    Files.touch(b);
+    PathUtils.fullyDelete(baseDir);
+    Assert.assertFalse(baseDir.exists());
+  }
+  @Test
+  public void testFullyDeleteContents() throws Exception {
+    File baseDir = Files.createTempDir();
+    File a = new File(baseDir, "a");
+    File b = new File(a, "b");
+    Files.createParentDirs(b);
+    Files.touch(b);
+    PathUtils.fullyDeleteContents(baseDir);
+    Assert.assertTrue(baseDir.exists());
+    Assert.assertFalse(a.exists());
+  }
+
 }

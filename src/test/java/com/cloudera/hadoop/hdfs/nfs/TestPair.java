@@ -33,17 +33,26 @@ public class TestPair {
   }
 
   @Test
-  public void testToString() {
+  public void testNull() {
     Pair<Object, Object> pair = Pair.of(null, null);
-    pair.toString(); // does not throw NPE
+    Assert.assertEquals("(null, null)", pair.toString());
   }
 
   @Test
-  public void testGetters() {
-    Object left = new Object();
-    Object right = new Object();
+  public void testNonNull() {
+    Object left = new Object() {
+      public String toString() {
+        return "left";
+      }
+    };
+    Object right = new Object(){
+      public String toString() {
+        return "right";
+      }
+    };
     Pair<Object, Object> pair = Pair.of(left, right);
     Assert.assertEquals(left, pair.getFirst());
     Assert.assertEquals(right, pair.getSecond());
+    Assert.assertEquals("(left, right)", pair.toString());
   }
 }
