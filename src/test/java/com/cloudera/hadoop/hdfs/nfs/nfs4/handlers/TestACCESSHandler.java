@@ -70,7 +70,6 @@ public class TestACCESSHandler extends TestBaseHandler {
   }
   @Test
   public void testNullGroup() throws Exception {
-    configuration.clear();
     configuration.set(GROUP, "");
     ACCESSResponse response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_SERVERFAULT, response.getStatus());
