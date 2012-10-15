@@ -235,20 +235,7 @@
         <profile>
             <id>cdh3</id>
             <properties>
-                <hadoop.version>0.20.2-cdh3u2</hadoop.version>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.hadoop</groupId>
-                    <artifactId>hadoop-core</artifactId>
-                    <version>${hadoop.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>hadoop020</id>
-            <properties>
-                <hadoop.version>0.20.205.0</hadoop.version>
+                <hadoop.version>0.20.2-cdh3u5</hadoop.version>
             </properties>
             <dependencies>
                 <dependency>
@@ -278,19 +265,6 @@
         </profile>
         <profile>
             <id>hadoop100</id>
-            <properties>
-                <hadoop.version>1.0.0</hadoop.version>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.hadoop</groupId>
-                    <artifactId>hadoop-core</artifactId>
-                    <version>${hadoop.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>hadoop103</id>
             <properties>
                 <hadoop.version>1.0.3</hadoop.version>
             </properties>

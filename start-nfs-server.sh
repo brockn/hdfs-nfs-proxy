@@ -2,12 +2,13 @@
 set -e
 if [[ $# -ne 2 ]]
 then
-  echo Usage: $0 HADOOP_CONF_DIR HDFS_NFS_PROXY_SNAPHOT
-  echo "e.g. $0 /usr/lib/hadoop/conf snapshots/hadoop-nfs-proxy-0.80-SNAPSHOT-with-deps-0.20.2-cdh3u2.jar"
+  echo "Usage: $0 {hadoop config dir} {port}"
+  echo "e.g. $0 /usr/lib/hadoop/conf port"
   exit 1
 fi
+JAR=target/hadoop-nfs-proxy-0.8-SNAPSHOT-with-deps.jar
 HADOOP_CONFIG=$1
-JAR=$2
+PORT=$2
 if [[ ! -f $JAR ]]
 then
   echo "Jar $JAR does not exist"
@@ -19,7 +20,6 @@ then
   exit 1
 fi
 CONFIG=$PWD/conf
-JAR=$(readlink -f $JAR)
 cd target 
 if [[ -f nfsserver.pid ]]
 then
@@ -35,6 +35,6 @@ then
   fi
 fi
 nohup java -Xmx2g -Xms2g -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -cp $CONFIG:$JAR:$HADOOP_CONFIG \
-  com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Server 2050 1>nfsserver.out 2>nfsserver.err </dev/null &
+  com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Server $PORT 1>nfsserver.out 2>nfsserver.err </dev/null &
 pid="$!"
 echo $pid > nfsserver.pid

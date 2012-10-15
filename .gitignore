@@ -11,6 +11,3 @@ bin/
 *.iml
 *.orig
 *~
-conf-home
-conf-road
-conf
