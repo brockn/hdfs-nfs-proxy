@@ -68,6 +68,9 @@ public class TestFileBackedWrite {
     assertArrayEquals(data, write.getData());
     assertTrue(write.equals(write));
     assertFalse(write.equals(new FileBackedWrite(backingFile2, "test2", xid, offset, sync, data, 0, data.length - 1)));
+    assertFalse(write.equals(new FileBackedWrite(backingFile2, "test2", xid, offset + 1, sync, data, 0, data.length)));
+    assertFalse(write.equals(null));
+    assertFalse(write.equals(new Object()));
     write.close();
     assertFalse(backingFile1.exists());
   }
