@@ -38,7 +38,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.cloudera.hadoop.hdfs.nfs.NFSUtils;
+import com.cloudera.hadoop.hdfs.nfs.NetUtils;
 import com.cloudera.hadoop.hdfs.nfs.TestUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
@@ -255,7 +255,7 @@ public class TestWithClient {
 
   protected void doCompareFileStatusFile(FileStatus fileStatus) throws IOException {
     File file = new File(fileStatus.path.toString());
-    String domain = NFSUtils.getDomain(new Configuration(), LOCALHOST);
+    String domain = NetUtils.getDomain(new Configuration(), LOCALHOST);
     assertEquals(getOwner(file) + "@" + domain, fileStatus.getOwner());
     assertEquals(getOwnerGroup(file) + "@" + domain, fileStatus.getOwnerGroup());
     assertEquals(file.length(), fileStatus.getSize());

@@ -25,7 +25,7 @@ import java.io.IOException;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 
-import com.cloudera.hadoop.hdfs.nfs.NFSUtils;
+import com.cloudera.hadoop.hdfs.nfs.NetUtils;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
@@ -36,7 +36,7 @@ public class OwnerHandler extends AttributeHandler<Owner> {
   public Owner get(HDFSState hdfsState, Session session, FileSystem fs,
       FileStatus fileStatus) {
     Owner owner = new Owner();
-    String domain = NFSUtils.getDomain(session.getConfiguration(), session.getClientAddress());
+    String domain = NetUtils.getDomain(session.getConfiguration(), session.getClientAddress());
     owner.setOwner(fileStatus.getOwner() + "@" + domain);
     return owner;
   }

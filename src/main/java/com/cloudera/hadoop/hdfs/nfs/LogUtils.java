@@ -25,11 +25,12 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
-import com.google.common.base.Throwables;
 
 public class LogUtils {
-
+  protected static final Logger LOGGER = Logger.getLogger(LogUtils.class);
   @SuppressWarnings("rawtypes")
   public static String dump(Object parent) {
     StringBuilder buffer = new StringBuilder();
@@ -55,7 +56,7 @@ public class LogUtils {
         }
       }
     } catch(Exception ex) {
-      throw Throwables.propagate(ex);
+      LOGGER.info("Error performing debug logging", ex);
     }
     return buffer.append("END ").append(parent.getClass().getName()).append("\n").toString();
   }

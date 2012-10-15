@@ -28,7 +28,7 @@ import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.MessageProp;
 
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
-import com.cloudera.hadoop.hdfs.nfs.NFSUtils;
+import com.cloudera.hadoop.hdfs.nfs.NetUtils;
 import com.cloudera.hadoop.hdfs.nfs.Pair;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
@@ -41,7 +41,7 @@ public class GSSSecurityHandler extends SecurityHandler {
   protected GSSContext mContext;
   protected byte[] mToken;
   protected int mSequenceNumber;
-  protected byte[] mContextID = Bytes.toBytes(NFSUtils.nextRandomInt());
+  protected byte[] mContextID = Bytes.toBytes(NetUtils.nextRandomInt());
 
   public GSSSecurityHandler() throws GSSException {
     mContext = mManager.createContext((GSSCredential) null);

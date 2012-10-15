@@ -23,13 +23,13 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
-import com.cloudera.hadoop.hdfs.nfs.NFSUtils;
+import com.cloudera.hadoop.hdfs.nfs.NetUtils;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
 public class StateID implements MessageBase {
   protected int mSeqID;
   protected OpaqueData12 mData;
-  protected static final int LOCAL_ID = NFSUtils.nextRandomInt();
+  protected static final int LOCAL_ID = NetUtils.nextRandomInt();
   protected static final AtomicLong STATEIDs = new AtomicLong(0);
 
   @Override

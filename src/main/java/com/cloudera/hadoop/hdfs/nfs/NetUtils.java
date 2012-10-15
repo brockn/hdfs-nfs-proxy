@@ -24,9 +24,12 @@ import java.net.InetAddress;
 import java.util.Random;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
 
-public class NFSUtils {
+import com.google.common.base.Joiner;
 
+public class NetUtils {
+  protected static final Logger LOGGER = Logger.getLogger(NetUtils.class);
   private static final Random RANDOM = new Random();
   
   public static String getDomain(Configuration conf, InetAddress address) {
@@ -44,7 +47,13 @@ public class NFSUtils {
     if((pos = host.indexOf('.')) > 0 && pos < host.length()) {
       return host.substring(pos + 1);
     }
-    return host;
+    LOGGER.error(Joiner.on("\n").join(
+        "Unable to find the domain the server is running on. Please report.",
+        "canonicalHostName = " + host, 
+        "hostname = " + address.getHostName(),
+        "isLoopback = " + address.isLoopbackAddress(),
+        "hostAdddress = " + address.getHostAddress()));
+    return "unknown";
   }
 
   
