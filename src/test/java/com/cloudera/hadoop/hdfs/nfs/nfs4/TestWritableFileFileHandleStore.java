@@ -47,17 +47,17 @@ public class TestWritableFileFileHandleStore {
     store.storeFileHandle(entry);
     assertTrue(store.getAll().size() == 1);
     entry = store.getAll().get(0);
-    assertTrue(entry.fileID == inode);
-    assertTrue(Arrays.equals(fileHandle, entry.fileHandle));
-    assertEquals(name, entry.path);
+    assertTrue(entry.getFileID() == inode);
+    assertTrue(Arrays.equals(fileHandle, entry.getFileHandle()));
+    assertEquals(name, entry.getPath());
     store.close();
 
     store = (WritableFileFileHandleStore)FileHandleStore.get(conf);
     assertTrue(store.getAll().size() == 1);
     entry = store.getAll().get(0);
-    assertTrue(entry.fileID == inode);
-    assertTrue(Arrays.equals(fileHandle, entry.fileHandle));
-    assertEquals(name, entry.path);
+    assertTrue(entry.getFileID() == inode);
+    assertTrue(Arrays.equals(fileHandle, entry.getFileHandle()));
+    assertEquals(name, entry.getPath());
     store.close();
     file.delete();
   }

@@ -27,9 +27,9 @@ import java.util.Arrays;
 import org.apache.hadoop.io.WritableComparable;
 
 public class FileHandleStoreEntry implements WritableComparable<FileHandleStoreEntry> {
-  protected byte[] fileHandle;
-  protected String path;
-  protected long fileID;
+  private byte[] fileHandle;
+  private String path;
+  private long fileID;
 
   public FileHandleStoreEntry() {
     this(null, null, -1);

@@ -99,7 +99,7 @@ public class WritableFileFileHandleStore extends FileHandleStore {
             FileHandleStoreEntry entry = new FileHandleStoreEntry();
             entry.readFields(is);
             entryList.add(entry);
-            LOGGER.info("Read filehandle " + entry.path + " " + entry.fileID);
+            LOGGER.info("Read filehandle " + entry.getPath() + " " + entry.getFileID());
             try {
               moreEntries = is.readBoolean();
             } catch (EOFException e) {
@@ -134,7 +134,7 @@ public class WritableFileFileHandleStore extends FileHandleStore {
     entry.write(mFileHandleStore);
     mFileHandleStore.flush();
     mFileHandleStoreChannel.force(true);
-    LOGGER.info("Wrote filehandle " + entry.path + "  " + entry.fileID);
+    LOGGER.info("Wrote filehandle " + entry.getPath() + "  " + entry.getFileID());
   }
 
   @Override
