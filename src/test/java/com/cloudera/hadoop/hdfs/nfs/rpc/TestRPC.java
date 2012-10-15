@@ -68,8 +68,10 @@ public class TestRPC {
   @Test
   public void testResponseWireAuthError() throws Exception {
     RPCResponse base = RPCTestUtil.createResponse();
+    base.setVerifier(null);
     base.setReplyState(RPC_REPLY_STATE_DENIED);
-    base.setAuthState(RPC_REJECT_AUTH_ERROR);
+    base.setAuthState(RPC_AUTH_STATUS_BADCRED);
+    base.setAcceptState(RPC_REJECT_AUTH_ERROR);
     RPCResponse copy = new RPCResponse();
     copy(base, copy);
     assertEquals(base.getMessageType(), copy.getMessageType());

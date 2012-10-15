@@ -102,7 +102,7 @@ public class TestHDFSStateBackgroundWorker {
     verify(writeOrderHandler, never()).close(true);
   }
   @Test
-  public void testDoesRemoveInactiveWriters() throws Exception {
+  public void testdoesremoveinactivewriters() throws Exception {
     when(out.getLastOperation()).thenReturn(System.currentTimeMillis());
     synchronized (writerOrderHandlerMap) {
       writerOrderHandlerMap.put(fileHandle, writeOrderHandler);

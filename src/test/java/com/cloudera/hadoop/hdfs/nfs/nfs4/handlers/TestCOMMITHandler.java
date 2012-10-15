@@ -70,4 +70,25 @@ public class TestCOMMITHandler extends TestBaseHandler {
     when(writeOrderHandler.syncWouldBlock(any(Long.class))).thenReturn(false);
     Assert.assertFalse(handler.wouldBlock(hdfsState, session, request));
   }
+  @Test
+  public void testWouldBlockStaleFileHandle() throws Exception {
+    when(hdfsState.getWriteOrderHandler(currentFileHandle)).thenReturn(null);
+    Assert.assertFalse(handler.wouldBlock(hdfsState, session, request));
+  }
+  @Test
+  public void testWouldBlockNullFileHandle() throws Exception {
+    when(session.getCurrentFileHandle()).thenReturn(null);
+    Assert.assertFalse(handler.wouldBlock(hdfsState, session, request));
+  }
+  @Test
+  public void testWouldBlockOffsetZero() throws Exception {
+    request.setOffset(0);
+    Assert.assertFalse(handler.wouldBlock(hdfsState, session, request));
+  }
+  @Test
+  public void testStaleFileHandle() throws Exception {
+    when(hdfsState.getWriteOrderHandler(currentFileHandle)).thenReturn(null);
+    Status response = handler.handle(hdfsState, session, request);
+    Assert.assertEquals(NFS4ERR_STALE, response.getStatus());
+  }
 }

@@ -22,6 +22,10 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4;
 import static com.cloudera.hadoop.hdfs.nfs.TestUtils.*;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
+import java.util.BitSet;
+
+import junit.framework.Assert;
+
 import org.junit.Test;
 
 public class TestBitmap {
@@ -48,7 +52,7 @@ public class TestBitmap {
     base.set(64);
     Bitmap copy = new Bitmap();
     copy(base, copy);
-    deepEquals(base, copy);
+    equals(base.getMask(), copy.getMask());
   }
 
   @Test
@@ -62,6 +66,14 @@ public class TestBitmap {
     base.set(64);
     Bitmap copy = new Bitmap();
     copy(base, copy);
-    deepEquals(base, copy);
+    equals(base.getMask(), copy.getMask());
+  }
+  
+  private void equals(BitSet bs1, BitSet bs2) {
+    Assert.assertEquals(bs1.size(), bs2.size());
+    Assert.assertEquals(bs1.cardinality(), bs2.cardinality());
+    for (int bitIndex = 0; bitIndex < bs1.size(); bitIndex++) {
+      Assert.assertEquals(bs1.get(bitIndex), bs2.get(bitIndex));
+    }
   }
 }

@@ -54,35 +54,4 @@ public class ClientID implements MessageBase {
   public void setOpaqueID(OpaqueData id) {
     this.mID = id;
   }
-
-  @Override
-  public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + ((mID == null) ? 0 : mID.hashCode());
-    result = prime * result + ((mVerifer == null) ? 0 : mVerifer.hashCode());
-    return result;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj)
-      return true;
-    if (obj == null)
-      return false;
-    if (getClass() != obj.getClass())
-      return false;
-    ClientID other = (ClientID) obj;
-    if (mID == null) {
-      if (other.mID != null)
-        return false;
-    } else if (!mID.equals(other.mID))
-      return false;
-    if (mVerifer == null) {
-      if (other.mVerifer != null)
-        return false;
-    } else if (!mVerifer.equals(other.mVerifer))
-      return false;
-    return true;
-  }
 }

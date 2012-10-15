@@ -32,21 +32,20 @@ import com.cloudera.hadoop.hdfs.nfs.security.Verifier;
 public class RPCRequest extends RPCPacket {
 
   protected static final Logger LOGGER = Logger.getLogger(RPCRequest.class);
-  protected int mCredentialsFlavor;
-  protected Credentials mCredentials;
-  protected int mVerifierFlavor;
-  protected Verifier mVerifier;
+  private int mCredentialsFlavor;
+  private Credentials mCredentials;
+  private int mVerifierFlavor;
+  private Verifier mVerifier;
+  private int mRpcVersion, mProgram, mProgramVersion, mProcedure;
 
   public RPCRequest(int xid, int rpcVersion) {
     this.mXid = xid;
-
     this.mMessageType = RPC_MESSAGE_TYPE_CALL;
     this.mRpcVersion = rpcVersion;
-
-
   }
 
   public RPCRequest() {
+
   }
 
   @Override
@@ -94,5 +93,29 @@ public class RPCRequest extends RPCPacket {
   public void setVerifier(Verifier verifier) {
     mVerifier = verifier;
     mVerifierFlavor = mVerifier.getFlavor();
+  }
+  public int getRpcVersion() {
+    return mRpcVersion;
+  }
+  public void setRpcVersion(int rpcVersion) {
+    this.mRpcVersion = rpcVersion;
+  }
+  public int getProgram() {
+    return mProgram;
+  }
+  public void setProgram(int program) {
+    this.mProgram = program;
+  }
+  public int getProgramVersion() {
+    return mProgramVersion;
+  }
+  public void setProgramVersion(int programVersion) {
+    this.mProgramVersion = programVersion;
+  }
+  public int getProcedure() {
+    return mProcedure;
+  }
+  public void setProcedure(int procedure) {
+    this.mProcedure = procedure;
   }
 }

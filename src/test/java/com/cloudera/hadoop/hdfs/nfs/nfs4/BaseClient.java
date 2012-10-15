@@ -129,7 +129,7 @@ public abstract class BaseClient {
         RequiresCredentials requiresCredentials = (RequiresCredentials)result;
         requiresCredentials.setCredentials(((RequiresCredentials)message).getCredentials());
       }
-      TestUtils.deepEquals(message, result);
+      //TestUtils.deepEquals(message, result);
       return (T)result;
     } catch (RuntimeException x) {
       LOGGER.warn("Error reading buffer: " + LogUtils.dump(message), x);

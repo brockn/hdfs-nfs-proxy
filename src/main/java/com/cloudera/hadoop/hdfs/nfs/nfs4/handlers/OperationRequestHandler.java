@@ -68,14 +68,14 @@ public abstract class OperationRequestHandler<IN extends OperationRequest, OUT e
         response.setStatus(nfsEx.getError());
       } else if (ex instanceof FileNotFoundException) {
         response.setStatus(NFS4ERR_NOENT);
+      } else if (ex instanceof AccessControlException) {
+        response.setStatus(NFS4ERR_PERM);
       } else if (ex instanceof IOException) {
         response.setStatus(NFS4ERR_IO);
       } else if (ex instanceof IllegalArgumentException) {
         response.setStatus(NFS4ERR_INVAL);
       } else if (ex instanceof UnsupportedOperationException) {
         response.setStatus(NFS4ERR_NOTSUPP);
-      } else if (ex instanceof AccessControlException) {
-        response.setStatus(NFS4ERR_PERM);
       } else {
         response.setStatus(NFS4ERR_SERVERFAULT);
       }

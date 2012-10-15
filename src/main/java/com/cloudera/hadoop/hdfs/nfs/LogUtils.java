@@ -21,9 +21,12 @@ package com.cloudera.hadoop.hdfs.nfs;
 
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.List;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
+import com.google.common.base.Throwables;
 
 public class LogUtils {
 
@@ -33,23 +36,26 @@ public class LogUtils {
     Field[] fields = parent.getClass().getDeclaredFields();
     buffer.append("START ").append(parent.getClass().getName()).append(" = '").append(parent).append("' = ");
     buffer.append(fields.length).append("\n");
-    for(Field field : fields) {
-      field.setAccessible(true);
-      try {
-        Object child = field.get(parent);
-        if(child instanceof List) {
-          for(Object grandChild : (List)child) {
-            buffer.append(dump(grandChild));
+    try {
+      for(Method method : parent.getClass().getMethods()) {
+        int mod = method.getModifiers();
+        if (method.getName().startsWith("get") && method.getParameterTypes().length == 0
+            && !(Modifier.isStatic(mod) || Modifier.isAbstract(mod) || Modifier.isNative(mod))) {
+          Object result = method.invoke(parent, (Object[]) null);
+          if(result instanceof List) {
+            for(Object grandChild : (List)result) {
+              buffer.append(dump(grandChild));
+            }
+          } else if (result instanceof MessageBase){
+            buffer.append(dump(result));
+          } else {
+            buffer.append(method.getDeclaringClass().getSimpleName()).append(" ").append(method.getName());
+            buffer.append(" = '").append(result).append("'\n");
           }
-        } else if (child instanceof MessageBase){
-          buffer.append(dump(child));
-        } else {
-          buffer.append(field.getType().getSimpleName()).append(" ").append(field.getName());
-          buffer.append(" = '").append(child).append("'\n");
         }
-      } catch (IllegalAccessException e) {
-        buffer.append("IllegalAccessException: ").append(e.getMessage()).append("\n");
       }
+    } catch(Exception ex) {
+      throw Throwables.propagate(ex);
     }
     return buffer.append("END ").append(parent.getClass().getName()).append("\n").toString();
   }

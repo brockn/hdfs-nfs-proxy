@@ -116,6 +116,18 @@ public class TestWRITEHandler extends TestBaseHandler {
   }
   
   @Test
+  public void testSyncNotBlock() throws Exception {
+    when(writeOrderHandler.writeWouldBlock(any(Long.class))).thenReturn(false);
+    request.setStable(NFS4_COMMIT_DATA_SYNC4);
+    WRITEResponse response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4_OK, response.getStatus());
+    assertEquals(request.getLength(), response.getCount());
+    PendingWrite write = writeReference.get();
+    assertNotNull(write);
+    assertTrue(write.isSync());
+  }
+  
+  @Test
   public void testFileBackedWrite() throws Exception {
     request.setOffset(ONE_MB * 2);
     WRITEResponse response = handler.handle(hdfsState, session, request);

@@ -66,6 +66,8 @@ public class NetworkClient extends BaseClient {
   protected CompoundResponse doMakeRequest(CompoundRequest request) throws IOException {
 
     RPCBuffer buffer = new RPCBuffer();
+    // save space for length
+    buffer.writeInt(Integer.MAX_VALUE);
     RPCRequest rpcRequest = RPCTestUtil.createRequest();
     LOGGER.info(rpcRequest.getXidAsHexString() + ": request = " + request);
     rpcRequest.setCredentials((Credentials)TestUtils.newCredentials());

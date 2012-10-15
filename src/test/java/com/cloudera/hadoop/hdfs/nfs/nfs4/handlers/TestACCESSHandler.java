@@ -272,7 +272,7 @@ public class TestACCESSHandler extends TestBaseHandler {
     @Override
     public String getGroupForGID(Configuration conf, int gid,
         String defaultGroup) throws Exception {
-      String s = conf.get(USER);
+      String s = conf.get(GROUP);
       if(s.isEmpty()) {
         return null;
       }
@@ -281,7 +281,7 @@ public class TestACCESSHandler extends TestBaseHandler {
     @Override
     public String getUserForUID(Configuration conf, int gid, String defaultUser)
         throws Exception {
-      String s = conf.get(GROUP);
+      String s = conf.get(USER);
       if(s.isEmpty()) {
         return null;
       }

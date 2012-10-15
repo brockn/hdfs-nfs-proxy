@@ -20,6 +20,7 @@
 package com.cloudera.hadoop.hdfs.nfs.nfs4.attrs;
 
 import static com.cloudera.hadoop.hdfs.nfs.TestUtils.*;
+import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import static org.junit.Assert.*;
 
 import org.junit.Test;
@@ -101,6 +102,23 @@ public class TestAttrs {
     Type base = new Type();
     base.setType(15);
     Type copy = new Type();
+    testAttribute(base, copy);
+  }
+  
+  @Test
+  public void testSetAccessTimeClient() throws Exception {
+    SetAccessTime base = new SetAccessTime();
+    base.setHow(NFS4_SET_TO_CLIENT_TIME4);
+    base.setTime(new Time(System.currentTimeMillis()));
+    SetAccessTime copy = new SetAccessTime();
+    testAttribute(base, copy);
+  }
+  
+  @Test
+  public void testSetAccessTimeServer() throws Exception {
+    SetAccessTime base = new SetAccessTime();
+    base.setHow(NFS4_SET_TO_SERVER_TIME4);
+    SetAccessTime copy = new SetAccessTime();
     testAttribute(base, copy);
   }
 

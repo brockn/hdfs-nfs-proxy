@@ -29,11 +29,10 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 public abstract class RPCPacket implements MessageBase {
   protected static final Logger LOGGER = Logger.getLogger(RPCPacket.class);
 
-  protected int mXid, mMessageType, mRpcVersion, mProgram, mProgramVersion, mProcedure;
+  protected int mXid, mMessageType;
 
   @Override
   public void write(RPCBuffer buffer) {
-    buffer.writeInt(Integer.MAX_VALUE); // save space
     buffer.writeInt(mXid);
     buffer.writeInt(mMessageType);
   }
@@ -57,36 +56,8 @@ public abstract class RPCPacket implements MessageBase {
   public void setMessageType(int messageType) {
     this.mMessageType = messageType;
   }
-  public int getRpcVersion() {
-    return mRpcVersion;
-  }
-  public void setRpcVersion(int rpcVersion) {
-    this.mRpcVersion = rpcVersion;
-  }
-  public int getProgram() {
-    return mProgram;
-  }
-  public void setProgram(int program) {
-    this.mProgram = program;
-  }
-  public int getProgramVersion() {
-    return mProgramVersion;
-  }
-  public void setProgramVersion(int programVersion) {
-    this.mProgramVersion = programVersion;
-  }
-  public int getProcedure() {
-    return mProcedure;
-  }
-  public void setProcedure(int procedure) {
-    this.mProcedure = procedure;
-  }
-
   @Override
   public String toString() {
-    return "RPCPacket [xid="
-        + mXid + ", messageType=" + mMessageType + ", rpcVersion=" + mRpcVersion
-        + ", program=" + mProgram + ", programVersion=" + mProgramVersion
-        + ", procedure=" + mProcedure + "]";
+    return "RPCPacket [mXid=" + mXid + ", mMessageType=" + mMessageType + "]";
   }
 }

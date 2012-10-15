@@ -48,23 +48,16 @@ public class RPCTestUtil {
   public static RPCResponse createResponse() {
     int xid = XID.next();
     RPCResponse response = new RPCResponse(xid, RPC_VERSION);
-    response.setProgram(NFS_PROG);
-    response.setProcedure(NFS_PROC_COMPOUND);
-    response.setProgramVersion(NFS_VERSION);
     response.setReplyState(RPC_REPLY_STATE_ACCEPT);
     response.setAcceptState(RPC_ACCEPT_STATE_ACCEPT);
-    response.setAuthState(RPC_REJECT_AUTH_ERROR);
+    response.setAuthState(0);
     response.setVerifier(new VerifierNone());
 
     assertEquals(xid, response.getXid());
     assertEquals(RPC_MESSAGE_TYPE_REPLY, response.getMessageType());
-    assertEquals(RPC_VERSION, response.getRpcVersion());
-    assertEquals(NFS_PROG, response.getProgram());
-    assertEquals(NFS_VERSION, response.getProgramVersion());
-    assertEquals(NFS_PROC_COMPOUND, response.getProcedure());
     assertEquals(RPC_REPLY_STATE_ACCEPT, response.getReplyState());
     assertEquals(RPC_ACCEPT_STATE_ACCEPT, response.getAcceptState());
-    assertEquals(RPC_REJECT_AUTH_ERROR, response.getAuthState());
+    assertEquals(0, response.getAuthState());
 
     return response;
   }

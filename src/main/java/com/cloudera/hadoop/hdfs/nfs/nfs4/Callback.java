@@ -44,23 +44,23 @@ public class Callback implements MessageBase {
     return mCallbackProgram;
   }
 
-  public void setCallbackProgram(int mCallbackProgram) {
-    this.mCallbackProgram = mCallbackProgram;
+  public void setCallbackProgram(int program) {
+    this.mCallbackProgram = program;
   }
 
   public String getNetID() {
     return mNetID;
   }
 
-  public void setNetID(String mNetID) {
-    this.mNetID = mNetID;
+  public void setNetID(String netID) {
+    this.mNetID = netID;
   }
 
   public String getAddr() {
     return mAddr;
   }
 
-  public void setAddr(String mAddr) {
-    this.mAddr = mAddr;
+  public void setAddr(String addr) {
+    this.mAddr = addr;
   }
 }

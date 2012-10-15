@@ -89,6 +89,26 @@ public class TestREADHandler extends TestBaseHandler {
     verify(inputStream).read(any(byte[].class));
   }
   @Test
+  public void testShortRead() throws Exception {
+    when(fileStatus.getLen()).thenReturn(1025L);
+    when(inputStream.read(any(byte[].class))).thenReturn(256);
+    READResponse response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4_OK, response.getStatus());
+    assertFalse(response.isEOF());
+    assertEquals(256, response.getLength());
+    verify(inputStream).read(any(byte[].class));
+  }
+  @Test
+  public void testShortReadNoMoreData() throws Exception {
+    when(fileStatus.getLen()).thenReturn(512L + 256L);
+    when(inputStream.read(any(byte[].class))).thenReturn(256);
+    READResponse response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4_OK, response.getStatus());
+    assertFalse(response.isEOF());
+    assertEquals(256, response.getLength());
+    verify(inputStream).read(any(byte[].class));
+  }
+  @Test
   public void testSuccess() throws Exception {
     READResponse response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4_OK, response.getStatus());

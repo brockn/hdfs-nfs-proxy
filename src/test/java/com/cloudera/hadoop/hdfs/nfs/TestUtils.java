@@ -28,21 +28,24 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FixedUserIDMapper;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
-import com.cloudera.hadoop.hdfs.nfs.rpc.RPCPacket;
 import com.cloudera.hadoop.hdfs.nfs.security.AuthenticatedCredentials;
 import com.cloudera.hadoop.hdfs.nfs.security.CredentialsSystem;
+import com.google.common.base.Throwables;
 
 public class TestUtils {
 
@@ -117,9 +120,6 @@ public class TestUtils {
     RPCBuffer buffer = new RPCBuffer();
     base.write(buffer);
     buffer.flip();
-    if (base instanceof RPCPacket) {
-      buffer.skip(4); // size
-    }
     copy.read(buffer);
   }
 
@@ -184,35 +184,70 @@ public class TestUtils {
   }
 
   protected static void deepEquals(MessageBase base, MessageBase copy, AtomicInteger count) {
+    assertNotNull(base);
+    assertNotNull(copy);
     assertEquals(base.getClass(), copy.getClass());
     String prefix = null;
     try {
       Class<?> clazz = base.getClass();
+      LOGGER.debug(clazz.getName());
       for (Method method : clazz.getMethods()) {
         prefix = clazz.getName() + ":" + method.getName();
+        LOGGER.debug(prefix);
         int mod = method.getModifiers();
         if (method.getName().startsWith("get") && method.getParameterTypes().length == 0
             && !(Modifier.isStatic(mod) || Modifier.isAbstract(mod) || Modifier.isNative(mod))) {
           Object baseResult = method.invoke(base, (Object[]) null);
-          Object copyResult = method.invoke(base, (Object[]) null);
-          if (baseResult instanceof MessageBase) {
+          Object copyResult = method.invoke(copy, (Object[]) null);
+          if(baseResult == null) {
+            count.addAndGet(1);
+            Assert.assertNull(copyResult);
+          } else if (baseResult instanceof MessageBase) {
             deepEquals((MessageBase) baseResult, (MessageBase) copyResult, count);
           } else if (baseResult instanceof List) {
             List<?> baseList = (List<?>) baseResult;
             List<?> copyList = (List<?>) copyResult;
             assertEquals(baseList.size(), copyList.size());
             for (int i = 0; i < baseList.size(); i++) {
-              count.addAndGet(1);
-              assertEquals(baseList.get(i), copyList.get(i));
+              if(baseList.get(i) instanceof MessageBase) {
+                deepEquals((MessageBase)baseList.get(i), (MessageBase)copyList.get(i), count);                
+              } else {
+                count.addAndGet(1);
+                assertEquals(baseList.get(i), copyList.get(i));
+              }
+            }
+          } else if (baseResult.getClass().isArray()) {
+            if(baseResult instanceof byte[]) {
+              assertTrue(Bytes.compareTo((byte[])baseResult, (byte[])copyResult) == 0);              
+            } else if(baseResult instanceof int[]) {
+              assertTrue(Arrays.equals((int[])baseResult, (int[])copyResult));
+            } else if(baseResult instanceof long[]) {
+              assertTrue(Arrays.equals((long[])baseResult, (long[])copyResult));
+            } else {
+              assertTrue(Arrays.equals((Object[])baseResult, (Object[])copyResult));
+            }
+          } else if(baseResult instanceof Map){
+            Map<?, ?> baseMap = (Map<?, ?>) baseResult;
+            Map<?, ?> copyMap = (Map<?, ?>) copyResult;
+            assertEquals(baseMap.keySet(), copyMap.keySet());
+            for(Object key : baseMap.keySet()) {
+              Object baseValue = baseMap.get(key);
+              Object copyValue = baseMap.get(key);
+              if(baseValue instanceof MessageBase) {
+                deepEquals((MessageBase) baseValue, (MessageBase)copyValue); 
+              } else {
+                assertEquals(baseValue, copyValue);
+              }
             }
           } else {
+            LOGGER.debug(baseResult);
             count.addAndGet(1);
             assertEquals(prefix, baseResult, copyResult);
           }
         }
       }
     } catch (Exception e) {
-      throw new RuntimeException(prefix, e);
+      throw Throwables.propagate(e);
     }
   }
 }

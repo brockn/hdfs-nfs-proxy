@@ -64,16 +64,18 @@ public class TestNFS4Server {
   @Test
   public void testNull() throws UnknownHostException, IOException {
     assertTrue(mNFS4Server.isAlive());
-    RPCRequest request = RPCTestUtil.createRequest();
-    request.setProcedure(NFS_PROC_NULL);
-    RPCBuffer buffer = new RPCBuffer();
-    request.write(buffer);
-
     Socket socket = new Socket(LOCALHOST, mPort);
     try {
       OutputStream out = socket.getOutputStream();
       InputStream in = socket.getInputStream();
 
+      RPCBuffer buffer = new RPCBuffer();
+      // save space for length
+      buffer.writeInt(Integer.MAX_VALUE);
+      
+      RPCRequest request = RPCTestUtil.createRequest();
+      request.setProcedure(NFS_PROC_NULL);
+      request.write(buffer);
       buffer.flip();
       buffer.write(out);
 

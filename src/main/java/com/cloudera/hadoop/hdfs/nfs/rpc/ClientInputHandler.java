@@ -267,6 +267,8 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
     LOGGER.info(mSessionID + " " + request.getXidAsHexString() + " Writing " + 
         applicationResponse.getClass().getSimpleName() + " to "  + mClientName);
     RPCBuffer responseBuffer = new RPCBuffer();
+    // save space for length header
+    responseBuffer.writeInt(Integer.MAX_VALUE);
     try {
       RPCResponse response = new RPCResponse(request.getXid(), RPC_VERSION);
       response.setReplyState(RPC_REPLY_STATE_ACCEPT);
@@ -313,6 +315,8 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
       LOGGER.debug(mSessionID + " Writing bare RPC Response to "  + mClientName);
     }
     RPCBuffer responseBuffer = new RPCBuffer();
+    // save space for length
+    responseBuffer.writeInt(Integer.MAX_VALUE);
     response.write(responseBuffer);
     if(payload != null) {
       payload.flip();

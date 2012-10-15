@@ -74,4 +74,9 @@ public class TestCLOSEHandler extends TestBaseHandler {
     when(writeOrderHandler.closeWouldBlock()).thenReturn(false);
     Assert.assertFalse(handler.wouldBlock(hdfsState, session, request));
   }
+  @Test
+  public void testWouldBlockNullFileHandle() throws Exception {
+    when(session.getCurrentFileHandle()).thenReturn(null);
+    Assert.assertFalse(handler.wouldBlock(hdfsState, session, request));
+  }
 }

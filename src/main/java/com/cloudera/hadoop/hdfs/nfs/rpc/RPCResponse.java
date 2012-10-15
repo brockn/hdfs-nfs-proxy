@@ -39,8 +39,6 @@ public class RPCResponse extends RPCPacket {
   }
   public RPCResponse(int xid, int rpcVersion) {
     this.mXid = xid;
-    this.mRpcVersion = rpcVersion;
-
     this.mMessageType = RPC_MESSAGE_TYPE_REPLY;
     this.mReplyState = RPC_REPLY_STATE_ACCEPT;
     this.mAcceptState = RPC_ACCEPT_STATE_ACCEPT;
@@ -71,7 +69,7 @@ public class RPCResponse extends RPCPacket {
   @Override
   public void read(RPCBuffer buffer) {
     super.read(buffer);
-    this.mReplyState = buffer.readInt();
+    this.mReplyState = buffer.readUint32();
     /*
      * It looks like if reply state is not
      * accept, the next value acceptState
@@ -79,9 +77,9 @@ public class RPCResponse extends RPCPacket {
     if(mReplyState == RPC_REPLY_STATE_ACCEPT) {
       mVerifierFlavor = buffer.readUint32();
       mVerifier = Verifier.readVerifier(mVerifierFlavor, buffer);
-      this.mAcceptState = buffer.readUint32();
+      mAcceptState = buffer.readUint32();
     } else if(mReplyState == RPC_REPLY_STATE_DENIED) {
-      this.mAcceptState = buffer.readUint32();
+      mAcceptState = buffer.readUint32();
       if(mAcceptState == RPC_REJECT_AUTH_ERROR) {
         mAuthState = buffer.readUint32();
       }
@@ -91,8 +89,13 @@ public class RPCResponse extends RPCPacket {
     return mVerifier;
   }
   public void setVerifier(Verifier verifier) {
-    mVerifier = verifier;
-    mVerifierFlavor = mVerifier.getFlavor();
+    if(verifier == null) {
+      mVerifier = null;
+      mVerifierFlavor = 0;
+    } else {
+      mVerifier = verifier;
+      mVerifierFlavor = mVerifier.getFlavor();
+    }
   }
   public int getAuthState() {
     return mAuthState;
