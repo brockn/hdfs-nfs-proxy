@@ -146,7 +146,7 @@ public class TestWriteOrderHandler {
   public void testErrorOnWriteAfterError() throws IOException, NFS4Exception, InterruptedException {
     doThrow(new IOException()).when(mOutputStream).write(any(byte[].class), anyInt(), anyInt());
     mWriteOrderHandler.write(new MemoryBackedWrite("a file", xid.incrementAndGet(), 0, false, buffer, 0, buffer.length));
-    Thread.sleep(10);
+    Thread.sleep(100);
     mWriteOrderHandler.write(new MemoryBackedWrite("a file", xid.incrementAndGet(), 0, false, buffer, 0, buffer.length));
   }
 
@@ -175,6 +175,7 @@ public class TestWriteOrderHandler {
     assertEquals(0, expectedLength.get());
     int id = xid.incrementAndGet();
     int length = mWriteOrderHandler.write(new MemoryBackedWrite("a file", id, 0, true, buffer, 0, buffer.length));
+    Thread.sleep(100);
     assertEquals(length, expectedLength.get());
   }
 }
