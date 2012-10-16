@@ -60,7 +60,9 @@ public class WritableFileFileHandleStore extends FileHandleStore {
     boolean fileHandleStoreIsBad = pair.getSecond();
 
     try {
-      mFileHandleStoreFile.delete();
+      if(!mFileHandleStoreFile.delete()) {
+        LOGGER.warn("Unable to delete " + mFileHandleStoreFile);
+      }
       FileOutputStream fos = new FileOutputStream(mFileHandleStoreFile);
       mFileHandleStoreChannel = fos.getChannel();
       mFileHandleStore = new DataOutputStream(fos);

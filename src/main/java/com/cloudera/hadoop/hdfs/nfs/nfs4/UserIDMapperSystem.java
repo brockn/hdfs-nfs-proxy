@@ -33,6 +33,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.Shell;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Charsets;
+
 /**
  * Implements UID -&gt; User and User -&gt; UID mapping for Linux.
  */
@@ -149,7 +151,7 @@ public class UserIDMapperSystem extends UserIDMapper {
     }
     BufferedReader reader = null;
     try {
-      reader = new BufferedReader(new InputStreamReader(new FileInputStream(idFile)));
+      reader = new BufferedReader(new InputStreamReader(new FileInputStream(idFile), Charsets.UTF_8));
       String line;
       Pattern pattern = Pattern.compile("^([A-z]+):x:" + id + ":");
       while((line = reader.readLine()) != null) {
@@ -176,7 +178,7 @@ public class UserIDMapperSystem extends UserIDMapper {
     return defaultID;
   }
 
-  class IDCache<K> {
+  static class IDCache<K> {
     K id;
     long timestamp;
     public IDCache(K id) {

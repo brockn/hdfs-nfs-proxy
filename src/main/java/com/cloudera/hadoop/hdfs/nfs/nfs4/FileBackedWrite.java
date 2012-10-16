@@ -24,11 +24,15 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import org.apache.log4j.Logger;
+
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 
 public class FileBackedWrite extends AbstractPendingWrite {
+
+  protected static final Logger LOGGER = Logger.getLogger(FileBackedWrite.class);
 
   private final File backingFile;
   private final int length;
@@ -82,7 +86,9 @@ public class FileBackedWrite extends AbstractPendingWrite {
   }
   @Override
   public void close() {
-   backingFile.delete(); 
+   if(!backingFile.delete()) {
+     LOGGER.error("Unable to delete " + backingFile);
+   }
   }
   private void writeBytes(byte[] buffer, int start, int length) 
       throws IOException {

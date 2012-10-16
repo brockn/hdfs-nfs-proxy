@@ -23,6 +23,8 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.hadoop.conf.Configuration;
@@ -32,11 +34,14 @@ import org.apache.log4j.Logger;
 import com.cloudera.hadoop.hdfs.nfs.PathUtils;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CompoundResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSFile;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSStateBackgroundWorker;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCHandler;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
 import com.cloudera.hadoop.hdfs.nfs.security.AuthenticatedCredentials;
 import com.cloudera.hadoop.hdfs.nfs.security.Credentials;
+import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -51,6 +56,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   private final Metrics mMetrics;
   private final AsyncTaskExecutor<CompoundResponse> executor;
   private final HDFSState mHDFSState;
+  private final HDFSStateBackgroundWorker mHDFSStateBackgroundWorker;
   private final String[] mTempDirs;
   
   /**
@@ -75,7 +81,13 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     long maxInactiveOpenFileTime = configuration.getInt(MAX_OPEN_FILE_INACTIVITY_PERIOD, 
         DEFAULT_MAX_OPEN_FILE_INACTIVITY_PERIOD);
     maxInactiveOpenFileTime = TimeUnit.MILLISECONDS.convert(maxInactiveOpenFileTime, TimeUnit.MINUTES);
-    mHDFSState = new HDFSState(fileHandleStore, mTempDirs, mMetrics, maxInactiveOpenFileTime);    
+    ConcurrentMap<FileHandle, HDFSFile> fileHandleMap = Maps.newConcurrentMap();
+    Map<FileHandle, WriteOrderHandler> writeOrderHandlerMap = Maps.newHashMap();
+    mHDFSState = new HDFSState(fileHandleStore, mTempDirs, mMetrics, writeOrderHandlerMap, fileHandleMap);
+    mHDFSStateBackgroundWorker = new HDFSStateBackgroundWorker(writeOrderHandlerMap, 
+        fileHandleMap, 60L * 1000L, maxInactiveOpenFileTime);
+    mHDFSStateBackgroundWorker.setDaemon(true);
+    mHDFSStateBackgroundWorker.start();
     executor = new AsyncTaskExecutor<CompoundResponse>();
   }
   public void shutdown() throws IOException {

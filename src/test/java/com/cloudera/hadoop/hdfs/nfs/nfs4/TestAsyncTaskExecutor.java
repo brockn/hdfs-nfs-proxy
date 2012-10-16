@@ -23,6 +23,8 @@ import static org.fest.reflect.core.Reflection.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.management.RuntimeErrorException;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -44,9 +46,11 @@ public class TestAsyncTaskExecutor {
     Assert.assertEquals(2, task1.calls.get());
     Assert.assertTrue(queue.isEmpty());
   }
-  
-  private static class AsyncFutureImpl extends AbstractFuture<Void> 
+  private static abstract class BaseAsyncFuture extends AbstractFuture<Void> 
   implements AsyncFuture<Void> {
+  }
+  
+  private static class AsyncFutureImpl extends BaseAsyncFuture {
     AtomicInteger calls = new AtomicInteger(0);
     @Override
     public AsyncFuture.Complete makeProgress() {
@@ -55,5 +59,42 @@ public class TestAsyncTaskExecutor {
       }
       return AsyncFuture.Complete.RETRY;
     }    
+  }
+  
+  @Test
+  public void testException() throws InterruptedException {
+    AsyncTaskExecutor<Void> executor = new AsyncTaskExecutor<Void>();
+    BaseAsyncFuture task1 = new BaseAsyncFuture() {
+      @Override
+      public AsyncFuture.Complete makeProgress() {
+        throw new RuntimeException();
+      }
+    };
+    executor.schedule(task1);
+    @SuppressWarnings("rawtypes")
+    BlockingQueue queue = field("queue")
+        .ofType(BlockingQueue.class)
+        .in(executor)
+        .get();    
+    Thread.sleep(2000L);
+    Assert.assertTrue(queue.isEmpty());
+  }
+  @Test
+  public void testError() throws InterruptedException {
+    AsyncTaskExecutor<Void> executor = new AsyncTaskExecutor<Void>();
+    BaseAsyncFuture task1 = new BaseAsyncFuture() {
+      @Override
+      public AsyncFuture.Complete makeProgress() {
+        throw new Error();
+      }
+    };
+    executor.schedule(task1);
+    @SuppressWarnings("rawtypes")
+    BlockingQueue queue = field("queue")
+        .ofType(BlockingQueue.class)
+        .in(executor)
+        .get();    
+    Thread.sleep(2000L);
+    Assert.assertTrue(queue.isEmpty());
   }
 } 

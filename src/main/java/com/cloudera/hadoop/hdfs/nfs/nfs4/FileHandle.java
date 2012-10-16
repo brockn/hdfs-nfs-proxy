@@ -33,7 +33,7 @@ public class FileHandle implements MessageBase {
 
   }
   public FileHandle(byte[] bytes) {
-    this.mBytes = bytes;
+    this.mBytes = Arrays.copyOf(bytes, bytes.length);
   }
   @Override
   public void read(RPCBuffer buffer) {
@@ -47,11 +47,11 @@ public class FileHandle implements MessageBase {
   }
 
   public byte[] getBytes() {
-    return mBytes;
+    return Arrays.copyOf(mBytes, mBytes.length);
   }
 
   public void setBytes(byte[] bytes) {
-    this.mBytes = bytes;
+    this.mBytes = Arrays.copyOf(bytes, bytes.length);
   }
 
   @Override

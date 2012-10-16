@@ -24,6 +24,8 @@ import static org.mockito.Mockito.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -44,6 +46,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData12;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
 import com.google.common.base.Charsets;
+import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 
 public class TestHDFSState {
@@ -66,7 +69,14 @@ public class TestHDFSState {
     metrics = new Metrics();
     tempDirs = new String[1];
     tempDirs[0] = Files.createTempDir().getAbsolutePath();
-    hdfsState = new HDFSState(new MemoryFileHandleStore(), tempDirs, metrics, 30);    
+    ConcurrentMap<FileHandle, HDFSFile> fileHandleMap = Maps.newConcurrentMap();
+    Map<FileHandle, WriteOrderHandler> writeOrderHandlerMap = Maps.newHashMap();
+
+    hdfsState = new HDFSState(new MemoryFileHandleStore(), tempDirs, metrics, writeOrderHandlerMap, fileHandleMap);    
+    HDFSStateBackgroundWorker hdfsStateBackgroundWorker = new HDFSStateBackgroundWorker(writeOrderHandlerMap, 
+        fileHandleMap, 60L * 1000L, 30);
+    hdfsStateBackgroundWorker.setDaemon(true);
+    hdfsStateBackgroundWorker.start();
     stateID1 = new StateID();
     OpaqueData12 opaque = new OpaqueData12();
     opaque.setData("1".getBytes(Charsets.UTF_8));

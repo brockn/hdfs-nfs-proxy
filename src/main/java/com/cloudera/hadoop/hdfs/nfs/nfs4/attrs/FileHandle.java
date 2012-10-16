@@ -21,6 +21,8 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4.attrs;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
+import java.util.Arrays;
+
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class FileHandle extends Attribute {
   public FileHandle() {
@@ -44,11 +46,11 @@ public class FileHandle extends Attribute {
   }
 
   public byte[] getFileHandle() {
-    return mFileHandle;
+    return Arrays.copyOf(mFileHandle, mFileHandle.length);
   }
 
   public void set(byte[] fileHandle) {
-    this.mFileHandle = fileHandle;
+    this.mFileHandle =  Arrays.copyOf(fileHandle, fileHandle.length);
   }
 
 }

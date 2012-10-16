@@ -111,6 +111,20 @@ public class AsyncTaskExecutor<T> {
     }
 
     @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + (int) (delayMS ^ (delayMS >>> 32));
+      result = prime * result + (int) (start ^ (start >>> 32));
+      return result;
+    }
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj)
+        return true;
+      return false;
+    }
+    @Override
     public long getDelay(TimeUnit unit) {
       long elapsed = System.currentTimeMillis() - start;
       if(elapsed >= delayMS) {

@@ -35,20 +35,10 @@ public class FileHandleStoreEntry implements WritableComparable<FileHandleStoreE
     this(null, null, -1);
   }
 
-  public byte[] getFileHandle() {
-    return fileHandle;
-  }
-
-  public String getPath() {
-    return path;
-  }
-
-  public long getFileID() {
-    return fileID;
-  }
-
   public FileHandleStoreEntry(byte[] fileHandle, String path, long fileID) {
-    this.fileHandle = fileHandle;
+    if(fileHandle != null) {
+      this.fileHandle =  Arrays.copyOf(fileHandle, fileHandle.length);
+    }
     this.path = path;
     this.fileID = fileID;
   }
@@ -74,7 +64,17 @@ public class FileHandleStoreEntry implements WritableComparable<FileHandleStoreE
   public int compareTo(FileHandleStoreEntry o) {
     return path.compareTo(o.path);
   }
+  public byte[] getFileHandle() {
+    return Arrays.copyOf(fileHandle, fileHandle.length);
+  }
 
+  public String getPath() {
+    return path;
+  }
+
+  public long getFileID() {
+    return fileID;
+  }
   @Override
   public int hashCode() {
     final int prime = 31;

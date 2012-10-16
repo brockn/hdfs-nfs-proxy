@@ -62,20 +62,20 @@ public class HDFSState {
   /**
    * getPath is not synchronized on this as such a concurrent map is used
    */
-  private final ConcurrentMap<FileHandle, HDFSFile> mFileHandleMap = Maps.newConcurrentMap();
+  private final ConcurrentMap<FileHandle, HDFSFile> mFileHandleMap;
   private final long mStartTime = System.currentTimeMillis();
   private final ClientFactory mClientFactory = new ClientFactory();
   /**
    * Synchronized on the map itself
    */
-  private final Map<FileHandle, WriteOrderHandler> mWriteOrderHandlerMap = Maps.newHashMap();
+  private final Map<FileHandle, WriteOrderHandler> mWriteOrderHandlerMap;
   private final FileHandleStore mFileHandleStore;
   private final Metrics mMetrics;
   private final File[] mTempDirs;
-  private final HDFSStateBackgroundWorker mHDFSStateBackgroundWorker;
   
   public HDFSState(FileHandleStore fileHandleStore, String[] tempDirs, Metrics metrics, 
-      long maxInactiveOpenFileTime) throws IOException {
+      Map<FileHandle, WriteOrderHandler> writeOrderHandlerMap,
+      ConcurrentMap<FileHandle, HDFSFile> fileHandleMap) throws IOException {
     mFileHandleStore = fileHandleStore;
     mTempDirs = new File[tempDirs.length];
     for (int i = 0; i < tempDirs.length; i++) {
@@ -84,17 +84,14 @@ public class HDFSState {
           " is not a directory");
     }
     mMetrics = metrics;
-    mHDFSStateBackgroundWorker = new HDFSStateBackgroundWorker(mWriteOrderHandlerMap, 
-        mFileHandleMap, 60L * 1000L, maxInactiveOpenFileTime);
-    mHDFSStateBackgroundWorker.setDaemon(true);
-    mHDFSStateBackgroundWorker.start();
-
+    mFileHandleMap = fileHandleMap;
+    mWriteOrderHandlerMap = writeOrderHandlerMap;
     for(File tempDir : mTempDirs) {
       try {
         if(tempDir.isDirectory()) {
           PathUtils.fullyDeleteContents(tempDir);          
         } else if(tempDir.isFile()) {
-          tempDir.delete();
+          Preconditions.checkState(tempDir.delete(), "Cannot delete " + tempDir);
         }
       } catch (IOException e) {
         LOGGER.error("Error deleting " + tempDir, e);
@@ -113,7 +110,9 @@ public class HDFSState {
           throw new IOException("Unable to create test file " + testFile);
         }        
       } finally {
-        testFile.delete();
+        if(!testFile.delete()) {
+          LOGGER.warn("Unable to delete " + testFile);
+        }
       }
       
     }

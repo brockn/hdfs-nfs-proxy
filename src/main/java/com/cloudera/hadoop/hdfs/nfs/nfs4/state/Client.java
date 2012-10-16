@@ -35,11 +35,6 @@ public class Client {
   private OpaqueData8 mVerifer;
   private String mClientHost;
   private boolean mConfirmed;
-  /**
-   * Last time the lease was renewed. We don't use leases.
-   */
-  @SuppressWarnings("unused")
-  private long mRenew = System.currentTimeMillis();
 
   public boolean isConfirmed() {
     return mConfirmed;
@@ -99,6 +94,6 @@ public class Client {
     this.mVerifer = verifer;
   }
   public void setRenew(long ts) {
-    mRenew = ts;
+    // not used for now
   }
 }

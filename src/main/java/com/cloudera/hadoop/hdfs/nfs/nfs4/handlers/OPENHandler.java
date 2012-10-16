@@ -34,7 +34,6 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.attrs.ChangeID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.OPENRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.OPENResponse;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSInputStream;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSOutputStream;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 import com.google.common.base.Strings;
@@ -73,8 +72,8 @@ public class OPENHandler extends OperationRequestHandler<OPENRequest, OPENRespon
     Path parentPath = hdfsState.getPath(session.getCurrentFileHandle());
     Path path = new Path(parentPath, request.getName());
     session.setCurrentFileHandle(hdfsState.createFileHandle(path));
-    @SuppressWarnings("unused")
-    HDFSInputStream in = hdfsState.forRead(stateID, fs, session.getCurrentFileHandle());
+    // creates input stream
+    hdfsState.forRead(stateID, fs, session.getCurrentFileHandle());
     OPENResponse response = createResponse();
     response.setStateID(stateID);
     FileStatus fileStatus = fs.getFileStatus(path);

@@ -287,7 +287,7 @@ public class Bytes {
     }
   }
 
-  protected static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
+  private static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
 
   public static String asHex(byte[] buf) {
     return asHex(buf, 0, buf.length);
