@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 @SuppressWarnings({"rawtypes","unchecked"})
 public class AsyncTaskExecutor<T> {
@@ -93,13 +94,14 @@ public class AsyncTaskExecutor<T> {
       }
     }
   }
-  private static class DelayedRunnable extends FutureTask<Void> implements Delayed {
+  @VisibleForTesting
+  static class DelayedRunnable extends FutureTask<Void> implements Delayed {
     private final long delayMS;
     private final long start;
-    public DelayedRunnable(TaskRunnable delegate) {
+    public DelayedRunnable(Runnable delegate) {
       this(delegate, 0L);
     }
-    public DelayedRunnable(TaskRunnable delegate, long delayMS) {
+    public DelayedRunnable(Runnable delegate, long delayMS) {
       super(delegate, null);
       this.delayMS = delayMS;
       this.start = System.currentTimeMillis();

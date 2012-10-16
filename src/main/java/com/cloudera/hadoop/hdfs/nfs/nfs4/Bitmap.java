@@ -53,9 +53,6 @@ public class Bitmap implements MessageBase {
 
   @Override
   public void write(RPCBuffer buffer) {
-    if(mMask == null) {
-      mMask = new BitSet(DEFAULT_NUM_BITS);
-    }
     int bits = mMask.size();
     // all the written to an array of 32 bit integers
     int size = bits % 32 == 0 ? bits / 32 : (bits / 32) + 1;
@@ -100,15 +97,5 @@ public class Bitmap implements MessageBase {
   @Override
   public String toString() {
     return String.valueOf(mMask);
-  }
-  public static void main(String[] args) {
-    RPCBuffer buffer = new RPCBuffer();
-    buffer.writeUint32(2);
-    buffer.writeUint32(0);
-    buffer.writeUint32(2);
-    buffer.flip();
-    Bitmap map = new Bitmap();
-    map.read(buffer);
-    System.out.println(map);
   }
 }

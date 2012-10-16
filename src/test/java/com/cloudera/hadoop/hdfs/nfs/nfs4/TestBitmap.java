@@ -31,7 +31,7 @@ import org.junit.Test;
 public class TestBitmap {
 
   @Test
-  public void testBitMapLarge() {
+  public void testLarge() {
     // both first int and second int in bitmap
     Bitmap base = new Bitmap();
     base.set(NFS4_FATTR4_SUPPORTED_ATTRS);
@@ -56,7 +56,7 @@ public class TestBitmap {
   }
 
   @Test
-  public void testBitMapSmall() {
+  public void testSmall() {
     // first int only
     Bitmap base = new Bitmap();
     base.set(NFS4_FATTR4_LEASE_TIME);
@@ -69,11 +69,38 @@ public class TestBitmap {
     equals(base.getMask(), copy.getMask());
   }
   
+  @Test
+  public void testNotDivisableBy32() {
+    // first int only
+    Bitmap base = new Bitmap();
+    base.set(1);
+    base.set(4);
+    base.set(5);
+    base.set(99);
+    Bitmap copy = new Bitmap();
+    copy(base, copy);
+    equals(base.getMask(), copy.getMask());
+  }
+  
   private void equals(BitSet bs1, BitSet bs2) {
     Assert.assertEquals(bs1.size(), bs2.size());
     Assert.assertEquals(bs1.cardinality(), bs2.cardinality());
     for (int bitIndex = 0; bitIndex < bs1.size(); bitIndex++) {
       Assert.assertEquals(bs1.get(bitIndex), bs2.get(bitIndex));
     }
+  }
+  @Test
+  public void testEmpty() {
+    Bitmap base = new Bitmap();
+    Bitmap copy = new Bitmap();
+    copy(base, copy);
+    equals(base.getMask(), copy.getMask());
+  }
+  @Test
+  public void testToString() {
+    Bitmap base = new Bitmap();
+    base.set(NFS4_FATTR4_SUPPORTED_ATTRS);
+    base.set(NFS4_FATTR4_SPACE_USED);
+    Assert.assertEquals("{0, 45}", base.toString());
   }
 }

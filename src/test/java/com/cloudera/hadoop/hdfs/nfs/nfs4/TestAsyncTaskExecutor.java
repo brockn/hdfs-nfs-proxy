@@ -21,13 +21,13 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4;
 import static org.fest.reflect.core.Reflection.*;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.management.RuntimeErrorException;
 
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.cloudera.hadoop.hdfs.nfs.nfs4.AsyncTaskExecutor.DelayedRunnable;
 import com.google.common.util.concurrent.AbstractFuture;
 public class TestAsyncTaskExecutor {
 
@@ -96,5 +96,66 @@ public class TestAsyncTaskExecutor {
         .get();    
     Thread.sleep(2000L);
     Assert.assertTrue(queue.isEmpty());
+  }
+  @Test
+  public void testGetDelayNoDelay() throws InterruptedException {
+    DelayedRunnable delayRunnable = new DelayedRunnable(new Runnable() {      
+      @Override
+      public void run() {
+      }
+    });
+    Assert.assertEquals(0, delayRunnable.getDelay(TimeUnit.MILLISECONDS));
+  }
+  @Test
+  public void testGetDelayDelay() throws InterruptedException {
+    DelayedRunnable delayRunnable = new DelayedRunnable(new Runnable() {      
+      @Override
+      public void run() {
+      }
+    }, 2000L);
+    Assert.assertTrue(delayRunnable.getDelay(TimeUnit.MILLISECONDS) > 1000L);
+    Thread.sleep(2001L);
+    Assert.assertEquals(0, delayRunnable.getDelay(TimeUnit.MILLISECONDS));
+  }
+  @Test
+  public void testEqualsHashCode() throws InterruptedException {
+    DelayedRunnable delayRunnable1 = new DelayedRunnable(new Runnable() {      
+      @Override
+      public void run() {
+      }
+    }, 2000L);
+    Thread.sleep(5L);
+    DelayedRunnable delayRunnable2 = new DelayedRunnable(new Runnable() {      
+      @Override
+      public void run() {
+      }
+    }, 2000L);
+    Assert.assertFalse(delayRunnable1.equals(null));
+    Assert.assertFalse(delayRunnable1.equals(delayRunnable2));
+    Assert.assertTrue(delayRunnable1.equals(delayRunnable1));
+    Assert.assertFalse(delayRunnable1.hashCode() == delayRunnable2.hashCode());
+  }
+  @Test
+  public void testSortOrder() throws InterruptedException {
+    DelayedRunnable delayRunnable1 = new DelayedRunnable(new Runnable() {      
+      @Override
+      public void run() {
+      }
+    }, 2000L);
+    Thread.sleep(5L);
+    DelayedRunnable delayRunnable2 = new DelayedRunnable(new Runnable() {      
+      @Override
+      public void run() {
+      }
+    }, 2000L);
+    Assert.assertTrue(delayRunnable1.compareTo(delayRunnable2) < 0);
+    Assert.assertTrue(delayRunnable2.compareTo(delayRunnable1) > 0);
+    // since this is based on time, we have to retry this a few times
+    // in case the time changed during the call
+    boolean result = false;
+    for (int i = 0; i < 10 && !result; i++) {
+      result = delayRunnable1.compareTo(delayRunnable1) == 0;
+    }
+    Assert.assertTrue(result);
   }
 } 
