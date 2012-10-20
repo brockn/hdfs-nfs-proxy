@@ -5,7 +5,7 @@
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.cloudera</groupId>
-    <artifactId>hadoop-nfs-proxy</artifactId>
+    <artifactId>hdfs-nfs-proxy</artifactId>
     <packaging>jar</packaging>
     <version>0.8-SNAPSHOT</version>
     <name>HDFS NFS4 Proxy</name>
@@ -246,9 +246,9 @@
             </dependencies>
         </profile>
         <profile>
-            <id>hadoop023</id>
+            <id>cdh4</id>
             <properties>
-                <hadoop.version>0.23.1-SNAPSHOT</hadoop.version>
+                <hadoop.version>2.0.0-cdh4.1.1</hadoop.version>
             </properties>
             <dependencies>
                 <dependency>
@@ -264,7 +264,25 @@
             </dependencies>
         </profile>
         <profile>
-            <id>hadoop100</id>
+            <id>hadoop2</id>
+            <properties>
+                <hadoop.version>2.0.2-alpha</hadoop.version>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-common</artifactId>
+                    <version>${hadoop.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-hdfs</artifactId>
+                    <version>${hadoop.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>hadoop1</id>
             <properties>
                 <hadoop.version>1.0.3</hadoop.version>
             </properties>

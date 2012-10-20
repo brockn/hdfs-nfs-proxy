@@ -4,12 +4,10 @@ Questions? email brock at cloudera dot com
 
 1. Requirements:
 
-        - HDFS Instance with CDH, Apache Hadoop 0.23+, or Apache Hadoop 1.0+
-        - Note that this has only been tested extensive on RHEL 
-          (or equivalent) with 5.7 and 6.X as NFS Clients with CDH3u2
+        - HDFS Instance with CDH, Apache Hadoop 2.x+, or Apache Hadoop 1.x+
         - NFS Packages (nfs-utils on RHEL, CentOS and nfs-common on Ubuntu)
           must be installed on any clients wishing to mount HDFS
-        - A native NFS Server cannot be running hte hosts unless you change
+        - A native NFS Server cannot be running the hosts unless you change
           the port of HDFS NFS Proxy, instructions in the FAQ
         
 1. Download
@@ -30,16 +28,13 @@ Questions? email brock at cloudera dot com
 
     Should you choose to build your own binary, you need choose the appropiate hadoop version when building the package. Examples below:
 
-        0.20 Branch:
-         CDH3u2:
+        Hadoop 1:
           $ mvn package -Pcdh3
-         Apache Hadoop 1.0.0 (Renamed 0.20):
-          $ mvn package -Phadoop100
-         Apache Hadoop 1.0.3:
-          $ mvn package -Phadoop103
+          $ mvn package -Phadoop1
 
-        0.23 Branch:
-         $ mvn package -Phadoop-0.23
+        Hadoop 2:
+          $ mvn package -Pcdh4
+          $ mvn package -Phadoop2
 
     The output jar will be target/ you likely want the -with-deps jar.
 
@@ -48,25 +43,21 @@ Questions? email brock at cloudera dot com
         Below, /usr/lib/hadoop/conf, is the path to my *-site.xml files. Note that
         the daemon should be started as the user running hdfs, typically hadoop or hdfs.
 
-        CHD3u2 (as user hdfs or hadoop):
+        To run the server on port 2049:
 
-        $ ./start-nfs-server.sh /usr/lib/hadoop/conf snapshots/hadoop-nfs-proxy-0.8-SNAPSHOT-0.20.2-cdh3u2-with-deps-*.jar
-
-        Apache Hadoop 1.0.0 (as user hadoop):
-
-        $ ./start-nfs-server.sh /usr/lib/hadoop/conf snapshots/hadoop-nfs-proxy-0.8-SNAPSHOT-1.0.0-with-deps-*.jar
+        $ ./start-nfs-server.sh /usr/lib/hadoop/conf 2049
 
 1. Mount hdfs
 
         $ sudo mount /mnt/hdfs
 
-1. You should now be able to access HDFS. Note: The script ./start-nfs-client-tests.sh runs basic tests.
+1. You should now be able to access HDFS via ls -la /mnt/hdfs 
 
 # FAQ
 
-* I am running an NFS Server on port 2049, how can I configure this to use another port?
+* I am running an NFS Server on port 2049, how can I configure this to use another port, say 2050?
 
-         1) Change 2049 in start-nfs-server.sh to say 2050
+         1) Change your start command to: ./start-nfs-server.sh /usr/lib/hadoop/conf 2050
          2) Add port=2050 to the mount options
 
 * What is this good for? or Can I replace my expensive NAS?
@@ -117,8 +108,8 @@ is running your namenode.
 
 # What needs improvement (in no order)
 
-* Locking:
-NFS4Handler has coarse grained locking and is heavily used
+None of these make the system unusable, they are just things we should improve.
+
 * User Mapping: 
 NFS4 User identities are user@domain. However, the RPC protocol uses UID/GID.
 Currently we map the UID on the incoming request via the system the daemon executes on.
@@ -141,7 +132,5 @@ than required. We also might considering pooling input streams.
 Heavy read loads use a fair amount of old gen likely due to our response cache
 and the size of read responses. If this becomes an issue we could easily exclude 
 read requests from the response cache.
-* Write Ordering:
-We buffer writes until we find the prereq, this memory consumption is not bounded.
 * Metrics:
 A simple metrics system is used. We should use Hadoops Metric System. 

@@ -6,7 +6,7 @@ then
   echo "e.g. $0 /usr/lib/hadoop/conf port"
   exit 1
 fi
-JAR=$PWD/target/hadoop-nfs-proxy-0.8-SNAPSHOT-with-deps.jar
+JAR=$PWD/target/hdfs-nfs-proxy-0.8-SNAPSHOT-with-deps.jar
 HADOOP_CONFIG=$1
 PORT=$2
 if [[ ! -f $JAR ]]
