@@ -191,7 +191,9 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
             byte[] plainData = mSecurityHandler.unwrap(encryptedData);
             requestBuffer = new RPCBuffer(plainData);
           }
-          boolean inProgress = mRequestsInProgress.putIfAbsent(request.getXid(), System.currentTimeMillis()) != null;
+          // if putIfAbsent returns non-null then the request is already in progress
+          boolean inProgress = mRequestsInProgress.putIfAbsent(request.getXid(), 
+              System.currentTimeMillis()) != null;
           if(inProgress) {
             mRetransmits++;
             mHandler.incrementMetric(RESTRANSMITS, 1);
@@ -285,7 +287,7 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
     } finally {
       Long startTime = mRequestsInProgress.remove(request.getXid());
       if(startTime != null) {
-        
+        mHandler.incrementMetric(COMPOUND_REQUEST_ELAPSED_TIME, System.currentTimeMillis() - startTime);
       }
     }
   }
