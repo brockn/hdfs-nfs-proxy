@@ -19,12 +19,14 @@
 package com.cloudera.hadoop.hdfs.nfs.metrics;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.metrics.MetricConstants.Metric;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 public class MetricsAccumulator {
   protected static final Logger LOGGER = Logger.getLogger(MetricsAccumulator.class);
@@ -41,6 +43,9 @@ public class MetricsAccumulator {
     mMetricsPrinter.setDaemon(true);
     mMetricsPrinter.start();
   }
+  /**
+   * Increment an adoc metric
+   */
   public synchronized void incrementMetric(String name, long count) {
     name = name.toUpperCase();
     AtomicLong counter = mAdhocMetrics.get(name);
@@ -51,7 +56,7 @@ public class MetricsAccumulator {
     counter.addAndGet(count);
   }
   /**
-   * Create or increment a named counter
+   * Increment a specific metric
    */
   public synchronized void incrementMetric(Metric metric, long count) {
     AtomicLong counter = mMetrics.get(metric);
@@ -61,7 +66,9 @@ public class MetricsAccumulator {
     }
     counter.addAndGet(count);
   }
-  
+  /**
+   * Get adhoc metric value, returning 0 if it does not exist
+   */
   public synchronized long getMetric(String name) {
     name = name.toUpperCase();
     AtomicLong counter = mAdhocMetrics.get(name);
@@ -71,7 +78,9 @@ public class MetricsAccumulator {
     }
     return counter.get();
   }
-  
+  /**
+   * Get a specific metric value
+   */
   public synchronized long getMetric(Metric metric) {
     AtomicLong counter = mMetrics.get(metric);
     if (counter == null) {
@@ -87,18 +96,20 @@ public class MetricsAccumulator {
       AtomicLong counter = mAdhocMetrics.get(key);
       values.put(key, counter.getAndSet(0L));
     }
+    Set<Metric> metricsWithDivisors = Sets.newHashSet();
     for (Metric key : mMetrics.keySet()) {
       AtomicLong counter = mMetrics.get(key);
       String name = key.name();
       values.put(name, counter.getAndSet(0L));
-    }
-    for(Metric key : mMetrics.keySet()) {
       if(key.hasDivisor()) {
-        Long counter = values.get(key.name());
-        Long divisor = values.get(key.getDivisor());
-        if(divisor != null && divisor > 0L) {
-          values.put("AVG_" + key.name(), (counter / divisor));
-        }
+        metricsWithDivisors.add(key);
+      }
+    }
+    for(Metric key : metricsWithDivisors) {
+      Long counter = values.get(key.name());
+      Long divisor = values.get(key.getDivisor());
+      if(divisor != null && divisor > 0L) {
+        values.put("AVG_" + key.name(), (counter / divisor));
       }
     }
     mMetricPublisher.publish(values);
