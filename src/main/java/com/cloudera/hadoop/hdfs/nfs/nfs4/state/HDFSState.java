@@ -19,6 +19,7 @@
 package com.cloudera.hadoop.hdfs.nfs.nfs4.state;
 
 import static com.cloudera.hadoop.hdfs.nfs.PathUtils.*;
+import static com.cloudera.hadoop.hdfs.nfs.metrics.MetricConstants.Metric.*;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.io.File;
@@ -39,10 +40,11 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.PathUtils;
+import com.cloudera.hadoop.hdfs.nfs.metrics.MetricConstants.Metric;
+import com.cloudera.hadoop.hdfs.nfs.metrics.MetricsAccumulator;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandleStore;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandleStoreEntry;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.Metrics;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
@@ -70,10 +72,10 @@ public class HDFSState {
    */
   private final Map<FileHandle, WriteOrderHandler> mWriteOrderHandlerMap;
   private final FileHandleStore mFileHandleStore;
-  private final Metrics mMetrics;
+  private final MetricsAccumulator mMetrics;
   private final File[] mTempDirs;
   
-  public HDFSState(FileHandleStore fileHandleStore, String[] tempDirs, Metrics metrics, 
+  public HDFSState(FileHandleStore fileHandleStore, String[] tempDirs, MetricsAccumulator metrics, 
       Map<FileHandle, WriteOrderHandler> writeOrderHandlerMap,
       ConcurrentMap<FileHandle, HDFSFile> fileHandleMap) throws IOException {
     mFileHandleStore = fileHandleStore;
@@ -200,7 +202,7 @@ public class HDFSState {
   protected synchronized void putFileHandle(FileHandle fileHandle, String path, HDFSFile holder) {
     mPathMap.put(path, holder);
     mFileHandleMap.put(fileHandle, holder);
-    mMetrics.incrementMetric("FILE_HANDLES_CREATED", 1);
+    mMetrics.incrementMetric(FILE_HANDLES_CREATED, 1);
   }
 
   /**
@@ -276,7 +278,7 @@ public class HDFSState {
       } else {
         LOGGER.warn("File " + hdfsFile + " is not open for read or write.");
       }
-      mMetrics.incrementMetric("FILES_CLOSED", 1);
+      mMetrics.incrementMetric(FILES_CLOSED, 1);
       return file.getStateID();
     }
   }
@@ -361,7 +363,7 @@ public class HDFSState {
         throw new NFS4Exception(NFS4ERR_ISDIR);
       }
       HDFSInputStream in = new HDFSInputStream(fs.open(path));
-      mMetrics.incrementMetric("FILES_OPENED_READ", 1);
+      mMetrics.incrementMetric(FILES_OPENED_READ, 1);
       fileHolder.putInputStream(stateID, in);
       return in;
     }
@@ -454,7 +456,7 @@ public class HDFSState {
         throw new NFS4Exception(NFS4ERR_ISDIR);
       }
       HDFSOutputStream out = new HDFSOutputStream(fs.create(path, overwrite), path.toString(), fileHandle);
-      mMetrics.incrementMetric("FILES_OPENED_WRITE", 1);
+      mMetrics.incrementMetric(FILES_OPENED_WRITE, 1);
       fileHolder.setHDFSOutputStream(stateID, out);
       return out;
     }
@@ -552,6 +554,14 @@ public class HDFSState {
    */
   public void incrementMetric(String name, long count) {
     mMetrics.incrementMetric(name, count);
+  }
+  /**
+   * Increment name by count
+   * @param name
+   * @param count
+   */
+  public void incrementMetric(Metric metric, long count) {
+    mMetrics.incrementMetric(metric, count);
   }
   /**
    * @return next fileID

@@ -26,21 +26,24 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.cloudera.hadoop.hdfs.nfs.PathUtils;
+import com.cloudera.hadoop.hdfs.nfs.metrics.LogMetricPublisher;
+import com.cloudera.hadoop.hdfs.nfs.metrics.MetricsAccumulator;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MemoryFileHandleStore;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.Metrics;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData12;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
@@ -50,8 +53,9 @@ import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 
 public class TestHDFSState {
+  protected static final Logger LOGGER = Logger.getLogger(TestHDFSState.class);
 
-  private Metrics metrics;
+  private MetricsAccumulator metrics;
   private FileSystem fs;
   private FileStatus fileStatus;
   private HDFSState hdfsState;
@@ -66,9 +70,11 @@ public class TestHDFSState {
   
   @Before
   public void setup() throws IOException {
-    metrics = new Metrics();
-    tempDirs = new String[1];
+    metrics = new MetricsAccumulator(new LogMetricPublisher(LOGGER), 
+        TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES));
+    tempDirs = new String[2];
     tempDirs[0] = Files.createTempDir().getAbsolutePath();
+    tempDirs[1] = Files.createTempDir().getAbsolutePath();
     ConcurrentMap<FileHandle, HDFSFile> fileHandleMap = Maps.newConcurrentMap();
     Map<FileHandle, WriteOrderHandler> writeOrderHandlerMap = Maps.newHashMap();
 

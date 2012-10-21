@@ -23,9 +23,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -47,7 +45,7 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
   protected Configuration mConfiguration;
   protected Map<Integer, MessageBase> mResponseCache =
       Collections.synchronizedMap(new LRUCache<Integer, MessageBase>(500));
-  protected Set<Integer> mRequestsInProgress = Collections.synchronizedSet(new HashSet<Integer>());
+  protected ConcurrentMap<Integer, Long> mRequestsInProgress = Maps.newConcurrentMap();
   protected Map<String, BlockingQueue<RPCBuffer>> mOutputQueueMap = Maps.newHashMap();
 
   public RPCServer(RPCHandler<REQUEST, RESPONSE> rpcHandler, Configuration conf, InetAddress address) throws Exception {
@@ -123,7 +121,7 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
     return mResponseCache;
   }
 
-  public Set<Integer> getRequestsInProgress() {
+  public ConcurrentMap<Integer, Long> getRequestsInProgress() {
     return mRequestsInProgress;
   }
 

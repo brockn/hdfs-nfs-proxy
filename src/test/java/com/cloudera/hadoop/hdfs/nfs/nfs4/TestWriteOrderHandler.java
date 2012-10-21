@@ -20,10 +20,10 @@
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
 import static com.google.common.base.Preconditions.*;
+import static org.fest.reflect.core.Reflection.*;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
-import static org.fest.reflect.core.Reflection.*;
 
 import java.io.File;
 import java.io.IOException;

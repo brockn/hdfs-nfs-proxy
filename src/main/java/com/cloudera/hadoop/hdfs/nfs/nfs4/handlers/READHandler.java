@@ -18,6 +18,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
+import static com.cloudera.hadoop.hdfs.nfs.metrics.MetricConstants.Metric.*;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.io.IOException;
@@ -59,7 +60,7 @@ public class READHandler extends OperationRequestHandler<READRequest, READRespon
         } catch (IOException e) {
           throw new IOException(e.getMessage() + ": " + inputStream.getPos() + ", " + request.getOffset(), e);
         }
-        hdfsState.incrementMetric("NFS_RANDOM_READS", 1);
+        hdfsState.incrementMetric(NFS_RANDOM_READS, 1);
       }
       READResponse response = createResponse();
       byte[] data = new byte[size];
@@ -71,14 +72,14 @@ public class READHandler extends OperationRequestHandler<READRequest, READRespon
             + " at pos = " + request.getOffset()
             + ", wanted " + data.length + " and read " + count
             + ", fileLength = " + fileLength);
-        hdfsState.incrementMetric("NFS_SHORT_READS", 1);
+        hdfsState.incrementMetric(NFS_SHORT_READS, 1);
       }
       boolean eof = count < 0;
       if (eof) {
         data = new byte[0];
         count = 0;
       }
-      hdfsState.incrementMetric("HDFS_BYTES_READ", count);
+      hdfsState.incrementMetric(HDFS_BYTES_READ, count);
       response.setData(data, 0, count);
       response.setEOF(eof);
       response.setStatus(NFS4_OK);

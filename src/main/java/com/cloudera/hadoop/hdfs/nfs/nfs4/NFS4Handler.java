@@ -32,6 +32,9 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.PathUtils;
+import com.cloudera.hadoop.hdfs.nfs.metrics.LogMetricPublisher;
+import com.cloudera.hadoop.hdfs.nfs.metrics.MetricConstants.Metric;
+import com.cloudera.hadoop.hdfs.nfs.metrics.MetricsAccumulator;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CompoundResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSFile;
@@ -53,7 +56,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   protected static final Logger LOGGER = Logger.getLogger(NFS4Handler.class);
   private final Configuration mConfiguration;
-  private final Metrics mMetrics;
+  private final MetricsAccumulator mMetrics;
   private final AsyncTaskExecutor<CompoundResponse> executor;
   private final HDFSState mHDFSState;
   private final HDFSStateBackgroundWorker mHDFSStateBackgroundWorker;
@@ -75,7 +78,8 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
    */
   public NFS4Handler(Configuration configuration) throws IOException {
     mConfiguration = configuration;
-    mMetrics = new Metrics();
+    mMetrics = new MetricsAccumulator(new LogMetricPublisher(LOGGER), 
+        TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES));
     mTempDirs = configuration.getStrings(TEMP_DIRECTORIES, Files.createTempDir().getAbsolutePath());
     FileHandleStore fileHandleStore = FileHandleStore.get(configuration);    
     long maxInactiveOpenFileTime = configuration.getInt(MAX_OPEN_FILE_INACTIVITY_PERIOD, 
@@ -141,8 +145,8 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
 
 
   @Override
-  public void incrementMetric(String name, long count) {
-    mMetrics.incrementMetric(name, count);
+  public void incrementMetric(Metric metric, long count) {
+    mMetrics.incrementMetric(metric, count);
   }
 
   /**

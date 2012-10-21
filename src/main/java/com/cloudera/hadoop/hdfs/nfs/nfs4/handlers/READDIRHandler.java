@@ -18,6 +18,8 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
+
+import static com.cloudera.hadoop.hdfs.nfs.metrics.MetricConstants.Metric.*;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.io.IOException;
@@ -120,7 +122,7 @@ public class READDIRHandler extends OperationRequestHandler<READDIRRequest, READ
       }
       messageSize += entryLength;
       entries.add(entry);
-      hdfsState.incrementMetric("NFS_READDIR_ENTRIES", 1);
+      hdfsState.incrementMetric(NFS_READDIR_ENTRIES, 1);
     }
     DirectoryList entryList = new DirectoryList();
     entryList.setDirEntries(entries);

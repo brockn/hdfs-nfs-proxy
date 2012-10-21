@@ -18,6 +18,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.handlers;
 
+import static com.cloudera.hadoop.hdfs.nfs.metrics.MetricConstants.Metric.*;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.io.File;
@@ -106,7 +107,7 @@ public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITERes
     OpaqueData8 verifer = new OpaqueData8();
     verifer.setData(Bytes.toBytes(hdfsState.getStartTime()));
     response.setVerifer(verifer);
-    hdfsState.incrementMetric("HDFS_BYTES_WRITE", count);
+    hdfsState.incrementMetric(HDFS_BYTES_WRITE, count);
     response.setCount(count);
     response.setStatus(NFS4_OK);
     return response;

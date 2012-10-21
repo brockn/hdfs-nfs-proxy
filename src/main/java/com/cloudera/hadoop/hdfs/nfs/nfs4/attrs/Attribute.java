@@ -18,6 +18,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.attrs;
 
+import static com.cloudera.hadoop.hdfs.nfs.metrics.MetricConstants.Metric.*;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.io.IOException;
@@ -179,7 +180,7 @@ public abstract class Attribute implements MessageBase, Identifiable {
           attrValues.add(handler.get(hdfsState, session, fs, fileStatus));
         } else {
           LOGGER.info("getAttr Dropping attribute " + bitIndex);
-          hdfsState.incrementMetric("GETATTR_DROPPED_ATTRS", 1);
+          hdfsState.incrementMetric(GETATTR_DROPPED_ATTRS, 1);
         }
       }
     }

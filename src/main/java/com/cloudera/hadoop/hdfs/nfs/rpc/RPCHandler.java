@@ -21,6 +21,7 @@ package com.cloudera.hadoop.hdfs.nfs.rpc;
 
 import java.net.InetAddress;
 
+import com.cloudera.hadoop.hdfs.nfs.metrics.MetricConstants.Metric;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -33,7 +34,7 @@ public abstract class RPCHandler<REQUEST extends MessageBase, RESPONSE extends M
 
   public abstract REQUEST createRequest();
 
-  public abstract void incrementMetric(String name, long count);
+  public abstract void incrementMetric(Metric metric, long count);
 
 
 }

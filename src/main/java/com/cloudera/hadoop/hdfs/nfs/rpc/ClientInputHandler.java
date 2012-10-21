@@ -18,6 +18,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.rpc;
 
+import static com.cloudera.hadoop.hdfs.nfs.metrics.MetricConstants.Metric.*;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.io.EOFException;
@@ -25,8 +26,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -74,7 +75,7 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
   protected BlockingQueue<RPCBuffer> mOutputBufferQueue;
   protected RPCHandler<REQUEST, RESPONSE> mHandler;
   protected SecurityHandler mSecurityHandler;
-  protected Set<Integer> mRequestsInProgress;
+  protected ConcurrentMap<Integer, Long> mRequestsInProgress;
   protected Map<Integer, MessageBase> mResponseCache;
   /**
    * Number of retransmits received
@@ -123,33 +124,11 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
         // request is used to indicate if we should send
         // a failure packet in case of an error
         request = null;
-//        if(mRetransmits >= mRestransmitPenaltyThreshold) {
-//          mRetransmits = 0L;
-//          mHandler.incrementMetric("RETRANSMIT_PENALTY_BOX", 1);
-//          Thread.sleep(RETRANSMIT_PENALTY_TIME);
-//          if(LOGGER.isDebugEnabled()) {
-//            LOGGER.debug(mSessionID + " Client " + mClientName + " is going in the penalty box (SLOWDOWN)");
-//          }
-//        }
         mRetransmits = mRetransmits > 0 ? mRetransmits : 0;
-
-        // Some requests will burn a thread while waiting for a
-        // condition. For example close waits for writes to finish
-        // and rename waits for a few ms for the file to close
-        // if open. We should have an async return path.
-//        int count = 0;
-//        while(mRequestsInProgress.size() > mMaxPendingRequests && count++ < mMaxPendingRequestWaits) {
-//          mHandler.incrementMetric("TOO_MANY_PENDING_REQUESTS", 1);
-//          if(LOGGER.isDebugEnabled()) {
-//            LOGGER.debug(mSessionID + " Client " + mClientName + " is waiting for pending " + 
-//                mRequestsInProgress.size() + " requests to finish (SLOWDOWN)");
-//          }
-//          Thread.sleep(TOO_MANY_PENDING_REQUESTS_PAUSE);
-//        }
-
+        
         RPCBuffer requestBuffer = RPCBuffer.from(in);
         LOGGER.info(mSessionID + " got request");
-        mHandler.incrementMetric("CLIENT_BYTES_READ", requestBuffer.length());
+        mHandler.incrementMetric(CLIENT_BYTES_READ, requestBuffer.length());
         request = new RPCRequest();
         request.read(requestBuffer);
         if(request.getRpcVersion() != RPC_VERSION) {
@@ -212,13 +191,13 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
             byte[] plainData = mSecurityHandler.unwrap(encryptedData);
             requestBuffer = new RPCBuffer(plainData);
           }
-          if(mRequestsInProgress.contains(request.getXid())) {
+          boolean inProgress = mRequestsInProgress.putIfAbsent(request.getXid(), System.currentTimeMillis()) != null;
+          if(inProgress) {
             mRetransmits++;
-            mHandler.incrementMetric("RESTRANSMITS", 1);
+            mHandler.incrementMetric(RESTRANSMITS, 1);
             LOGGER.info(mSessionID + " ignoring request " + request.getXidAsHexString());
           } else {
             mRetransmits--;
-            mRequestsInProgress.add(request.getXid());
             /*
              * TODO ensure credentials are the same for request/cached
              * response.
@@ -291,7 +270,7 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
           // ignore, just sleep
         }
       }
-      mHandler.incrementMetric("CLIENT_BYTES_WROTE", responseBuffer.length());
+      mHandler.incrementMetric(CLIENT_BYTES_WROTE, responseBuffer.length());
     } catch(NFS4Exception ex) {
       // TODO pass back error code
       LOGGER.error(mSessionID + " Error from client " + mClientName + " xid = " + request.getXid(), ex);
@@ -304,7 +283,10 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
         LOGGER.error(mSessionID + " Error writing failure packet", x);
       }
     } finally {
-      mRequestsInProgress.remove(request.getXid());
+      Long startTime = mRequestsInProgress.remove(request.getXid());
+      if(startTime != null) {
+        
+      }
     }
   }
   protected void writeRPCResponse(RPCResponse response) {
@@ -330,7 +312,7 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
         // ignore, just sleep
       }
     }
-    mHandler.incrementMetric("CLIENT_BYTES_WROTE", responseBuffer.length());
+    mHandler.incrementMetric(CLIENT_BYTES_WROTE, responseBuffer.length());
   }
 
   private void execute(final RPCRequest request, RPCBuffer requestBuffer) {

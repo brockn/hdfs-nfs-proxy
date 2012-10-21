@@ -18,6 +18,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
+import static com.cloudera.hadoop.hdfs.nfs.metrics.MetricConstants.Metric.*;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.io.IOException;
@@ -71,7 +72,7 @@ implements AsyncFuture<CompoundResponse> {
       response.setStatus(lastStatus);
       response.setOperations(responses);
       set(response);
-      hdfsState.incrementMetric("NFS_COMMANDS", 1);
+      hdfsState.incrementMetric(NFS_COMPOUND_REQUESTS, 1);
     } catch (Exception ex) {
       if (ex instanceof UndeclaredThrowableException && ex.getCause() != null) {
         Throwable throwable = ex.getCause();
@@ -128,7 +129,7 @@ implements AsyncFuture<CompoundResponse> {
         return AsyncFuture.Complete.COMPLETE;
       }
       hdfsState.incrementMetric("NFS_" + request.getClass().getSimpleName(), 1);
-      hdfsState.incrementMetric("NFS_OPERATIONS", 1);
+      hdfsState.incrementMetric(NFS_REQUESTS, 1);
     }
     return AsyncFuture.Complete.COMPLETE;
   }
