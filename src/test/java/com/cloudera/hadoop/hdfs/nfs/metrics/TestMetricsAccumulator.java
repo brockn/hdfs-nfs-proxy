@@ -67,7 +67,7 @@ public class TestMetricsAccumulator {
     Assert.assertEquals(new Long(1L), values.get("NFS_REQUESTS"));
     Assert.assertEquals(new Long(2L), values.get("NFS_COMPOUND_REQUESTS"));
     Assert.assertEquals(new Long(5000L), values.get("COMPOUND_REQUEST_ELAPSED_TIME"));
-    Assert.assertEquals(new Long(2500L), values.get("AVG_COMPOUND_REQUEST_ELAPSED_TIME"));
+    Assert.assertEquals(new Long(2500L), values.get("COMPOUND_REQUEST_ELAPSED_TIME_AVG"));
     Assert.assertEquals(new Long(1L), values.get("NFS_REQUESTS"));
   }
 }

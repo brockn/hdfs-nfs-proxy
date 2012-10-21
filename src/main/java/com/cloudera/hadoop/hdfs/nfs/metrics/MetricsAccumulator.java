@@ -109,7 +109,7 @@ public class MetricsAccumulator {
       Long counter = values.get(key.name());
       Long divisor = values.get(key.getDivisor());
       if(divisor != null && divisor > 0L) {
-        values.put("AVG_" + key.name(), (counter / divisor));
+        values.put(key.name() + "_AVG", (counter / divisor));
       }
     }
     mMetricPublisher.publish(values);
