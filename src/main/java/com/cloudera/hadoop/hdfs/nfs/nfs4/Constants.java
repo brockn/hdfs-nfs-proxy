@@ -362,12 +362,6 @@ public class Constants {
   public static final String USER_ID_MAPPER_CLASS = "hdfs.nfs.useridmapper";
   public static final String NFS_OWNER_DOMAIN = "hdfs.nfs.nfs4.owner.domain";
 
-  public static final String RPC_MAX_THREADS = "hdfs.nfs.rpcserver.max.threads";
-
-  public static final String RPC_MAX_PENDING_REQUESTS = "hdfs.nfs.rpcworker.max.pending.requests";
-
-  public static final String RPC_RETRANSMIT_PENALTY_THRESHOLD = "hdfs.nfs.rpcworker.restransmit.penalty.threshold";
-
   public static final String DATA_DIRECTORY = "hdfs.nfs.data.dir";
   
   public static final String TEMP_DIRECTORIES = "hdfs.nfs.temp.dirs";

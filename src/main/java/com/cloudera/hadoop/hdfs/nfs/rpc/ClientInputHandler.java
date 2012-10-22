@@ -65,9 +65,6 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
   protected static final long RETRANSMIT_PENALTY_TIME = 100L;
   protected static final long TOO_MANY_PENDING_REQUESTS_PAUSE = 100L;
   protected static final long EXECUTOR_THREAD_POOL_FULL_PAUSE = 10L;
-  protected int mRestransmitPenaltyThreshold;
-  protected int mMaxPendingRequests;
-  protected int mMaxPendingRequestWaits;
   protected Socket mClient;
   protected String mClientName;
   protected RPCServer<REQUEST, RESPONSE> mRPCServer;
@@ -98,11 +95,6 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
     mSessionID = "0x" + Integer.toHexString(SESSIONID.addAndGet(-5));
     setName("RPCServer-" + mClientName);
     mOutputBufferQueue = mRPCServer.getOutputQueue(clientHost);
-
-    mMaxPendingRequests = mConfiguration.getInt(RPC_MAX_PENDING_REQUESTS, 20);
-    mRestransmitPenaltyThreshold = mConfiguration.getInt(RPC_RETRANSMIT_PENALTY_THRESHOLD, 3);
-    mMaxPendingRequestWaits = 500;
-    
     mRequestsInProgress = mRPCServer.getRequestsInProgress();
     mResponseCache = mRPCServer.getResponseCache();
   }
