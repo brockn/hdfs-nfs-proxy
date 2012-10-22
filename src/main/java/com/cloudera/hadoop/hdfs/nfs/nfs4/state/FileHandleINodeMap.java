@@ -130,18 +130,6 @@ public class FileHandleINodeMap {
       mWriteLock.unlock();
     }
   }
-  public Map<FileHandle, INode> getAll() {
-    mReadLock.lock();
-    try {
-      Map<FileHandle, INode> result = Maps.newHashMap();
-      for(Map.Entry<FileHandle, INode> entry : mFileHandleINodeMap.entrySet()) {
-        result.put(entry.getKey(), entry.getValue());
-      }
-      return result;
-    } finally {
-      mReadLock.unlock();
-    }
-  }
   public Map<FileHandle, String> getFileHandlesNotValidatedSince(Long upperBound) {
     Map<FileHandle, String> result = Maps.newHashMap();
     mReadLock.lock();

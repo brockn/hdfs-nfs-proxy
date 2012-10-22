@@ -126,12 +126,6 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     Preconditions.checkState(fileHandleINodeDir.isDirectory() || fileHandleINodeDir.mkdirs());
     FileHandleINodeMap fileHandleINodeMap = 
         new FileHandleINodeMap(new File(fileHandleINodeDir, "map"));
-    if(LOGGER.isDebugEnabled()) {
-      LOGGER.debug("Printing all file handles");
-      for(Map.Entry<FileHandle, INode> entry : fileHandleINodeMap.getAll().entrySet()) {
-        LOGGER.debug("Found " + entry.getKey() + " => " + entry.getValue());
-      }      
-    }
     mHDFSState = new HDFSState(fileHandleINodeMap, mTempDirs, mFileSystem, mMetrics, 
         writeOrderHandlerMap, openFileMap);
     mHDFSStateBackgroundWorker = new HDFSStateBackgroundWorker(mHDFSState, 
