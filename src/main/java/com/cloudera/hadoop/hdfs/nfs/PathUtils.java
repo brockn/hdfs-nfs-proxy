@@ -21,6 +21,7 @@ package com.cloudera.hadoop.hdfs.nfs;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.UUID;
 
 import org.apache.hadoop.fs.Path;
 
@@ -37,10 +38,9 @@ public class PathUtils {
     return path.toUri().getPath();
   }
   
-  public static void ensureDirectoryIsWriteAble(File tempDir) throws IOException {
-    if(tempDir.isDirectory()) {
-      PathUtils.fullyDeleteContents(tempDir);          
-    } else if(tempDir.isFile()) {
+  public static void ensureDirectoryIsWriteable(File tempDir) 
+      throws IOException {
+    if(tempDir.isFile()) {
       if(!tempDir.delete()) {
         throw new IOException("Cannot delete " + tempDir);
       }
@@ -49,7 +49,7 @@ public class PathUtils {
       throw new IOException("Directory " + tempDir +
           " does not exist or could not be created.");
     }
-    File testFile = new File(tempDir, "test");
+    File testFile = new File(tempDir, "test-" + UUID.randomUUID());
     try {
       if(testFile.isFile() && !testFile.delete()) {
         throw new IOException("Test file " + testFile + " exists but cannot be deleted");

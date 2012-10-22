@@ -92,7 +92,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       sDataDir = Files.createTempDir().getAbsolutePath();
     }
     File dataDir = new File(sDataDir);
-    PathUtils.ensureDirectoryIsWriteAble(dataDir);
+    PathUtils.ensureDirectoryIsWriteable(dataDir);
     String[] tempDirs = configuration.getStrings(TEMP_DIRECTORIES);
     if(tempDirs == null) {
       tempDirs = new String[1];
@@ -101,7 +101,8 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     mTempDirs = new File[tempDirs.length];
     for (int i = 0; i < tempDirs.length; i++) {
       mTempDirs[i] = new File(tempDirs[i]);
-      PathUtils.ensureDirectoryIsWriteAble(mTempDirs[i]);
+      PathUtils.fullyDeleteContents(mTempDirs[i]);
+      PathUtils.ensureDirectoryIsWriteable(mTempDirs[i]);
     }
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
