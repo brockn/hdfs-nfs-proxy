@@ -39,6 +39,7 @@ import jdbm.SecondaryTreeMap;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
 
 public class FileHandleINodeMap {
@@ -105,6 +106,11 @@ public class FileHandleINodeMap {
     mWriteLock.lock();
     try {
       mFileHandleINodeMap.put(fileHandle, value);
+      try {
+        mRecordManager.commit();
+      } catch (IOException e) {
+        Throwables.propagate(e);
+      }
     } finally {
       mWriteLock.unlock();
     }
@@ -113,6 +119,11 @@ public class FileHandleINodeMap {
     mWriteLock.lock();
     try {
       mFileHandleINodeMap.remove(fileHandle);
+      try {
+        mRecordManager.commit();
+      } catch (IOException e) {
+        Throwables.propagate(e);
+      }
     } finally {
       mWriteLock.unlock();
     }
@@ -123,6 +134,11 @@ public class FileHandleINodeMap {
       for(FileHandle fileHandle : fileHandles) {
         INode inode = mFileHandleINodeMap.get(fileHandle);
         mFileHandleINodeMap.put(fileHandle, new INode(inode.getPath(), inode.getNumber()));
+      }
+      try {
+        mRecordManager.commit();
+      } catch (IOException e) {
+        Throwables.propagate(e);
       }
     } finally {
       mWriteLock.unlock();
