@@ -42,12 +42,17 @@ public class NFS4Server extends Configured implements Tool {
   NFS4Handler mNFSServer;
   RPCServer<CompoundRequest, CompoundResponse> mRPCServer;
 
-  public static void main(String[] args) throws Exception {
-
+  static{
+    Configuration.addDefaultResource("hdfs-default.xml");
+    Configuration.addDefaultResource("hdfs-site.xml");
+    
     System.setProperty("java.security.krb5.realm", "LOCALDOMAIN");
     System.setProperty("java.security.krb5.kdc", "localhost");
     System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");
-    System.setProperty("java.security.auth.login.config", "sec.conf");
+    System.setProperty("java.security.auth.login.config", "conf/sec.conf");
+  }
+  
+  public static void main(String[] args) throws Exception {
 
     System.exit(ToolRunner.run(new Configuration(), new NFS4Server(), args));
   }
