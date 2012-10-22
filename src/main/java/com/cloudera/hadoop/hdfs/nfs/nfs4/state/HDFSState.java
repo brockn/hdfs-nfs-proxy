@@ -148,6 +148,8 @@ public class HDFSState {
       Path path = new Path(inode.getPath());
       synchronized(this) {
         if(!fileExists(path)) {
+          LOGGER.info("Path " + path + " does not exist in underlying fs, " +
+          		"deleting file handle");
           mFileHandleINodeMap.remove(fileHandle);
           return true;
         }
