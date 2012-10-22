@@ -25,6 +25,11 @@ public class INode implements Serializable {
   }
 
   @Override
+  public String toString() {
+    return "INode [path=" + path + ", number=" + number + ", creationTime="
+        + creationTime + "]";
+  }
+  @Override
   public int hashCode() {
     final int prime = 31;
     int result = 1;
