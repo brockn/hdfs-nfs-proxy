@@ -509,9 +509,10 @@ public class HDFSState {
    * @throws NFS4Exception if the FileHandle for the Path is stale
    */
   public FileHandle getFileHandle(Path path) throws NFS4Exception {
-    FileHandle fileHandle = mFileHandleINodeMap.getFileHandleByPath(realPath(path));
+    String realPath = realPath(path);
+    FileHandle fileHandle = mFileHandleINodeMap.getFileHandleByPath(realPath);
     if(fileHandle == null) {
-      throw new NFS4Exception(NFS4ERR_STALE);
+      throw new NFS4Exception(NFS4ERR_STALE, realPath);
     }
     return fileHandle;
   }
