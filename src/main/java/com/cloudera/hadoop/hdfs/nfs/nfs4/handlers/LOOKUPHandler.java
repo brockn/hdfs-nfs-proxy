@@ -22,7 +22,6 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.io.IOException;
 
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
@@ -49,12 +48,11 @@ public class LOOKUPHandler extends OperationRequestHandler<LOOKUPRequest, LOOKUP
     }
     Path parentPath = hdfsState.getPath(session.getCurrentFileHandle());
     Path path = new Path(parentPath, request.getName());
-    FileSystem fs = session.getFileSystem();
-    if (!hdfsState.fileExists(fs, path)) {
+    if (!hdfsState.fileExists(path)) {
       throw new NFS4Exception(NFS4ERR_NOENT, "Path " + path + " does not exist.", true);
     }
     LOOKUPResponse response = createResponse();
-    FileHandle fileHandle = hdfsState.createFileHandle(path);
+    FileHandle fileHandle = hdfsState.getOrCreateFileHandle(path);
     session.setCurrentFileHandle(fileHandle);
     response.setStatus(NFS4_OK);
     return response;

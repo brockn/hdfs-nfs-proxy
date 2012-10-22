@@ -33,7 +33,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.hadoop.conf.Configuration;
@@ -58,6 +57,7 @@ public class TestUtils {
     tmpDirPathForTest = tmpDirPath + File.separator
         + "TestDir" + (new Date()).getTime();
     Runtime.getRuntime().addShutdownHook(new Thread() {
+      @Override
       public void run() {
         try {
           PathUtils.fullyDelete(new File(tmpDirPathForTest));
@@ -94,17 +94,6 @@ public class TestUtils {
     if(conf.get(USER_ID_MAPPER_CLASS) == null) {
       conf.set(USER_ID_MAPPER_CLASS, FixedUserIDMapper.class.getName());
     }
-    final String dir = "/tmp/" + UUID.randomUUID().toString();
-    conf.set(NFS_FILEHANDLE_STORE_FILE, dir);
-    Runtime.getRuntime().addShutdownHook(new Thread() {
-      public void run() {
-        try {
-          PathUtils.fullyDelete(new File(dir));
-        } catch (IOException e) {
-
-        }
-      }
-    });
     return conf;
   }
 

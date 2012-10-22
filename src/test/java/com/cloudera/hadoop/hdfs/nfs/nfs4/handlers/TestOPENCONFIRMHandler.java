@@ -38,6 +38,7 @@ public class TestOPENCONFIRMHandler extends TestBaseHandler {
   private OPENCONFIRMHandler handler;
   private OPENCONFIRMRequest request;
 
+  @Override
   @Before
   public void setup() throws Exception {
     super.setup();

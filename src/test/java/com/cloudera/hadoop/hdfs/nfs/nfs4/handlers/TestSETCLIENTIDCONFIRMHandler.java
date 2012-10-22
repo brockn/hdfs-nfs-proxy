@@ -36,6 +36,7 @@ public class TestSETCLIENTIDCONFIRMHandler extends TestBaseHandler {
   private SETCLIENTIDCONFIRMHandler handler;
   private SETCLIENTIDCONFIRMRequest request;
 
+  @Override
   @Before
   public void setup() throws Exception {
     super.setup();

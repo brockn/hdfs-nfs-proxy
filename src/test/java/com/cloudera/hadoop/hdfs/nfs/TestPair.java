@@ -41,11 +41,13 @@ public class TestPair {
   @Test
   public void testNonNull() {
     Object left = new Object() {
+      @Override
       public String toString() {
         return "left";
       }
     };
     Object right = new Object(){
+      @Override
       public String toString() {
         return "right";
       }

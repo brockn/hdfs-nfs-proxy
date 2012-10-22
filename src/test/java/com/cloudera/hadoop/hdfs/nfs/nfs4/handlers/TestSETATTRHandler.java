@@ -38,6 +38,7 @@ public class TestSETATTRHandler extends TestBaseHandler {
   private SETATTRHandler handler;
   private SETATTRRequest request;
 
+  @Override
   @Before
   public void setup() throws Exception {
     super.setup();

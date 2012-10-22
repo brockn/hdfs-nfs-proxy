@@ -35,12 +35,13 @@ public class TestPUTROOTFHHandler extends TestBaseHandler {
   private PUTROOTFHHandler handler;
   private PUTROOTFHRequest request;
 
+  @Override
   @Before
   public void setup() throws Exception {
     super.setup();
     handler = new PUTROOTFHHandler();
     request = new PUTROOTFHRequest();
-    when(hdfsState.createFileHandle(new Path("/"))).thenReturn(currentFileHandle);
+    when(hdfsState.getOrCreateFileHandle(new Path("/"))).thenReturn(currentFileHandle);
   }
 
   @Test

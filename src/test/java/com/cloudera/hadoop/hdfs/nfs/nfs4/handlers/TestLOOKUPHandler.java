@@ -34,10 +34,11 @@ public class TestLOOKUPHandler extends TestBaseHandler {
 
   private LOOKUPHandler handler;
   private LOOKUPRequest request;
-  private Path dir = new Path("dir");
-  private Path file = new Path(dir, "file");
+  private final Path dir = new Path("dir");
+  private final Path file = new Path(dir, "file");
 
   
+  @Override
   @Before
   public void setup() throws Exception {
     super.setup();
@@ -61,13 +62,13 @@ public class TestLOOKUPHandler extends TestBaseHandler {
   }
   @Test
   public void testDoesNotExist() throws Exception {
-    when(hdfsState.fileExists(fs, file)).thenReturn(false);
+    when(hdfsState.fileExists(file)).thenReturn(false);
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_NOENT, response.getStatus());
   }
   @Test
   public void testExists() throws Exception {
-    when(hdfsState.fileExists(fs, file)).thenReturn(true);
+    when(hdfsState.fileExists(file)).thenReturn(true);
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4_OK, response.getStatus());
   }

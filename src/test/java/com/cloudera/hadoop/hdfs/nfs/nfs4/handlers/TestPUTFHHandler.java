@@ -34,6 +34,7 @@ public class TestPUTFHHandler extends TestBaseHandler {
   private PUTFHHandler handler;
   private PUTFHRequest request;
 
+  @Override
   @Before
   public void setup() throws Exception {
     super.setup();

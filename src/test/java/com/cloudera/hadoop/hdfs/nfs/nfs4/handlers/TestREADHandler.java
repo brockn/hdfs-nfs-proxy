@@ -26,7 +26,6 @@ import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,6 +44,7 @@ public class TestREADHandler extends TestBaseHandler {
 
   private HDFSInputStream inputStream;
 
+  @Override
   @Before
   public void setup() throws Exception {
     super.setup();
@@ -57,7 +57,7 @@ public class TestREADHandler extends TestBaseHandler {
     when(inputStream.getPos()).thenReturn(512L);
     when(inputStream.read(any(byte[].class))).thenReturn(512);
     when(hdfsState.getPath(currentFileHandle)).thenReturn(file);
-    when(hdfsState.forRead(any(StateID.class), any(FileSystem.class), any(FileHandle.class))).
+    when(hdfsState.forRead(any(StateID.class), any(FileHandle.class))).
       thenReturn(inputStream);
   }
   @Test

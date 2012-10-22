@@ -24,7 +24,7 @@ import java.io.InputStream;
 import org.apache.hadoop.fs.FSDataInputStream;
 
 public class HDFSInputStream extends InputStream {
-  private FSDataInputStream in;
+  private final FSDataInputStream in;
   public HDFSInputStream(FSDataInputStream in) {
     this.in = in;
   }
@@ -47,6 +47,7 @@ public class HDFSInputStream extends InputStream {
   public FSDataInputStream getFSDataInputStream() {
     return in;
   }
+  @Override
   public void close() throws IOException {
     in.close();
   }

@@ -34,8 +34,9 @@ public class TestREMOVEHandler extends TestBaseHandler {
 
   private REMOVEHandler handler;
   private REMOVERequest request;  
-  private Path path = new Path("/", "a");
+  private final Path path = new Path("/", "a");
   
+  @Override
   @Before
   public void setup() throws Exception {
     super.setup();
@@ -43,9 +44,9 @@ public class TestREMOVEHandler extends TestBaseHandler {
     request = new REMOVERequest();
     
     request.setName(path.getName());
-    when(hdfsState.fileExists(fs, path)).thenReturn(true);
+    when(hdfsState.fileExists(path)).thenReturn(true);
     
-    when(hdfsState.delete(fs, path)).thenReturn(true);
+    when(hdfsState.delete(path)).thenReturn(true);
 
   }
   @Test
@@ -67,14 +68,14 @@ public class TestREMOVEHandler extends TestBaseHandler {
   
   @Test
   public void testPathDoesNotExist() throws Exception {
-    when(hdfsState.fileExists(fs, path)).thenReturn(false);
+    when(hdfsState.fileExists(path)).thenReturn(false);
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_NOENT, response.getStatus());
   }
   
   @Test
   public void testDeleteFails() throws Exception {
-    when(hdfsState.delete(fs, path)).thenReturn(false);
+    when(hdfsState.delete(path)).thenReturn(false);
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_PERM, response.getStatus());
   }

@@ -75,7 +75,7 @@ public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITERes
     FileHandle fileHandle = session.getCurrentFileHandle();
     Path path = hdfsState.getPath(fileHandle);
     String file = path.toUri().getPath();
-    HDFSOutputStream out = hdfsState.forWrite(request.getStateID(), session.getFileSystem(), fileHandle, false);
+    HDFSOutputStream out = hdfsState.forWrite(request.getStateID(), fileHandle);
 
     LOGGER.info(session.getSessionID() + " xid = " + session.getXIDAsHexString() + 
         ", write accepted " + file + " " + request.getOffset());

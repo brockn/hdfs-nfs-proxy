@@ -41,6 +41,7 @@ public class TestRENEWHandler extends TestBaseHandler {
   private RENEWHandler handler;
   private RENEWRequest request;
 
+  @Override
   @Before
   public void setup() throws Exception {
     super.setup();

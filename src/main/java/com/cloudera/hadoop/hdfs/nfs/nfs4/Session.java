@@ -42,12 +42,13 @@ public class Session {
   protected final InetAddress mClientAddress;
   protected final String mSessionID;
   protected final int mXID;
-  public Session(int xid, CompoundRequest compoundRequest, Configuration configuration, InetAddress clientAddress, String sessionID)
+  public Session(int xid, CompoundRequest compoundRequest, Configuration configuration, 
+      FileSystem fileSystem, InetAddress clientAddress, String sessionID)
       throws IOException {
     mXID = xid;
     mCompoundRequest = compoundRequest;
     mConfiguration = configuration;
-    mFileSystem = FileSystem.get(mConfiguration);
+    mFileSystem = fileSystem;
     mClientAddress = clientAddress;
     mSessionID = sessionID;
   }

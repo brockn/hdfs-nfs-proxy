@@ -25,7 +25,7 @@ import com.google.common.collect.Maps;
 
 public class InMemoryMetricsPublisher implements MetricPublisher {
 
-  private ConcurrentMap<String, Long> mLatest;
+  private final ConcurrentMap<String, Long> mLatest;
   public InMemoryMetricsPublisher() {
     mLatest = Maps.newConcurrentMap();
   }

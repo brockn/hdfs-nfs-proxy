@@ -61,9 +61,6 @@ public class TestHDFSFile {
   
   @Test
   public void testGetters() throws Exception {
-    Assert.assertSame(fileHandle, hdfsFile.getFileHandle());
-    Assert.assertSame(path, hdfsFile.getPath());
-    Assert.assertSame(fileID, hdfsFile.getFileID());
     Assert.assertNull(hdfsFile.getHDFSOutputStream());
     Assert.assertNull(hdfsFile.getHDFSOutputStreamForWrite());
     Assert.assertNull(hdfsFile.getInputStream(new StateID()));

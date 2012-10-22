@@ -74,7 +74,7 @@ public class CREATEHandler extends OperationRequestHandler<CREATERequest, CREATE
     // error if they require the stateID to be set.
     Bitmap responseAttrs = Attribute.setAttrs(hdfsState, session,
         request.getAttrs(), requestAttrs, fs, fileStatus, null);
-    session.setCurrentFileHandle(hdfsState.createFileHandle(path));
+    session.setCurrentFileHandle(hdfsState.getOrCreateFileHandle(path));
     CREATEResponse response = createResponse();
     response.setChangeInfo(ChangeInfo.newChangeInfo(true, parentModTimeBefore, parentModTimeAfter));
     response.setStatus(NFS4_OK);

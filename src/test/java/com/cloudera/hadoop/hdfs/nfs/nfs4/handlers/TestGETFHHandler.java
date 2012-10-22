@@ -34,6 +34,7 @@ public class TestGETFHHandler extends TestBaseHandler {
   private GETFHHandler handler;
   private GETFHRequest request;
 
+  @Override
   @Before
   public void setup() throws Exception {
     super.setup();

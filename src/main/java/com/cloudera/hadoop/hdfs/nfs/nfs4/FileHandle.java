@@ -20,6 +20,7 @@
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
 
+import java.io.Serializable;
 import java.util.Arrays;
 
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
@@ -27,8 +28,11 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 /**
  * Represents a NFS FileHandle.
  */
-public class FileHandle implements MessageBase {
+public class FileHandle implements MessageBase, Serializable {
+  private static final long serialVersionUID = 2860563108015405150L;
+
   protected byte[] mBytes;
+  
   public FileHandle() {
 
   }

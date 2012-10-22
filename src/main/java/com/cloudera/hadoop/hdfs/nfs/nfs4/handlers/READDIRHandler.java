@@ -103,7 +103,7 @@ public class READDIRHandler extends OperationRequestHandler<READDIRRequest, READ
       fileStatus = fileStati[(int) (cookie - NFS4_COOKIE_OFFSET)];
       // we have to force creation of a file handle because that creates
       // a fileid which is required later in the getAttrs.
-      hdfsState.createFileHandle(fileStatus.getPath());
+      hdfsState.getOrCreateFileHandle(fileStatus.getPath());
       DirectoryEntry entry = readAttrs(hdfsState, session, request.getAttrs(), fs, fileStatus);
       entry.setName(fileStatus.getPath().getName());
       entry.setCookie(cookie);

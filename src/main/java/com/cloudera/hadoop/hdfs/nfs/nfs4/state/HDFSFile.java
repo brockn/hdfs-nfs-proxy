@@ -29,7 +29,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
 import com.google.common.collect.Maps;
 
 /**
- * Class which represents an HDFS file internally
+ * Class which represents an HDFS open resources
  */
 public class HDFSFile {
 
@@ -122,17 +122,6 @@ public class HDFSFile {
   public synchronized void setHDFSOutputStream(StateID stateID, HDFSOutputStream outputStream) {
     mOutputStream = Pair.of(stateID, new OpenResource<HDFSOutputStream>(stateID, outputStream));
   }
-  public String getPath() {
-    return mPath;
-  }
-
-  public FileHandle getFileHandle() {
-    return mFileHandle;
-  }
-  public long getFileID() {
-    return mFileID;
-  }
-
   @Override
   public synchronized String toString() {
     return "HDFSFile [mPath=" + mPath + ", mFileHandle=" + mFileHandle

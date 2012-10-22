@@ -37,6 +37,7 @@ public class TestCOMMITHandler extends TestBaseHandler {
   private COMMITRequest request;
   private WriteOrderHandler writeOrderHandler;
   
+  @Override
   @Before
   public void setup() throws Exception {
     super.setup();

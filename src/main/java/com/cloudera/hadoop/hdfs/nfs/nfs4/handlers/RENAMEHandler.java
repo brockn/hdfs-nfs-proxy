@@ -55,10 +55,10 @@ public class RENAMEHandler extends OperationRequestHandler<RENAMERequest, RENAME
     if (!(fs.getFileStatus(oldParentPath).isDir() && fs.getFileStatus(newParentPath).isDir())) {
       throw new NFS4Exception(NFS4ERR_NOTDIR);
     }     
-    if (!hdfsState.fileExists(fs, oldPath)) {
+    if (!hdfsState.fileExists(oldPath)) {
       throw new NFS4Exception(NFS4ERR_NOENT, "Path " + oldPath + " does not exist.");
     }
-    if (hdfsState.fileExists(fs, newPath)) {
+    if (hdfsState.fileExists(newPath)) {
       // TODO according to the RFC we are supposed to check to see if
       // the entry which exists is compatible (overwrite file and
       // empty directory if the "old" item is a file or dir respectively.

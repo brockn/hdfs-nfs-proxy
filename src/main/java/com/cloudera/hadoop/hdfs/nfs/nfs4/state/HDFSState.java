@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.hadoop.fs.FileStatus;
@@ -39,122 +38,57 @@ import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.log4j.Logger;
 
-import com.cloudera.hadoop.hdfs.nfs.PathUtils;
 import com.cloudera.hadoop.hdfs.nfs.metrics.MetricConstants.Metric;
 import com.cloudera.hadoop.hdfs.nfs.metrics.MetricsAccumulator;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandleStore;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandleStoreEntry;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
-import com.google.common.collect.Maps;
 
 public class HDFSState {
   protected static final Logger LOGGER = Logger.getLogger(HDFSState.class);
   private static final AtomicLong FILEID = new AtomicLong(0L);
   private static final Random RANDOM = new Random();
-  /**
-   * getFileHandle is not synchronized on this as such a concurrent map is used
-   */
-  private final ConcurrentMap<String, HDFSFile> mPathMap = Maps.newConcurrentMap();
-  /**
-   * getPath is not synchronized on this as such a concurrent map is used
-   */
-  private final ConcurrentMap<FileHandle, HDFSFile> mFileHandleMap;
+  private final FileHandleINodeMap mFileHandleINodeMap;
+  private final Map<FileHandle, HDFSFile> mOpenFilesMap;
   private final long mStartTime = System.currentTimeMillis();
   private final ClientFactory mClientFactory = new ClientFactory();
   /**
    * Synchronized on the map itself
    */
   private final Map<FileHandle, WriteOrderHandler> mWriteOrderHandlerMap;
-  private final FileHandleStore mFileHandleStore;
   private final MetricsAccumulator mMetrics;
   private final File[] mTempDirs;
+  private FileSystem mFileSystem;
   
-  public HDFSState(FileHandleStore fileHandleStore, String[] tempDirs, MetricsAccumulator metrics, 
-      Map<FileHandle, WriteOrderHandler> writeOrderHandlerMap,
-      ConcurrentMap<FileHandle, HDFSFile> fileHandleMap) throws IOException {
-    mFileHandleStore = fileHandleStore;
-    mTempDirs = new File[tempDirs.length];
-    for (int i = 0; i < tempDirs.length; i++) {
-      mTempDirs[i] = new File(tempDirs[i]);
-      Preconditions.checkState(mTempDirs[i].isDirectory(), "Path " + mTempDirs[i] + 
-          " is not a directory");
-    }
+  public HDFSState(FileHandleINodeMap fileHandleINodeMap, File[] tempDirs, FileSystem fileSystem,
+      MetricsAccumulator metrics, Map<FileHandle, WriteOrderHandler> writeOrderHandlerMap,
+      Map<FileHandle, HDFSFile> openFilesMap) throws IOException {
+    mFileHandleINodeMap = fileHandleINodeMap;
+    mTempDirs = tempDirs;
+    mFileSystem = fileSystem;
     mMetrics = metrics;
-    mFileHandleMap = fileHandleMap;
     mWriteOrderHandlerMap = writeOrderHandlerMap;
-    for(File tempDir : mTempDirs) {
-      try {
-        if(tempDir.isDirectory()) {
-          PathUtils.fullyDeleteContents(tempDir);          
-        } else if(tempDir.isFile()) {
-          Preconditions.checkState(tempDir.delete(), "Cannot delete " + tempDir);
-        }
-      } catch (IOException e) {
-        LOGGER.error("Error deleting " + tempDir, e);
-        Throwables.propagate(e);
-      }
-      if(!(tempDir.isDirectory() || tempDir.mkdirs())) {
-        throw new IOException("Directory " + tempDir +
-            " does not exist or could not be created.");
-      }
-      File testFile = new File(tempDir, "test");
-      try {
-        if(testFile.isFile() && !testFile.delete()) {
-          throw new IOException("Test file " + testFile + " exists but cannot be deleted");
-        }
-        if(!testFile.createNewFile()) {
-          throw new IOException("Unable to create test file " + testFile);
-        }        
-      } finally {
-        if(!testFile.delete()) {
-          LOGGER.warn("Unable to delete " + testFile);
-        }
-      }
-      
-    }
-    
+    mOpenFilesMap = openFilesMap;    
     LOGGER.info("Writing temp files to " + Arrays.toString(mTempDirs));
-    
-    Runtime.getRuntime().addShutdownHook(new Thread() {
-      public void run() {
-        for(File tempDir : mTempDirs) {
-          try {
-            PathUtils.fullyDelete(tempDir);
-          } catch (IOException e) {
-            LOGGER.error("Error deleting " + tempDir, e);
-          }
-        }
-      }
-    });
-    
-    for (FileHandleStoreEntry entry : mFileHandleStore.getAll()) {
-      FileHandle fileHandle = new FileHandle(entry.getFileHandle());
-      HDFSFile holder = new HDFSFile(fileHandle, entry.getPath(), entry.getFileID());
-      putFileHandle(fileHandle, entry.getPath(), holder);
-    }
-    
   }
   /**
    * Deletes a file from fs. If the file is open for writing,
    * the file will not be deleted.
-   * @param fs
    * @param path
    * @return
    * @throws IOException
    */
-  public synchronized boolean delete(FileSystem fs, Path path) 
+  public synchronized boolean delete(Path path) 
       throws IOException {
-    HDFSFile fileHolder = mPathMap.get(realPath(path));
-    if (fileHolder != null && fileHolder.isOpenForWrite()) {
+    FileHandle fileHandle = mFileHandleINodeMap.getFileHandleByPath(realPath(path));
+    HDFSFile hdfsFile = mOpenFilesMap.get(fileHandle);
+    if (hdfsFile != null && hdfsFile.isOpenForWrite()) {
       return false;
     }    
-    return fs.delete(path, false);
+    return mFileSystem.delete(path, false);
   }
   /**
    * Files which are in the process of being created need to exist from a NFS
@@ -162,18 +96,18 @@ public class HDFSState {
    * method intercepts requests for files that are open and calls
    * FileSystem.exists for other files.
    *
-   * @param fs
    * @param path
    * @return true if the file exists or is open for write
    * @throws IOException
    */
-  public synchronized boolean fileExists(FileSystem fs, Path path)
+  public synchronized boolean fileExists(Path path)
       throws IOException {
-    HDFSFile fileHolder = mPathMap.get(realPath(path));
-    if (fileHolder != null && fileHolder.isOpenForWrite()) {
+    FileHandle fileHandle = getOrCreateFileHandle(path);
+    HDFSFile hdfsFile = mOpenFilesMap.get(fileHandle);
+    if (hdfsFile != null && hdfsFile.isOpenForWrite()) {
       return true;
     }
-    return fs.exists(path);
+    return mFileSystem.exists(path);
   }
 
   /**
@@ -183,26 +117,43 @@ public class HDFSState {
    * @return a FileHandle
    * @throws IOException
    */
-  public synchronized FileHandle createFileHandle(Path path) throws IOException {
+  public synchronized FileHandle getOrCreateFileHandle(Path path) throws IOException {
     String realPath = realPath(path);
-    HDFSFile file = mPathMap.get(realPath);
-    if (file != null) {
-      return file.getFileHandle();
+    FileHandle fileHandle = mFileHandleINodeMap.getFileHandleByPath(realPath);
+    if(fileHandle != null) {
+      return fileHandle;
     }
     String s = UUID.randomUUID().toString().replace("-", "");
     byte[] bytes = s.getBytes(Charsets.UTF_8);
-    FileHandle fileHandle = new FileHandle(bytes);
-    HDFSFile holder = new HDFSFile(fileHandle, realPath, getNextFileID());
-    FileHandleStoreEntry storeEntry = new FileHandleStoreEntry(bytes, realPath, holder.getFileID());
-    mFileHandleStore.storeFileHandle(storeEntry);
-    putFileHandle(fileHandle, realPath, holder);
+    fileHandle = new FileHandle(bytes);
+    INode inode = new INode(realPath, getNextFileID());
+    mFileHandleINodeMap.put(fileHandle, inode);
+    mMetrics.incrementMetric(FILE_HANDLES_CREATED, 1);
     return fileHandle;
   }
-
-  protected synchronized void putFileHandle(FileHandle fileHandle, String path, HDFSFile holder) {
-    mPathMap.put(path, holder);
-    mFileHandleMap.put(fileHandle, holder);
-    mMetrics.incrementMetric(FILE_HANDLES_CREATED, 1);
+  /**
+   * Deletes a file handle if the file does not exist on
+   * the backing file system. Due to this requirement,
+   * this holds the underlying lock during an RPC to the
+   * as such this method should be called with great care.
+   *  
+   * @param fileHandle
+   * @return true if the fileHandle was removed or false otherwise
+   * @throws IOException
+   */
+  public boolean deleteFileHandleFileIfNotExist(FileHandle fileHandle) 
+      throws IOException {
+    INode inode = mFileHandleINodeMap.getINodeByFileHandle(fileHandle);
+    if(inode != null) {
+      Path path = new Path(inode.getPath());
+      synchronized(this) {
+        if(!fileExists(path)) {
+          mFileHandleINodeMap.remove(fileHandle);
+          return true;
+        }
+      }      
+    }
+    return false;
   }
 
   /**
@@ -215,9 +166,10 @@ public class HDFSState {
    * @throws NFS4Exception if the file does not have a FileHandle/
    */
   public synchronized long getFileID(Path path) throws NFS4Exception {
-    HDFSFile file = mPathMap.get(realPath(path));
-    if (file != null) {
-      return file.getFileID();
+    FileHandle fileHandle = mFileHandleINodeMap.getFileHandleByPath(realPath(path));
+    if(fileHandle != null) {
+      INode inode = mFileHandleINodeMap.getINodeByFileHandle(fileHandle);
+      return inode.getNumber();
     }
     throw new NFS4Exception(NFS4ERR_STALE, "Path " + realPath(path));
   }
@@ -241,17 +193,15 @@ public class HDFSState {
     WriteOrderHandler writeOrderHandler = null;
     OpenResource<?> file = null;
     synchronized (this) {
-      hdfsFile = mFileHandleMap.get(fileHandle);
+      hdfsFile = mOpenFilesMap.remove(fileHandle);
       if (hdfsFile == null) {
         throw new NFS4Exception(NFS4ERR_STALE);
       }
       if (hdfsFile.isOpenForWrite()) {
-        LOGGER.info(sessionID + " Closing " + hdfsFile.getPath()
-            + " for write");
+        LOGGER.info(sessionID + " Closing " + hdfsFile + " for write");
         file = hdfsFile.getHDFSOutputStream();
       } else {
-        LOGGER.info(sessionID + " Closing " + hdfsFile.getPath()
-            + " for read");
+        LOGGER.info(sessionID + " Closing " + hdfsFile + " for read");
         file = hdfsFile.getInputStream(stateID);
       }
       if (file == null) {
@@ -267,8 +217,7 @@ public class HDFSState {
     }
     if (writeOrderHandler != null) {
       writeOrderHandler.close(); // blocks
-      LOGGER.info(sessionID + " Closed WriteOrderHandler for "
-          + hdfsFile.getPath());
+      LOGGER.info(sessionID + " Closed WriteOrderHandler for " + hdfsFile);
     }
     synchronized (this) {
       if(hdfsFile.isOpenForRead()) {
@@ -295,13 +244,13 @@ public class HDFSState {
    */
   public synchronized StateID confirm(StateID stateID, int seqID,
       FileHandle fileHandle) throws NFS4Exception {
-    HDFSFile fileHolder = mFileHandleMap.get(fileHandle);
+    HDFSFile hdfsFile = mOpenFilesMap.get(fileHandle);
     OpenResource<?> file = null;
-    if (fileHolder != null) {
-      if (fileHolder.isOpenForWrite()) {
-        file = fileHolder.getHDFSOutputStreamForWrite();
+    if (hdfsFile != null) {
+      if (hdfsFile.isOpenForWrite()) {
+        file = hdfsFile.getHDFSOutputStreamForWrite();
       } else {
-        file = fileHolder.getInputStream(stateID);
+        file = hdfsFile.getInputStream(stateID);
       }
       if (file == null) {
         throw new NFS4Exception(NFS4ERR_OLD_STATEID);
@@ -324,9 +273,9 @@ public class HDFSState {
    * @return true if the file is open for read or write
    */
   public synchronized boolean isFileOpen(Path path) {
-    HDFSFile fileHolder = mPathMap.get(realPath(path));
-    if (fileHolder != null) {
-      return fileHolder.isOpen();
+    FileHandle fileHandle = mFileHandleINodeMap.getFileHandleByPath(realPath(path));
+    if(fileHandle != null) {
+      return mOpenFilesMap.containsKey(fileHandle);
     }
     return false;
   }
@@ -342,34 +291,58 @@ public class HDFSState {
    * not confirmed or the file handle is stale.
    * @throws IOException if the file open throws an IOException
    */
-  public synchronized HDFSInputStream forRead(StateID stateID, FileSystem fs,
+  public synchronized HDFSInputStream forRead(StateID stateID,
       FileHandle fileHandle) throws NFS4Exception, IOException {
-    HDFSFile fileHolder = mFileHandleMap.get(fileHandle);
-    if (fileHolder != null) {
-      if (fileHolder.isOpenForWrite()) {
+    HDFSFile hdfsFile = mOpenFilesMap.get(fileHandle);
+    if (hdfsFile != null) {
+      if (hdfsFile.isOpenForWrite()) {
         throw new NFS4Exception(NFS4ERR_FILE_OPEN); // TODO lock unavailable
         // should be _LOCK?
       }
-      Path path = new Path(fileHolder.getPath());
-      OpenResource<HDFSInputStream> file = fileHolder.getInputStream(stateID);
+      OpenResource<HDFSInputStream> file = hdfsFile.getInputStream(stateID);
       if (file != null) {
         if (!file.isConfirmed()) {
           throw new NFS4Exception(NFS4ERR_DENIED);
         }
         return file.get();
       }
-      FileStatus status = fs.getFileStatus(path);
-      if (status.isDir()) {
-        throw new NFS4Exception(NFS4ERR_ISDIR);
-      }
-      HDFSInputStream in = new HDFSInputStream(fs.open(path));
-      mMetrics.incrementMetric(FILES_OPENED_READ, 1);
-      fileHolder.putInputStream(stateID, in);
-      return in;
     }
     throw new NFS4Exception(NFS4ERR_STALE);
   }
-
+  /**
+   * Open a file for read.
+   * 
+   * @param stateID
+   * @param fileHandle
+   * @return HDFSInputStream resource allocated
+   * @throws NFS4Exception
+   * @throws IOException
+   */
+  public synchronized HDFSInputStream openForRead(StateID stateID,
+      FileHandle fileHandle) throws NFS4Exception, IOException {
+    HDFSFile hdfsFile = mOpenFilesMap.get(fileHandle);
+    if (hdfsFile != null && hdfsFile.isOpenForWrite()) {
+      throw new NFS4Exception(NFS4ERR_FILE_OPEN); // TODO lock unavailable
+      // should be _LOCK?
+    }
+    INode inode = mFileHandleINodeMap.getINodeByFileHandle(fileHandle);
+    if(inode == null) {
+      throw new NFS4Exception(NFS4ERR_STALE);
+    }
+    Path path = new Path(inode.getPath());
+    FileStatus status = mFileSystem.getFileStatus(path);
+    if (status.isDir()) {
+      throw new NFS4Exception(NFS4ERR_ISDIR);
+    }
+    HDFSInputStream in = new HDFSInputStream(mFileSystem.open(path));
+    mMetrics.incrementMetric(FILES_OPENED_READ, 1);
+    if(hdfsFile == null) {
+      hdfsFile = new HDFSFile(fileHandle, inode.getPath(), inode.getNumber());
+      mOpenFilesMap.put(fileHandle, hdfsFile);
+    }
+    hdfsFile.putInputStream(stateID, in);
+    return in;
+  }
   /**
    * Create or return the a WriteOrderHandler for a given FSDataOutputStream.
    *
@@ -385,7 +358,7 @@ public class HDFSState {
     synchronized (mWriteOrderHandlerMap) {
       writeOrderHandler = getWriteOrderHandler(fileHandle);
       if (writeOrderHandler == null) {
-        HDFSFile hdfsFile = mFileHandleMap.get(fileHandle);
+        HDFSFile hdfsFile = mOpenFilesMap.get(fileHandle);
         if (hdfsFile == null) {
           throw new NFS4Exception(NFS4ERR_STALE);
         }
@@ -400,7 +373,11 @@ public class HDFSState {
     }
     return writeOrderHandler;
   }
-
+  /**
+   * Return write order handler for a fileHandle
+   * @param fileHandle 
+   * @return WriteOrderHandler or null
+   */
   public WriteOrderHandler getWriteOrderHandler(FileHandle fileHandle) {
     synchronized (mWriteOrderHandlerMap) {
       if (mWriteOrderHandlerMap.containsKey(fileHandle)) {
@@ -411,56 +388,84 @@ public class HDFSState {
   }
   
   /**
-   *
+   * Get a HDFSOutptuStream for a fileHandle
    * @param stateID
-   * @param fs
    * @param fileHandle
-   * @param overwrite
    * @return
    * @throws NFS4Exception
    * @throws IOException
    */
   public synchronized HDFSOutputStream forWrite(StateID stateID,
-      FileSystem fs, FileHandle fileHandle, boolean overwrite)
+      FileHandle fileHandle)
           throws NFS4Exception, IOException {
-    HDFSFile fileHolder = mFileHandleMap.get(fileHandle);
-    if (fileHolder != null) {
-      OpenResource<HDFSOutputStream> file = fileHolder.getHDFSOutputStreamForWrite();
+    HDFSFile hdsfsFile = mOpenFilesMap.get(fileHandle);
+    if (hdsfsFile != null) {
+      OpenResource<HDFSOutputStream> file = hdsfsFile.getHDFSOutputStreamForWrite();
       if (file != null) {
         if (file.isOwnedBy(stateID)) {
           return file.get();
         }
         throw new NFS4Exception(NFS4ERR_FILE_OPEN);
       }
-      Path path = new Path(fileHolder.getPath());
-      boolean exists = fs.exists(path);
-      // If overwrite = false, fs.create throws IOException which
-          // is useless. In case of IOE do we always return EXIST?
-      // doesn't seem to make sense. As such, I am mitigating the issue
-      // even if there is a known race between the exists and create
-      if (!overwrite && exists) {
-        // append to a file
-        // We used to be NFS4ERR_EXIST here but the linux client behaved 
-        // rather oddly. It would open the file with overwrite=true but 
-        // then send the data which was to be appended at offset 0
-        throw new NFS4Exception(NFS4ERR_PERM,
-            "File Exists and overwrite = false", true);
-      }
-      if (path.getParent() != null) {
-        // TODO bad perms will fail with IOException, perhaps we should check
-        // that file can be created before trying to so we can return the
-        // correct error perm denied
-        // check(user, groups, status, access);
-      }
-      if (exists && fs.getFileStatus(path).isDir()) {
-        throw new NFS4Exception(NFS4ERR_ISDIR);
-      }
-      HDFSOutputStream out = new HDFSOutputStream(fs.create(path, overwrite), path.toString(), fileHandle);
-      mMetrics.incrementMetric(FILES_OPENED_WRITE, 1);
-      fileHolder.setHDFSOutputStream(stateID, out);
-      return out;
     }
     throw new NFS4Exception(NFS4ERR_STALE);
+  }
+  /**
+   * Open a file handle for write
+   * @param stateID
+   * @param fileHandle
+   * @param overwrite
+   * @throws NFS4Exception
+   * @throws IOException
+   */
+  public synchronized HDFSOutputStream openForWrite(StateID stateID,
+      FileHandle fileHandle, boolean overwrite)
+          throws NFS4Exception, IOException {
+    HDFSFile hdsfsFile = mOpenFilesMap.get(fileHandle);
+    if (hdsfsFile != null) {
+      OpenResource<HDFSOutputStream> file = hdsfsFile.getHDFSOutputStreamForWrite();
+      if (file != null) {
+        if (file.isOwnedBy(stateID)) {
+          return file.get();
+        }
+        throw new NFS4Exception(NFS4ERR_FILE_OPEN);
+      }
+    }
+    INode inode = mFileHandleINodeMap.getINodeByFileHandle(fileHandle);
+    if(inode == null) {
+      throw new NFS4Exception(NFS4ERR_STALE);
+    }
+    Path path = new Path(inode.getPath());
+    boolean exists = mFileSystem.exists(path);
+    // If overwrite = false, fs.create throws IOException which
+        // is useless. In case of IOE do we always return EXIST?
+    // doesn't seem to make sense. As such, I am mitigating the issue
+    // even if there is a known race between the exists and create
+    if (!overwrite && exists) {
+      // append to a file
+      // We used to be NFS4ERR_EXIST here but the linux client behaved 
+      // rather oddly. It would open the file with overwrite=true but 
+      // then send the data which was to be appended at offset 0
+      throw new NFS4Exception(NFS4ERR_PERM,
+          "File Exists and overwrite = false", true);
+    }
+    if (path.getParent() != null) {
+      // TODO bad perms will fail with IOException, perhaps we should check
+      // that file can be created before trying to so we can return the
+      // correct error perm denied
+      // check(user, groups, status, access);
+    }
+    if (exists && mFileSystem.getFileStatus(path).isDir()) {
+      throw new NFS4Exception(NFS4ERR_ISDIR);
+    }
+    HDFSOutputStream out = new HDFSOutputStream(mFileSystem.create(path, overwrite), path.toString(), fileHandle);
+    mMetrics.incrementMetric(FILES_OPENED_WRITE, 1);
+    if(hdsfsFile == null) {
+      hdsfsFile = new HDFSFile(fileHandle, inode.getPath(), inode.getNumber());
+      mOpenFilesMap.put(fileHandle, hdsfsFile);
+    }
+    hdsfsFile.setHDFSOutputStream(stateID, out);
+    return out;
   }
 
   protected boolean check(String user, List<String> groups, FileStatus
@@ -489,9 +494,9 @@ public class HDFSState {
    * @throws NFS4Exception if FileHandle is stale
    */
   public Path getPath(FileHandle fileHandle) throws NFS4Exception {
-    HDFSFile file = mFileHandleMap.get(fileHandle);
-    if (file != null) {
-      return new Path(file.getPath());
+    INode inode = mFileHandleINodeMap.getINodeByFileHandle(fileHandle);
+    if (inode != null) {
+      return new Path(inode.getPath());
     }
     throw new NFS4Exception(NFS4ERR_STALE);
   }
@@ -504,11 +509,11 @@ public class HDFSState {
    * @throws NFS4Exception if the FileHandle for the Path is stale
    */
   public FileHandle getFileHandle(Path path) throws NFS4Exception {
-    HDFSFile file = mPathMap.get(realPath(path));
-    if (file != null) {
-      return file.getFileHandle();
+    FileHandle fileHandle = mFileHandleINodeMap.getFileHandleByPath(realPath(path));
+    if(fileHandle == null) {
+      throw new NFS4Exception(NFS4ERR_STALE);
     }
-    throw new NFS4Exception(NFS4ERR_STALE);
+    return fileHandle;
   }
 
   /**
@@ -523,13 +528,16 @@ public class HDFSState {
    * IOException
    */
   public long getFileSize(FileStatus status) throws NFS4Exception {
-    HDFSFile fileHolder = mPathMap.get(realPath(status.getPath()));
-    if (fileHolder != null) {
-      OpenResource<HDFSOutputStream> file = fileHolder.getHDFSOutputStreamForWrite();
-      if (file != null) {
-        HDFSOutputStream out = file.get();
-        return out.getPos();
-      }
+    FileHandle fileHandle = mFileHandleINodeMap.getFileHandleByPath(realPath(status.getPath()));
+    if(fileHandle != null) {
+      HDFSFile hdfsFile = mOpenFilesMap.get(fileHandle);
+      if (hdfsFile != null) {
+        OpenResource<HDFSOutputStream> file = hdfsFile.getHDFSOutputStreamForWrite();
+        if (file != null) {
+          HDFSOutputStream out = file.get();
+          return out.getPos();
+        }
+      }      
     }
     return status.getLen();
   }
@@ -545,7 +553,7 @@ public class HDFSState {
    * @throws IOException
    */
   public void close() throws IOException {
-    mFileHandleStore.close();
+    mFileHandleINodeMap.close();
   }
   /**
    * Increment name by count

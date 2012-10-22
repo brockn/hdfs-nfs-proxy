@@ -43,7 +43,6 @@ import com.cloudera.hadoop.hdfs.nfs.PathUtils;
 import com.cloudera.hadoop.hdfs.nfs.metrics.LogMetricPublisher;
 import com.cloudera.hadoop.hdfs.nfs.metrics.MetricsAccumulator;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.MemoryFileHandleStore;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData12;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
@@ -55,6 +54,7 @@ import com.google.common.io.Files;
 public class TestHDFSState {
   protected static final Logger LOGGER = Logger.getLogger(TestHDFSState.class);
 
+  private File storageDir;
   private MetricsAccumulator metrics;
   private FileSystem fs;
   private FileStatus fileStatus;
@@ -66,21 +66,28 @@ public class TestHDFSState {
   private FSDataInputStream fsInputStream;
   private Path dir;
   private FileHandle dirFileHandle;
-  private String[] tempDirs;
+  private File[] tempDirs;
   
   @Before
   public void setup() throws IOException {
+    storageDir = Files.createTempDir();
     metrics = new MetricsAccumulator(new LogMetricPublisher(LOGGER), 
         TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES));
-    tempDirs = new String[2];
-    tempDirs[0] = Files.createTempDir().getAbsolutePath();
-    tempDirs[1] = Files.createTempDir().getAbsolutePath();
-    ConcurrentMap<FileHandle, HDFSFile> fileHandleMap = Maps.newConcurrentMap();
+    tempDirs = new File[2];
+    tempDirs[0] = Files.createTempDir();
+    tempDirs[1] = Files.createTempDir();
+    fs = mock(FileSystem.class);
+    fileStatus = mock(FileStatus.class);
+    out = mock(FSDataOutputStream.class);
+    fsInputStream = mock(FSDataInputStream.class);
+    ConcurrentMap<FileHandle, HDFSFile> openFilesMap = Maps.newConcurrentMap();
     Map<FileHandle, WriteOrderHandler> writeOrderHandlerMap = Maps.newHashMap();
-
-    hdfsState = new HDFSState(new MemoryFileHandleStore(), tempDirs, metrics, writeOrderHandlerMap, fileHandleMap);    
-    HDFSStateBackgroundWorker hdfsStateBackgroundWorker = new HDFSStateBackgroundWorker(writeOrderHandlerMap, 
-        fileHandleMap, 60L * 1000L, 30);
+    FileHandleINodeMap fileHandleINodeMap = 
+        new FileHandleINodeMap(new File(storageDir, "map"));
+    hdfsState = new HDFSState(fileHandleINodeMap, tempDirs, fs, metrics, writeOrderHandlerMap, openFilesMap);    
+    HDFSStateBackgroundWorker hdfsStateBackgroundWorker = 
+        new HDFSStateBackgroundWorker(hdfsState, writeOrderHandlerMap, 
+            openFilesMap, fileHandleINodeMap, 60L * 1000L, 30L, 30L* 60L * 1000L);
     hdfsStateBackgroundWorker.setDaemon(true);
     hdfsStateBackgroundWorker.start();
     stateID1 = new StateID();
@@ -91,57 +98,50 @@ public class TestHDFSState {
     opaque = new OpaqueData12();
     opaque.setData("2".getBytes(Charsets.UTF_8));
     stateID2.setData(opaque);
-    fs = mock(FileSystem.class);
-    fileStatus = mock(FileStatus.class);
     when(fs.getFileStatus(any(Path.class))).thenReturn(fileStatus);
-    out = mock(FSDataOutputStream.class);
-    fsInputStream = mock(FSDataInputStream.class);
     file = new Path("file");
     dir = new Path("dir");
-    fileFileHandle = hdfsState.createFileHandle(file);
+    fileFileHandle = hdfsState.getOrCreateFileHandle(file);
     when(fs.create(any(Path.class), any(Boolean.class))).thenReturn(out);
     when(fs.open(any(Path.class))).thenReturn(fsInputStream);
-    dirFileHandle = hdfsState.createFileHandle(dir);
+    dirFileHandle = hdfsState.getOrCreateFileHandle(dir);
   }
   @After
   public void teardown() throws Exception {
+    if(storageDir != null) {
+      PathUtils.fullyDelete(storageDir);
+    }
     if(tempDirs != null) {
-      for(String tempDir : tempDirs) {
-        PathUtils.fullyDelete(new File(tempDir));
+      for(File tempDir : tempDirs) {
+        PathUtils.fullyDelete(tempDir);
       }
     }
   }
   @Test
   public void testDeleteNotOpenForWrite() throws Exception {
     when(fs.delete(file, false)).thenReturn(true);
-    Assert.assertTrue(hdfsState.delete(fs, file));
+    Assert.assertTrue(hdfsState.delete(file));
   }
   
   @Test
   public void testDeleteOpenForWrite() throws Exception {
-    hdfsState.forWrite(stateID1, fs, fileFileHandle, false);
+    hdfsState.openForWrite(stateID1, fileFileHandle, false);
     when(fs.delete(file, false)).thenReturn(true);
-    Assert.assertFalse(hdfsState.delete(fs, file));
+    Assert.assertFalse(hdfsState.delete(file));
   }
   
   @Test
   public void testForWriteSameStateIDIsSameOutputStream() throws Exception {
-    HDFSOutputStream out1 = hdfsState.forWrite(stateID1, fs, fileFileHandle, false);
-    Assert.assertSame(out1, hdfsState.forWrite(stateID1, fs, fileFileHandle, false));
-    Assert.assertSame(out1, hdfsState.forWrite(stateID1, fs, fileFileHandle, true));
+    HDFSOutputStream out1 = hdfsState.openForWrite(stateID1, fileFileHandle, false);
+    Assert.assertSame(out1, hdfsState.forWrite(stateID1, fileFileHandle));
+    Assert.assertSame(out1, hdfsState.forWrite(stateID1, fileFileHandle));
   }
   @Test
   public void testForWriteDifferentStatIDsResultsInError() throws Exception {
     @SuppressWarnings("unused")
-    HDFSOutputStream out1 = hdfsState.forWrite(stateID1, fs, fileFileHandle, false);
+    HDFSOutputStream out1 = hdfsState.openForWrite(stateID1, fileFileHandle, false);
     try {
-      hdfsState.forWrite(stateID2, fs, fileFileHandle, false);
-      Assert.fail();
-    } catch (NFS4Exception e) {
-      Assert.assertEquals(NFS4ERR_FILE_OPEN, e.getError());
-    }
-    try {
-      hdfsState.forWrite(stateID2, fs, fileFileHandle, true);
+      hdfsState.forWrite(stateID2, fileFileHandle);
       Assert.fail();
     } catch (NFS4Exception e) {
       Assert.assertEquals(NFS4ERR_FILE_OPEN, e.getError());
@@ -151,19 +151,19 @@ public class TestHDFSState {
   public void testForWriteOverwrite() throws Exception {    
     when(fs.exists(file)).thenReturn(true);
     try {
-      hdfsState.forWrite(stateID1, fs, fileFileHandle, false);
+      hdfsState.openForWrite(stateID1, fileFileHandle, false);
       Assert.fail();
     } catch (NFS4Exception e) {
       Assert.assertEquals(NFS4ERR_PERM, e.getError());
     }
-    Assert.assertNotNull(hdfsState.forWrite(stateID1, fs, fileFileHandle, true));
+    Assert.assertNotNull(hdfsState.openForWrite(stateID1, fileFileHandle, true));
   }
   @Test
   public void testForWriteOnDir() throws Exception {
     when(fs.exists(dir)).thenReturn(true);
     when(fileStatus.isDir()).thenReturn(true);
     try {
-      hdfsState.forWrite(stateID1, fs, dirFileHandle, true);
+      hdfsState.openForWrite(stateID1, dirFileHandle, true);
       Assert.fail();
     } catch (NFS4Exception e) {
       Assert.assertEquals(NFS4ERR_ISDIR, e.getError());
@@ -172,7 +172,7 @@ public class TestHDFSState {
   @Test
   public void testForWriteNoFileHandle() throws Exception {
     try {
-      hdfsState.forWrite(stateID1, fs, new FileHandle(), true);
+      hdfsState.openForWrite(stateID1, new FileHandle(), true);
       Assert.fail();
     } catch (NFS4Exception e) {
       Assert.assertEquals(NFS4ERR_STALE, e.getError());
@@ -189,8 +189,8 @@ public class TestHDFSState {
     }
   }
   public void testCreateFileHandle() throws Exception {
-    FileHandle fileHandle1 = hdfsState.createFileHandle(new Path("does/not/exixt"));
-    FileHandle fileHandle2 = hdfsState.createFileHandle(new Path("does/not/exixt"));
+    FileHandle fileHandle1 = hdfsState.getOrCreateFileHandle(new Path("does/not/exixt"));
+    FileHandle fileHandle2 = hdfsState.getOrCreateFileHandle(new Path("does/not/exixt"));
     Assert.assertEquals(fileHandle1, fileHandle2);
   }
   @Test
@@ -214,7 +214,7 @@ public class TestHDFSState {
   public void testGetSizeFileOpenForWrite() throws Exception {
     when(fileStatus.getPath()).thenReturn(file);
     when(fileStatus.getLen()).thenReturn(123L);
-    HDFSOutputStream out = hdfsState.forWrite(stateID1, fs, fileFileHandle, false);
+    HDFSOutputStream out = hdfsState.openForWrite(stateID1, fileFileHandle, false);
     
     for (int i = 0; i < 532; i++) {
       out.write(Byte.MAX_VALUE);
@@ -230,12 +230,12 @@ public class TestHDFSState {
 
   @Test
   public void testGetWriteOrderHandler() throws Exception {
-    hdfsState.forWrite(stateID1, fs, fileFileHandle, false);  
+    hdfsState.openForWrite(stateID1, fileFileHandle, false);  
     WriteOrderHandler writeOrderHandler1 = hdfsState.getOrCreateWriteOrderHandler(fileFileHandle);
     WriteOrderHandler writeOrderHandler2 = hdfsState.getOrCreateWriteOrderHandler(fileFileHandle);
     Assert.assertSame(writeOrderHandler1, writeOrderHandler2);
-    FileHandle fileFileHandle2 = fileFileHandle = hdfsState.createFileHandle(new Path("file2"));;
-    hdfsState.forWrite(stateID1, fs, fileFileHandle2, false); 
+    FileHandle fileFileHandle2 = fileFileHandle = hdfsState.getOrCreateFileHandle(new Path("file2"));;
+    hdfsState.openForWrite(stateID1, fileFileHandle2, false); 
     WriteOrderHandler writeOrderHandler3 = hdfsState.getOrCreateWriteOrderHandler(fileFileHandle);
     Assert.assertNotSame(writeOrderHandler1, writeOrderHandler3);
   }
@@ -249,7 +249,7 @@ public class TestHDFSState {
   }
   @Test
   public void testGetWriteOrderHandlerByFileHandle() throws Exception {
-    hdfsState.forWrite(stateID1, fs, fileFileHandle, false);  
+    hdfsState.openForWrite(stateID1, fileFileHandle, false);  
     WriteOrderHandler writeOrderHandler1 = hdfsState.getOrCreateWriteOrderHandler(fileFileHandle);
     WriteOrderHandler writeOrderHandler2 = hdfsState.getWriteOrderHandler(fileFileHandle);
     Assert.assertSame(writeOrderHandler1, writeOrderHandler2);
@@ -258,7 +258,7 @@ public class TestHDFSState {
   @Test
   public void testForReadUnknownFileHandle() throws Exception {
     try {
-      hdfsState.forRead(stateID1, fs, new FileHandle());
+      hdfsState.forRead(stateID1, new FileHandle());
       Assert.fail();
     } catch (NFS4Exception e) {
       Assert.assertEquals(NFS4ERR_STALE, e.getError());
@@ -266,9 +266,9 @@ public class TestHDFSState {
   }
   @Test
   public void testForReadFileOpenForWrite() throws Exception {
-    hdfsState.forWrite(stateID1, fs, fileFileHandle, false);  
+    hdfsState.openForWrite(stateID1, fileFileHandle, false);  
     try {
-      hdfsState.forRead(stateID1, fs, fileFileHandle);
+      hdfsState.forRead(stateID1, fileFileHandle);
       Assert.fail();
     } catch (NFS4Exception e) {
       Assert.assertEquals(NFS4ERR_FILE_OPEN, e.getError());
@@ -278,7 +278,7 @@ public class TestHDFSState {
   public void testForReadIsDirectory() throws Exception {
     when(fileStatus.isDir()).thenReturn(true);
     try {
-      hdfsState.forRead(stateID1, fs, dirFileHandle);
+      hdfsState.openForRead(stateID1, dirFileHandle);
       Assert.fail();
     } catch (NFS4Exception e) {
       Assert.assertEquals(NFS4ERR_ISDIR, e.getError());
@@ -287,9 +287,9 @@ public class TestHDFSState {
   @Test
   public void testForReadUncomfired() throws Exception {
     Assert.assertSame(fsInputStream, 
-        hdfsState.forRead(stateID1, fs, fileFileHandle).getFSDataInputStream());
+        hdfsState.openForRead(stateID1, fileFileHandle).getFSDataInputStream());
     try {
-      hdfsState.forRead(stateID1, fs, fileFileHandle);
+      hdfsState.forRead(stateID1, fileFileHandle);
       Assert.fail();
     } catch (NFS4Exception e) {
       Assert.assertEquals(NFS4ERR_DENIED, e.getError());
@@ -298,10 +298,10 @@ public class TestHDFSState {
   @Test
   public void testForRead() throws Exception {
     Assert.assertSame(fsInputStream, 
-        hdfsState.forRead(stateID1, fs, fileFileHandle).getFSDataInputStream());
+        hdfsState.openForRead(stateID1, fileFileHandle).getFSDataInputStream());
     StateID stateIDConfimed = hdfsState.confirm(stateID1, 1, fileFileHandle);
     Assert.assertSame(fsInputStream,
-        hdfsState.forRead(stateIDConfimed, fs, fileFileHandle).getFSDataInputStream());
+        hdfsState.forRead(stateIDConfimed, fileFileHandle).getFSDataInputStream());
   }
   @Test
   public void testConfirmUnKnownFileHandle() throws Exception {
@@ -314,8 +314,10 @@ public class TestHDFSState {
   }
   @Test
   public void testConfirmOldStateId() throws Exception {
+    Assert.assertSame(fsInputStream, 
+        hdfsState.openForRead(stateID1, fileFileHandle).getFSDataInputStream());
     try {
-      hdfsState.confirm(stateID1, 1, fileFileHandle);
+      hdfsState.confirm(stateID2, 1, fileFileHandle);
       Assert.fail();
     } catch (NFS4Exception e) {
       Assert.assertEquals(NFS4ERR_OLD_STATEID, e.getError());
@@ -323,7 +325,7 @@ public class TestHDFSState {
   }
   @Test
   public void testConfirmWrongStateId() throws Exception {
-    hdfsState.forWrite(stateID1, fs, fileFileHandle, false);  
+    hdfsState.openForWrite(stateID1, fileFileHandle, false);  
     try {
       hdfsState.confirm(stateID2, 1, fileFileHandle);
       Assert.fail();
@@ -333,13 +335,13 @@ public class TestHDFSState {
   }
   @Test
   public void testIsFileOpenWrite() throws Exception {
-    hdfsState.forWrite(stateID1, fs, fileFileHandle, false);  
+    hdfsState.openForWrite(stateID1, fileFileHandle, false);  
     Assert.assertTrue(hdfsState.isFileOpen(file));
   }
   @Test
   public void testIsFileOpenRead() throws Exception {
     Assert.assertSame(fsInputStream, 
-        hdfsState.forRead(stateID1, fs, fileFileHandle).getFSDataInputStream());
+        hdfsState.openForRead(stateID1, fileFileHandle).getFSDataInputStream());
     Assert.assertTrue(hdfsState.isFileOpen(file));
   }
   @Test
@@ -357,7 +359,7 @@ public class TestHDFSState {
   }
   @Test
   public void testCloseUnknownStateID() throws Exception {
-    hdfsState.forWrite(stateID1, fs, fileFileHandle, false);  
+    hdfsState.openForWrite(stateID1, fileFileHandle, false);  
     try {
       hdfsState.close("test", stateID2, 2, fileFileHandle);
       Assert.fail();
@@ -367,6 +369,8 @@ public class TestHDFSState {
   }
   @Test
   public void testCloseOldStateID() throws Exception {
+    Assert.assertSame(fsInputStream, 
+        hdfsState.openForRead(stateID1, fileFileHandle).getFSDataInputStream());
     try {
       hdfsState.close("test", stateID2, 2, fileFileHandle);
       Assert.fail();
@@ -376,15 +380,15 @@ public class TestHDFSState {
   }
   @Test
   public void testCloseRead() throws Exception {
-    Assert.assertSame(fsInputStream,
-        hdfsState.forRead(stateID1, fs, fileFileHandle).getFSDataInputStream());
+    Assert.assertSame(fsInputStream, 
+        hdfsState.openForRead(stateID1, fileFileHandle).getFSDataInputStream());
     StateID stateID = hdfsState.close("test", stateID1, 2, fileFileHandle);
     Assert.assertEquals(stateID1, stateID);
     verify(fsInputStream).close();
   }
   @Test
   public void testClose() throws Exception {
-    hdfsState.forWrite(stateID1, fs, fileFileHandle, false);
+    hdfsState.openForWrite(stateID1, fileFileHandle, false);
     StateID stateID = hdfsState.close("test", stateID1, 2, fileFileHandle);
     Assert.assertEquals(stateID1, stateID);
     verify(out).close();
@@ -406,16 +410,16 @@ public class TestHDFSState {
   }
   @Test
   public void testFileExistsDoesNotExist() throws Exception {
-    Assert.assertFalse(hdfsState.fileExists(fs, new Path("does/not/exist")));
+    Assert.assertFalse(hdfsState.fileExists(new Path("does/not/exist")));
   }
   @Test
   public void testFileExistsDoesExist() throws Exception {
     when(fs.exists(file)).thenReturn(true);
-    Assert.assertTrue(hdfsState.fileExists(fs, file));
+    Assert.assertTrue(hdfsState.fileExists(file));
   }
   @Test
   public void testFileExistsIsOpenForWrite() throws Exception {
-    hdfsState.forWrite(stateID1, fs, fileFileHandle, false);
-    Assert.assertTrue(hdfsState.fileExists(fs, file));
+    hdfsState.openForWrite(stateID1, fileFileHandle, false);
+    Assert.assertTrue(hdfsState.fileExists(file));
   }
 }

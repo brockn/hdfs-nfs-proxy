@@ -37,6 +37,32 @@ public class PathUtils {
     return path.toUri().getPath();
   }
   
+  public static void ensureDirectoryIsWriteAble(File tempDir) throws IOException {
+    if(tempDir.isDirectory()) {
+      PathUtils.fullyDeleteContents(tempDir);          
+    } else if(tempDir.isFile()) {
+      if(!tempDir.delete()) {
+        throw new IOException("Cannot delete " + tempDir);
+      }
+    }
+    if(!(tempDir.isDirectory() || tempDir.mkdirs())) {
+      throw new IOException("Directory " + tempDir +
+          " does not exist or could not be created.");
+    }
+    File testFile = new File(tempDir, "test");
+    try {
+      if(testFile.isFile() && !testFile.delete()) {
+        throw new IOException("Test file " + testFile + " exists but cannot be deleted");
+      }
+      if(!testFile.createNewFile()) {
+        throw new IOException("Unable to create test file " + testFile);
+      }        
+    } finally {
+      if(!testFile.delete()) {
+        throw new IOException("Unable to delete test file " + testFile);
+      }
+    } 
+  }
   /**
    * Delete a directory and all its contents.  If
    * we return false, the directory may be partially-deleted.

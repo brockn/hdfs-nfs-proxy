@@ -21,7 +21,9 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4;
 public interface PendingWrite {
 
   public int getSize();
+  @Override
   public int hashCode();
+  @Override
   public boolean equals(Object obj);
   public String getName();
   public int getXid();

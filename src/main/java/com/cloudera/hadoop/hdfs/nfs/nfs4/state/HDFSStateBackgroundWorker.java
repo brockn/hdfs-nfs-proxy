@@ -18,6 +18,7 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4.state;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -29,28 +30,38 @@ import org.apache.log4j.Logger;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
 
 public class HDFSStateBackgroundWorker extends Thread {
   protected static final Logger LOGGER = Logger.getLogger(HDFSStateBackgroundWorker.class);
   
-  private final ConcurrentMap<FileHandle, HDFSFile> mFileHandleMap;
+  private final HDFSState mHDFSState;
+  private final ConcurrentMap<FileHandle, HDFSFile> mOpenFileMap;
   private final Map<FileHandle, WriteOrderHandler> mWriteOrderHandlerMap;
+  private final FileHandleINodeMap mFileHandleINodeMap;
   private final long mIntervalMS;
   private final long mMaxInactivityMS;
+  private final long mFileHandleReapInterval;
   private volatile boolean run;
   
-  public HDFSStateBackgroundWorker(Map<FileHandle, WriteOrderHandler> writeOrderHandlerMap,
-      ConcurrentMap<FileHandle, HDFSFile> fileHandleMap, long intervalMS, long maxInactivityMS) {
+  public HDFSStateBackgroundWorker(HDFSState hdfsState,
+      Map<FileHandle, WriteOrderHandler> writeOrderHandlerMap,
+      ConcurrentMap<FileHandle, HDFSFile> openFileMap, FileHandleINodeMap fileHandleINodeMap,
+      long intervalMS, long maxInactivityMS, long fileHandleReapInterval) {
+    mHDFSState = hdfsState;
     mWriteOrderHandlerMap = writeOrderHandlerMap;
-    mFileHandleMap = fileHandleMap;
+    mOpenFileMap = openFileMap;
+    mFileHandleINodeMap = fileHandleINodeMap;
     mIntervalMS = intervalMS;
     mMaxInactivityMS = maxInactivityMS;
+    mFileHandleReapInterval = fileHandleReapInterval;
     run = true;
     setName("HDFSStateBackgroundWorker-" + getId());
   }
   public void shutdown() {
     run = false;
   }
+  @Override
   public void run() {
     while(run) {
       try {
@@ -66,11 +77,11 @@ public class HDFSStateBackgroundWorker extends Thread {
        *  started. Clearly we need to cleanup this design.
        */
       Set<FileHandle> fileHandles;
-      synchronized (mFileHandleMap) {
-        fileHandles = new HashSet<FileHandle>(mFileHandleMap.keySet());
+      synchronized (mOpenFileMap) {
+        fileHandles = new HashSet<FileHandle>(mOpenFileMap.keySet());
       }
       for(FileHandle fileHandle : fileHandles) {
-        HDFSFile file = mFileHandleMap.get(fileHandle);
+        HDFSFile file = mOpenFileMap.get(fileHandle);
         if(file != null && file.isOpen()) {
           try {
             file.closeResourcesInactiveSince(minimumLastOperationTime);
@@ -86,10 +97,9 @@ public class HDFSStateBackgroundWorker extends Thread {
         fileHandles = new HashSet<FileHandle>(mWriteOrderHandlerMap.keySet());
       }
       for(FileHandle fileHandle : fileHandles) {
-        HDFSFile file = mFileHandleMap.get(fileHandle);
+        HDFSFile file = mOpenFileMap.get(fileHandle);
         Preconditions.checkState(file != null);
         OpenResource<HDFSOutputStream> resource = file.getHDFSOutputStream();
-        System.out.println(file + " " + resource);
         if(resource != null) {
           HDFSOutputStream out = resource.get();
           if(out.getLastOperation() < minimumLastOperationTime) {
@@ -108,7 +118,31 @@ public class HDFSStateBackgroundWorker extends Thread {
           }
         }
       }
+      /*
+       * Now we are going to reap any file handles for old non-existent files
+       */
+      Long upperBound = System.currentTimeMillis() - mFileHandleReapInterval;
+      Map<FileHandle, String> agedFileHandles = 
+          mFileHandleINodeMap.getFileHandlesNotValidatedSince(upperBound);
+      Set<FileHandle> fileHandlesWhichStillExist = Sets.newHashSet();
+      for(FileHandle fileHandle : agedFileHandles.keySet()) {
+        if(!run) {
+          break;
+        }
+        String path = agedFileHandles.get(fileHandle);
+        try {
+          if(!mHDFSState.deleteFileHandleFileIfNotExist(fileHandle)) {
+            fileHandlesWhichStillExist.add(fileHandle);
+          }
+          // expensive logic so do this slowly
+          TimeUnit.MILLISECONDS.sleep(10L);
+        } catch (IOException e) {
+          LOGGER.warn("Error checking existance of " + path, e);
+        } catch (InterruptedException e) {
+          // not interruptible
+        }
+      }
+      mFileHandleINodeMap.updateValidationTime(fileHandlesWhichStillExist);
     }
   }
-
 }

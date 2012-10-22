@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.log4j.Logger;
 
@@ -37,6 +38,7 @@ import com.cloudera.hadoop.hdfs.nfs.metrics.MetricConstants.Metric;
 import com.cloudera.hadoop.hdfs.nfs.metrics.MetricsAccumulator;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CompoundResponse;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.state.FileHandleINodeMap;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSFile;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSStateBackgroundWorker;
@@ -44,6 +46,7 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCHandler;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
 import com.cloudera.hadoop.hdfs.nfs.security.AuthenticatedCredentials;
 import com.cloudera.hadoop.hdfs.nfs.security.Credentials;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import com.google.common.util.concurrent.Futures;
@@ -56,11 +59,12 @@ import com.google.common.util.concurrent.ListenableFuture;
 public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   protected static final Logger LOGGER = Logger.getLogger(NFS4Handler.class);
   private final Configuration mConfiguration;
+  private final FileSystem mFileSystem;
   private final MetricsAccumulator mMetrics;
   private final AsyncTaskExecutor<CompoundResponse> executor;
   private final HDFSState mHDFSState;
   private final HDFSStateBackgroundWorker mHDFSStateBackgroundWorker;
-  private final String[] mTempDirs;
+  private final File[] mTempDirs;
   
   /**
    * Create a handler object with a default configuration object
@@ -78,27 +82,62 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
    */
   public NFS4Handler(Configuration configuration) throws IOException {
     mConfiguration = configuration;
+    mFileSystem = FileSystem.get(mConfiguration);
     mMetrics = new MetricsAccumulator(new LogMetricPublisher(LOGGER), 
         TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES));
-    mTempDirs = configuration.getStrings(TEMP_DIRECTORIES, Files.createTempDir().getAbsolutePath());
-    FileHandleStore fileHandleStore = FileHandleStore.get(configuration);    
+    String sDataDir = configuration.get(DATA_DIRECTORY);
+    if(sDataDir == null) {
+      LOGGER.warn("Configuration option " + DATA_DIRECTORY + " is not "
+          + "configured, using temp directory to store vital data.");
+      sDataDir = Files.createTempDir().getAbsolutePath();
+    }
+    File dataDir = new File(sDataDir);
+    PathUtils.ensureDirectoryIsWriteAble(dataDir);
+    String[] tempDirs = configuration.getStrings(TEMP_DIRECTORIES);
+    if(tempDirs == null) {
+      tempDirs = new String[1];
+      tempDirs[0] = Files.createTempDir().getAbsolutePath();
+    }
+    mTempDirs = new File[tempDirs.length];
+    for (int i = 0; i < tempDirs.length; i++) {
+      mTempDirs[i] = new File(tempDirs[i]);
+      PathUtils.ensureDirectoryIsWriteAble(mTempDirs[i]);
+    }
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      @Override
+      public void run() {
+        for(File tempDir : mTempDirs) {
+          try {
+            PathUtils.fullyDelete(tempDir);
+          } catch (IOException e) {
+            LOGGER.error("Error deleting " + tempDir, e);
+          }
+        }
+      }
+    });
     long maxInactiveOpenFileTime = configuration.getInt(MAX_OPEN_FILE_INACTIVITY_PERIOD, 
         DEFAULT_MAX_OPEN_FILE_INACTIVITY_PERIOD);
     maxInactiveOpenFileTime = TimeUnit.MILLISECONDS.convert(maxInactiveOpenFileTime, TimeUnit.MINUTES);
-    ConcurrentMap<FileHandle, HDFSFile> fileHandleMap = Maps.newConcurrentMap();
+    ConcurrentMap<FileHandle, HDFSFile> openFileMap = Maps.newConcurrentMap();
     Map<FileHandle, WriteOrderHandler> writeOrderHandlerMap = Maps.newHashMap();
-    mHDFSState = new HDFSState(fileHandleStore, mTempDirs, mMetrics, writeOrderHandlerMap, fileHandleMap);
-    mHDFSStateBackgroundWorker = new HDFSStateBackgroundWorker(writeOrderHandlerMap, 
-        fileHandleMap, 60L * 1000L, maxInactiveOpenFileTime);
+    File fileHandleINodeDir = new File(dataDir, "fh-to-inode");
+    Preconditions.checkState(fileHandleINodeDir.isDirectory() || fileHandleINodeDir.mkdirs());
+    FileHandleINodeMap fileHandleINodeMap = 
+        new FileHandleINodeMap(new File(fileHandleINodeDir, "map"));
+    mHDFSState = new HDFSState(fileHandleINodeMap, mTempDirs, mFileSystem, mMetrics, 
+        writeOrderHandlerMap, openFileMap);
+    mHDFSStateBackgroundWorker = new HDFSStateBackgroundWorker(mHDFSState, 
+        writeOrderHandlerMap, openFileMap, fileHandleINodeMap, 60L * 1000L /* 1 minute*/, 
+        maxInactiveOpenFileTime, 3L * 24L * 60L * 60L * 1000L /* 3 days */);
     mHDFSStateBackgroundWorker.setDaemon(true);
     mHDFSStateBackgroundWorker.start();
     executor = new AsyncTaskExecutor<CompoundResponse>();
   }
   public void shutdown() throws IOException {
     mHDFSState.close();
-    for(String tempDir : mTempDirs) {
+    for(File tempDir : mTempDirs) {
       try {
-        PathUtils.fullyDelete(new File(tempDir));
+        PathUtils.fullyDelete(tempDir);
       } catch (IOException e) {
         LOGGER.warn("Error deleting " + tempDir, e);
       }
@@ -129,7 +168,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
         sudoUgi = UserGroupInformation.createRemoteUser(username);
       }
       Session session = new Session(rpcRequest.getXid(), compoundRequest,
-          mConfiguration, clientAddress, sessionID);
+          mConfiguration, mFileSystem, clientAddress, sessionID);
       NFS4AsyncFuture task = new NFS4AsyncFuture(mHDFSState, session, sudoUgi);
       executor.schedule(task);
       return task;

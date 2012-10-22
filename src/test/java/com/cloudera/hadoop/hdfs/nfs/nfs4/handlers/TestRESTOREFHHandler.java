@@ -34,6 +34,7 @@ public class TestRESTOREFHHandler extends TestBaseHandler {
   private RESTOREFHHandler handler;
   private RESTOREFHRequest request;
 
+  @Override
   @Before
   public void setup() throws Exception {
     super.setup();

@@ -24,7 +24,6 @@ import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,6 +43,7 @@ public class TestOPENHandler extends TestBaseHandler {
   private Path file;
   private HDFSOutputStream out;
 
+  @Override
   @Before
   public void setup() throws Exception {
     super.setup();
@@ -53,9 +53,9 @@ public class TestOPENHandler extends TestBaseHandler {
     file = new Path(parent, "file");
     request.setName(file.getName());
     out = mock(HDFSOutputStream.class);
-    when(hdfsState.forWrite(any(StateID.class), any(FileSystem.class), any(FileHandle.class), any(Boolean.class))).thenReturn(out);
+    when(hdfsState.openForWrite(any(StateID.class),any(FileHandle.class), any(Boolean.class))).thenReturn(out);
     when(hdfsState.getPath(currentFileHandle)).thenReturn(parent);
-    when(hdfsState.createFileHandle(file)).thenReturn(new FileHandle("file".getBytes(Charsets.UTF_8)));
+    when(hdfsState.getOrCreateFileHandle(file)).thenReturn(new FileHandle("file".getBytes(Charsets.UTF_8)));
   }
   @Test
   public void testInvalidNameEmpty() throws Exception {

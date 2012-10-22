@@ -42,6 +42,7 @@ public class TestCLOSEHandler extends TestBaseHandler {
   private CLOSERequest request;
   private WriteOrderHandler writeOrderHandler;
   
+  @Override
   @Before
   public void setup() throws Exception {
     super.setup();

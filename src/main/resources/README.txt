@@ -22,11 +22,13 @@ Questions? email brock at cloudera dot com
 
         <hostname of server running the proxy>:/   /mnt/hdfs   nfs4       rw,intr,timeo=600      0 0
 
-1. Choose binary:
+1. Build binary:
 
-    Either build a binary or choose one of the pre-built snapshots. The snapshots are in the snapshots/ directory.
+   Install JDBM in your local repo:
+      $ mvn install:install-file -Dfile=lib/jdbm-2.4.jar -DgroupId=thirdparty \
+          -DartifactId=jdbm -Dversion=2.4 -Dpackaging=jar
 
-    Should you choose to build your own binary, you need choose the appropiate hadoop version when building the package. Examples below:
+    Choose the appropiate hadoop version when building the package. Examples below:
 
         Hadoop 1:
           $ mvn package -Pcdh3

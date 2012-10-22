@@ -28,7 +28,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.After;
 import org.junit.Before;
@@ -59,6 +58,7 @@ public class TestWRITEHandler extends TestBaseHandler {
   private HDFSOutputStream outputStream;
   private AtomicReference<PendingWrite> writeReference;
   
+  @Override
   @Before
   public void setup() throws Exception {
     super.setup();
@@ -72,8 +72,9 @@ public class TestWRITEHandler extends TestBaseHandler {
     writeOrderHandler = mock(WriteOrderHandler.class);
     outputStream = mock(HDFSOutputStream.class);
     when(hdfsState.getPath(currentFileHandle)).thenReturn(file);
-    when(hdfsState.forWrite(any(StateID.class), any(FileSystem.class), any(FileHandle.class), 
+    when(hdfsState.openForWrite(any(StateID.class), any(FileHandle.class), 
         any(Boolean.class))).thenReturn(outputStream);
+    when(hdfsState.forWrite(any(StateID.class), any(FileHandle.class))).thenReturn(outputStream);
     when(hdfsState.getOrCreateWriteOrderHandler(currentFileHandle)).thenReturn(writeOrderHandler);
     when(writeOrderHandler.getTemporaryFile(any(String.class))).thenReturn(fileBackedWrite);
     when(writeOrderHandler.write(any(PendingWrite.class))).then(new Answer<Integer>() {

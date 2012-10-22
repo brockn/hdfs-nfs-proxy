@@ -39,6 +39,7 @@ public class TestGETATTRHandler extends TestBaseHandler {
   private GETATTRHandler handler;
   private GETATTRRequest request;
 
+  @Override
   @Before
   public void setup() throws Exception {
     super.setup();

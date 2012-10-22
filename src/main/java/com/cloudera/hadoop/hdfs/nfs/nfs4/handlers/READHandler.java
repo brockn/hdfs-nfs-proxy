@@ -52,7 +52,7 @@ public class READHandler extends OperationRequestHandler<READRequest, READRespon
     FileHandle fileHandle = session.getCurrentFileHandle();
     Path path = hdfsState.getPath(fileHandle);
     FileSystem fs = session.getFileSystem();
-    HDFSInputStream inputStream = hdfsState.forRead(request.getStateID(), fs, fileHandle);
+    HDFSInputStream inputStream = hdfsState.forRead(request.getStateID(), fileHandle);
     synchronized (inputStream) {
       if (inputStream.getPos() != request.getOffset()) {
         try {

@@ -21,50 +21,64 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4.state;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
+import java.io.File;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import junit.framework.Assert;
 
+import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import com.cloudera.hadoop.hdfs.nfs.PathUtils;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
+import com.google.common.io.Files;
 public class TestHDFSStateBackgroundWorker {
+  protected static final Logger LOGGER = Logger.getLogger(TestHDFSStateBackgroundWorker.class);
 
   private Map<FileHandle, WriteOrderHandler> writerOrderHandlerMap;
-  private  ConcurrentMap<FileHandle, HDFSFile> fileHandleMap;
+  private ConcurrentMap<FileHandle, HDFSFile> openFileMap;
+  private FileHandleINodeMap fileHandleINodeMap;
   private HDFSStateBackgroundWorker worker;
-  
+  private File storageDir;
   private long interval;
   private long maxInactivity;
+  private long fileHandleReapInterval;
   private HDFSOutputStream out;
   private WriteOrderHandler writeOrderHandler;
   private FileHandle fileHandle;
   private HDFSFile hdfsFile;
+  private HDFSState hdfsState;
   
   @Before
   public void setUp() throws Exception {
     writerOrderHandlerMap = Maps.newHashMap();
-    fileHandleMap = Maps.newConcurrentMap();
-
+    openFileMap = Maps.newConcurrentMap();
+    storageDir = Files.createTempDir();
+    hdfsState = mock(HDFSState.class);
     out = mock(HDFSOutputStream.class);
     writeOrderHandler = mock(WriteOrderHandler.class);
     fileHandle = new FileHandle("fh".getBytes(Charsets.UTF_8));
     hdfsFile = mock(HDFSFile.class);
-    fileHandleMap.put(fileHandle, hdfsFile);
+    openFileMap.put(fileHandle, hdfsFile);
     when(hdfsFile.getHDFSOutputStream()).
       thenReturn(new OpenResource<HDFSOutputStream>(new StateID(), out));
     interval = 5L;
     maxInactivity = 10L;
-    worker = new HDFSStateBackgroundWorker(writerOrderHandlerMap, fileHandleMap, interval, maxInactivity);
+    fileHandleReapInterval = 2000L;
+    fileHandleINodeMap = 
+        new FileHandleINodeMap(new File(storageDir, "map"));
+    worker = new HDFSStateBackgroundWorker(hdfsState, writerOrderHandlerMap, 
+        openFileMap, fileHandleINodeMap, interval, maxInactivity, 
+        fileHandleReapInterval);
     worker.setDaemon(true);
     worker.start();
     while(!worker.isAlive()) {
@@ -75,6 +89,11 @@ public class TestHDFSStateBackgroundWorker {
   @After
   public void tearDown() throws Exception {
     worker.shutdown();
+    Thread.sleep(interval * 4L);
+    fileHandleINodeMap.close();
+    if(storageDir != null) {
+      PathUtils.fullyDelete(storageDir);
+    }
   }
 
   @Test
@@ -116,8 +135,8 @@ public class TestHDFSStateBackgroundWorker {
   @Test
   public void testFileNotOpen() throws Exception {
     when(hdfsFile.isOpen()).thenReturn(false);
-    synchronized (fileHandleMap) {
-      fileHandleMap.put(fileHandle, hdfsFile);
+    synchronized (openFileMap) {
+      openFileMap.put(fileHandle, hdfsFile);
     }
     Thread.sleep(interval * 2);
     verify(hdfsFile, never()).closeResourcesInactiveSince(any(Long.class));
@@ -125,10 +144,42 @@ public class TestHDFSStateBackgroundWorker {
   @Test
   public void testFileOpen() throws Exception {
     when(hdfsFile.isOpen()).thenReturn(true);
-    synchronized (fileHandleMap) {
-      fileHandleMap.put(fileHandle, hdfsFile);
+    synchronized (openFileMap) {
+      openFileMap.put(fileHandle, hdfsFile);
     }
     Thread.sleep(interval * 2);
     verify(hdfsFile, atLeastOnce()).closeResourcesInactiveSince(any(Long.class));
+  }
+
+  @Test
+  public void testFileHandleReap() throws Exception {
+    FileHandle fh1 = new FileHandle("fh1".getBytes(Charsets.UTF_8));
+    FileHandle fh2 = new FileHandle("fh2".getBytes(Charsets.UTF_8));
+    FileHandle fh3 = new FileHandle("fh3".getBytes(Charsets.UTF_8));
+    // will be deleted
+    INode inode1 = new INode("/1", 1);
+    // will not be deleted
+    INode inode2 = new INode("/1", 2);
+    fileHandleINodeMap.put(fh1, inode1);
+    fileHandleINodeMap.put(fh2, inode2);
+    when(hdfsState.deleteFileHandleFileIfNotExist(fh1)).thenReturn(true);
+    when(hdfsState.deleteFileHandleFileIfNotExist(fh2)).thenReturn(false);
+    
+    Thread.sleep(fileHandleReapInterval + (interval * 2L));
+    // will not be returned by getFileHandlesNotValidatedSince
+    INode inode3 = new INode("/3", 3);
+    fileHandleINodeMap.put(fh3, inode3);
+    
+    Thread.sleep(interval * 4L);
+
+    verify(hdfsState, atLeast(1)).deleteFileHandleFileIfNotExist(fh1);
+    verify(hdfsState, atLeast(1)).deleteFileHandleFileIfNotExist(fh2);
+    verify(hdfsState, times(0)).deleteFileHandleFileIfNotExist(fh3);
+    INode inode2Updated = fileHandleINodeMap.getINodeByFileHandle(fh2);
+    Assert.assertEquals(inode2, inode2Updated);
+    Assert.assertTrue(inode2Updated.getCreationTime() > inode2.getCreationTime());
+    INode inode3Updated = fileHandleINodeMap.getINodeByFileHandle(fh3);
+    Assert.assertEquals(inode3, inode3Updated);
+    Assert.assertEquals(inode3.getCreationTime(), inode3Updated.getCreationTime());
   }
 }

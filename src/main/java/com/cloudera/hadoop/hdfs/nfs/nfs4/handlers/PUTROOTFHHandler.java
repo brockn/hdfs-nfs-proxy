@@ -38,7 +38,7 @@ public class PUTROOTFHHandler extends OperationRequestHandler<PUTROOTFHRequest, 
   @Override
   protected PUTROOTFHResponse doHandle(HDFSState hdfsState, Session session,
       PUTROOTFHRequest request) throws NFS4Exception, IOException {
-    session.setCurrentFileHandle(hdfsState.createFileHandle(new Path("/")));
+    session.setCurrentFileHandle(hdfsState.getOrCreateFileHandle(new Path("/")));
     PUTROOTFHResponse response = createResponse();
     response.setStatus(NFS4_OK);
     return response;

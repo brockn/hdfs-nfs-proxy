@@ -71,9 +71,9 @@ public class OPENHandler extends OperationRequestHandler<OPENRequest, OPENRespon
     FileSystem fs = session.getFileSystem();
     Path parentPath = hdfsState.getPath(session.getCurrentFileHandle());
     Path path = new Path(parentPath, request.getName());
-    session.setCurrentFileHandle(hdfsState.createFileHandle(path));
+    session.setCurrentFileHandle(hdfsState.getOrCreateFileHandle(path));
     // creates input stream
-    hdfsState.forRead(stateID, fs, session.getCurrentFileHandle());
+    hdfsState.openForRead(stateID, session.getCurrentFileHandle());
     OPENResponse response = createResponse();
     response.setStateID(stateID);
     FileStatus fileStatus = fs.getFileStatus(path);
@@ -95,12 +95,11 @@ public class OPENHandler extends OperationRequestHandler<OPENRequest, OPENRespon
       OPENRequest request) throws NFS4Exception, IOException {
     // generate stateid
     StateID stateID = StateID.newStateID(request.getSeqID());
-    FileSystem fs = session.getFileSystem();
     Path parentPath = hdfsState.getPath(session.getCurrentFileHandle());
     Path path = new Path(parentPath, request.getName());
-    session.setCurrentFileHandle(hdfsState.createFileHandle(path));
+    session.setCurrentFileHandle(hdfsState.getOrCreateFileHandle(path));
     boolean overwrite = request.getOpenType() == NFS4_OPEN4_CREATE;
-    HDFSOutputStream out = hdfsState.forWrite(stateID, fs, session.getCurrentFileHandle(), overwrite);
+    HDFSOutputStream out = hdfsState.openForWrite(stateID, session.getCurrentFileHandle(), overwrite);
     out.sync(); // create file in namenode
     LOGGER.info(session.getSessionID() + " Opened " + path + " for write " + out);
     OPENResponse response = createResponse();

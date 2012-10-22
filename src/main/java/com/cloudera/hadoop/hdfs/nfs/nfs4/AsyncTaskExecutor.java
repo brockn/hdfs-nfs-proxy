@@ -54,6 +54,7 @@ public class AsyncTaskExecutor<T> {
         queue, new ThreadFactoryBuilder().setDaemon(true).
         setNameFormat("AsyncTaskExecutor-" + instanceCounter.incrementAndGet() + "-%d")
         .build()) {
+      @Override
       @SuppressWarnings("hiding")
       protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
         if(runnable instanceof DelayedRunnable) {
@@ -68,8 +69,8 @@ public class AsyncTaskExecutor<T> {
     executor.submit(new DelayedRunnable(new TaskRunnable(queue, task)));
   }
   private static class TaskRunnable implements Runnable {
-    private AsyncFuture<?> task;
-    private BlockingQueue queue;
+    private final AsyncFuture<?> task;
+    private final BlockingQueue queue;
     public TaskRunnable(BlockingQueue queue, AsyncFuture<?> task) {
       this.queue = queue;
       this.task = task;
