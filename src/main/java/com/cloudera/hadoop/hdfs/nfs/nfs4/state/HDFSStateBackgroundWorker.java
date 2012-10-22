@@ -142,7 +142,11 @@ public class HDFSStateBackgroundWorker extends Thread {
           // not interruptible
         }
       }
-      mFileHandleINodeMap.updateValidationTime(fileHandlesWhichStillExist);
+      try {
+        mFileHandleINodeMap.updateValidationTime(fileHandlesWhichStillExist);
+      } catch(IOException e) {
+        LOGGER.warn("Error updated creation time for file handles", e);
+      }
     }
   }
 }

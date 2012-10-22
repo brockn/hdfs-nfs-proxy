@@ -39,7 +39,6 @@ import jdbm.SecondaryTreeMap;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
 
 public class FileHandleINodeMap {
@@ -54,7 +53,6 @@ public class FileHandleINodeMap {
   
   public FileHandleINodeMap(File file) throws IOException {
     Properties properties = new Properties();
-    properties.put(RecordManagerOptions.AUTO_COMMIT, "true");
     properties.put(RecordManagerOptions.CACHE_TYPE, "mru");
     properties.put(RecordManagerOptions.CACHE_SIZE, "10000");
     properties.put(RecordManagerOptions.COMPRESS, "false");
@@ -102,44 +100,32 @@ public class FileHandleINodeMap {
       mReadLock.unlock();
     }
   }
-  public void put(FileHandle fileHandle, INode value) {
+  public void put(FileHandle fileHandle, INode value) throws IOException {
     mWriteLock.lock();
     try {
       mFileHandleINodeMap.put(fileHandle, value);
-      try {
-        mRecordManager.commit();
-      } catch (IOException e) {
-        Throwables.propagate(e);
-      }
+      mRecordManager.commit();
     } finally {
       mWriteLock.unlock();
     }
   }
-  public void remove(FileHandle fileHandle) {
+  public void remove(FileHandle fileHandle) throws IOException {
     mWriteLock.lock();
     try {
       mFileHandleINodeMap.remove(fileHandle);
-      try {
-        mRecordManager.commit();
-      } catch (IOException e) {
-        Throwables.propagate(e);
-      }
+      mRecordManager.commit();
     } finally {
       mWriteLock.unlock();
     }
   }
-  public void updateValidationTime(Set<FileHandle> fileHandles) {
+  public void updateValidationTime(Set<FileHandle> fileHandles) throws IOException {
     mWriteLock.lock();
     try {
       for(FileHandle fileHandle : fileHandles) {
         INode inode = mFileHandleINodeMap.get(fileHandle);
         mFileHandleINodeMap.put(fileHandle, new INode(inode.getPath(), inode.getNumber()));
       }
-      try {
-        mRecordManager.commit();
-      } catch (IOException e) {
-        Throwables.propagate(e);
-      }
+      mRecordManager.commit();
     } finally {
       mWriteLock.unlock();
     }
