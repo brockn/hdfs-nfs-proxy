@@ -42,7 +42,6 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.state.FileHandleINodeMap;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSFile;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSStateBackgroundWorker;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.state.INode;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCHandler;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
 import com.cloudera.hadoop.hdfs.nfs.security.AuthenticatedCredentials;

@@ -19,6 +19,7 @@
 package com.cloudera.hadoop.hdfs.nfs.nfs4.state;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -122,13 +123,16 @@ public class HDFSStateBackgroundWorker extends Thread {
        * Now we are going to reap any file handles for old non-existent files
        */
       Long upperBound = System.currentTimeMillis() - mFileHandleReapInterval;
+      LOGGER.info("Validating file handles older than " + new Date(upperBound));
       Map<FileHandle, String> agedFileHandles = 
           mFileHandleINodeMap.getFileHandlesNotValidatedSince(upperBound);
       Set<FileHandle> fileHandlesWhichStillExist = Sets.newHashSet();
+      int count = 0;
       for(FileHandle fileHandle : agedFileHandles.keySet()) {
         if(!run) {
           break;
         }
+        count++;
         String path = agedFileHandles.get(fileHandle);
         try {
           if(!mHDFSState.deleteFileHandleFileIfNotExist(fileHandle)) {
@@ -142,6 +146,7 @@ public class HDFSStateBackgroundWorker extends Thread {
           // not interruptible
         }
       }
+      LOGGER.info("Validated " + count + " file handles");
       try {
         mFileHandleINodeMap.updateValidationTime(fileHandlesWhichStillExist);
       } catch(IOException e) {
