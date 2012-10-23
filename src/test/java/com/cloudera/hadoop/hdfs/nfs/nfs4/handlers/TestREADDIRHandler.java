@@ -96,8 +96,14 @@ public class TestREADDIRHandler extends TestBaseHandler {
     assertEquals("3", entries.get(3).getName());
   }
   @Test
-  public void testBadCookieVerifer() throws Exception {
+  public void testBadVerifer() throws Exception {
     request.setCookieVerifer(new OpaqueData8(99));
+    READDIRResponse response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_NOT_SAME, response.getStatus());
+  }
+  @Test
+  public void testBadCookie() throws Exception {
+    request.setCookie(Long.MAX_VALUE);
     READDIRResponse response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_BAD_COOKIE, response.getStatus());
   }
