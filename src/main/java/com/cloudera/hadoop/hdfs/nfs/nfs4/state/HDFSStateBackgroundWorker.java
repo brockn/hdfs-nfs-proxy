@@ -148,7 +148,9 @@ public class HDFSStateBackgroundWorker extends Thread {
       }
       LOGGER.info("Validated " + count + " file handles");
       try {
-        mFileHandleINodeMap.updateValidationTime(fileHandlesWhichStillExist);
+        if(!fileHandlesWhichStillExist.isEmpty()) {
+          mFileHandleINodeMap.updateValidationTime(fileHandlesWhichStillExist);
+        }
       } catch(IOException e) {
         LOGGER.warn("Error updated creation time for file handles", e);
       }
