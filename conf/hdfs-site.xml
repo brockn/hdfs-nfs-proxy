@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration>
+  <property>
+    <name>hdfs.nfs.data.dir</name>
+    <value>/tmp/hdfs-nfs-proxy/data</value>
+  </property>
+  <property>
+    <name>hdfs.nfs.temp.dirs</name>
+    <value>/tmp/hdfs-nfs-proxy/tmp1,/tmp/hdfs-nfs-proxy/tmp2,/tmp/hdfs-nfs-proxy/tmp3</value>
+  </property>
+</configuration>
