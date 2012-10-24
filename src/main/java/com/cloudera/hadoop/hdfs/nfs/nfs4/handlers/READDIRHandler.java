@@ -84,6 +84,12 @@ public class READDIRHandler extends OperationRequestHandler<READDIRRequest, READ
       /*
        * "If the server determines that the cookieverf is no longer valid 
        * for the directory, the error NFS4ERR_NOT_SAME must be returned."
+       * 
+       * However, the linux client ignores the cookieverf. However, the
+       * server will notice the update mtime of the directory after
+       * this error and re-read it. See this discussion on why the linux
+       * client ignores the cookieverf:
+       * http://www.spinics.net/lists/linux-nfs/msg33321.html
        */
       throw new NFS4Exception(NFS4ERR_NOT_SAME, "verifer = " + verifer + 
           ", requestVerifer = " + requestVerifer);

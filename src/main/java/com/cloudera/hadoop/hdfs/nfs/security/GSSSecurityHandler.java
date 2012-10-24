@@ -66,8 +66,13 @@ public class GSSSecurityHandler extends SecurityHandler {
         System.out.println("Writing token " + mToken.length + ": " + Bytes.asHex(mToken));
         System.out.println("Established " + mContext.isEstablished());
       }
-
+      
       System.out.println(mContext.getSrcName());
+      GSSCredential cred = mContext.getDelegCred();
+      if(cred != null) {
+        System.out.println(cred.getName().getStringNameType());
+        System.out.println(cred.getName());
+      }
 
       CredentialsGSS creds = (CredentialsGSS)request.getCredentials();
       mSequenceNumber = creds.getSequenceNum();
