@@ -20,6 +20,9 @@ package com.cloudera.hadoop.hdfs.nfs.security;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
+import java.util.Arrays;
+
+import com.cloudera.hadoop.hdfs.nfs.Bytes;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class VerifierGSS extends Verifier {
@@ -46,6 +49,12 @@ public class VerifierGSS extends Verifier {
 
   public byte[] get() {
     return mOpaqueData.getData();
+  }
+
+  @Override
+  public String toString() {
+    return "VerifierGSS [get()=" + Bytes.asHex(get()) + ", getFlavor()="
+        + getFlavor() + "]";
   }
 
   @Override

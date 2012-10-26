@@ -23,6 +23,8 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
 public class VerifierNone extends Verifier {
+
+
   @Override
   public void read(RPCBuffer buffer) {
     int length = buffer.readUint32();
@@ -40,5 +42,8 @@ public class VerifierNone extends Verifier {
   public int getFlavor() {
     return RPC_VERIFIER_NULL;
   }
-
+  @Override
+  public String toString() {
+    return "VerifierNone [getFlavor()=" + getFlavor() + "]";
+  }
 }

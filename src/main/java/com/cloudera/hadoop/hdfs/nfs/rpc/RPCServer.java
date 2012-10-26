@@ -33,6 +33,7 @@ import org.apache.hadoop.io.IOUtils;
 import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
+import com.cloudera.hadoop.hdfs.nfs.security.SecurityHandlerFactory;
 import com.google.common.collect.Maps;
 
 public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase> extends Thread {
@@ -46,7 +47,7 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
   protected Map<Integer, MessageBase> mResponseCache =
       Collections.synchronizedMap(new LRUCache<Integer, MessageBase>(500));
   protected ConcurrentMap<Integer, Long> mRequestsInProgress = Maps.newConcurrentMap();
-  protected Map<String, BlockingQueue<RPCBuffer>> mOutputQueueMap = Maps.newHashMap();
+  private final SecurityHandlerFactory mSecurityHandlerFactory;
 
   public RPCServer(RPCHandler<REQUEST, RESPONSE> rpcHandler, Configuration conf, InetAddress address) throws Exception {
     this(rpcHandler, conf, address, 0);
@@ -56,6 +57,7 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
     mHandler = rpcHandler;
     mConfiguration = conf;
     mPort = port;
+    mSecurityHandlerFactory = new SecurityHandlerFactory(mConfiguration);
     mServer = new ServerSocket(mPort, -1, address);
     // if port is 0, we are supposed to find a port
     // mPort should then be set to the port we found
@@ -75,7 +77,8 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
         String name = client.getInetAddress().getCanonicalHostName() + ":" + client.getPort();
         LOGGER.info(mHandler.getClass() + " got client " + name);
 
-        ClientInputHandler<REQUEST, RESPONSE> worker = new ClientInputHandler<REQUEST, RESPONSE>(mConfiguration, this, mHandler, client);
+        ClientInputHandler<REQUEST, RESPONSE> worker = new ClientInputHandler<REQUEST, RESPONSE>(mConfiguration, this, mHandler, 
+            mSecurityHandlerFactory, client);
         mClients.put(client, worker);
         worker.start();
       }
@@ -106,15 +109,6 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
 
   public int getPort() {
     return mPort;
-  }
-
-  protected BlockingQueue<RPCBuffer> getOutputQueue(String name) {
-    synchronized (mOutputQueueMap) {
-      if (!mOutputQueueMap.containsKey(name)) {
-        mOutputQueueMap.put(name, new LinkedBlockingQueue<RPCBuffer>(1000));
-      }
-      return mOutputQueueMap.get(name);
-    }
   }
 
   protected Map<Integer, MessageBase> getResponseCache() {

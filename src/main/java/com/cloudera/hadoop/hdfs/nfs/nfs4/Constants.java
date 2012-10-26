@@ -366,6 +366,10 @@ public class Constants {
   
   public static final String TEMP_DIRECTORIES = "hdfs.nfs.temp.dirs";
   
+  public static final String SECURITY_FLAVOR = "hdfs.nfs.security.flavor";
+  public static final String SECURITY_FLAVOR_DEFAULT= "unix";
+  public static final String SECURITY_FLAVOR_KERBEROS = "krb5";
+  
   public static final String MAX_OPEN_FILE_INACTIVITY_PERIOD = "hdfs.nfs.max.open.file.inactivity.ms";
   
   public static final int DEFAULT_MAX_OPEN_FILE_INACTIVITY_PERIOD = 30;

@@ -105,8 +105,12 @@ public class RPCResponse extends RPCPacket {
   }
   @Override
   public String toString() {
-    return "RPCResponse [replyState=" + mReplyState + ", acceptState="
-        + mAcceptState + "]";
+    return "RPCResponse [getVerifier()=" + getVerifier() + ", getAuthState()="
+        + getAuthState() + ", getVerifierFlavor()=" + getVerifierFlavor()
+        + ", getAcceptState()=" + getAcceptState() + ", getReplyState()="
+        + getReplyState() + ", getXidAsHexString()=" + getXidAsHexString()
+        + ", getXid()=" + getXid() + ", getMessageType()=" + getMessageType()
+        + "]";
   }
   public int getVerifierFlavor() {
     return mVerifierFlavor;

@@ -36,7 +36,7 @@
 
     <!-- default priority is info and all messages are logged to root -->
     <root>
-        <priority value="FATAL"/>
+        <priority value="INFO"/>
         <appender-ref ref="appender-stdout"/>
     </root>
 

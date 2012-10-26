@@ -9,4 +9,8 @@
     <name>hdfs.nfs.temp.dirs</name>
     <value>/tmp/hdfs-nfs-proxy/tmp1,/tmp/hdfs-nfs-proxy/tmp2,/tmp/hdfs-nfs-proxy/tmp3</value>
   </property>
+  <property>
+    <name>hdfs.nfs.security.flavor</name>
+    <value>krb5p</value>
+  </property>
 </configuration>

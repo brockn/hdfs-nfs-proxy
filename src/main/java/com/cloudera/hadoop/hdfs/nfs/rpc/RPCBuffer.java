@@ -271,6 +271,9 @@ public class RPCBuffer {
    */
   public void write(OutputStream out) throws IOException {
     putInt(0, RPC_LAST_FRAGEMANT | limit() - 4);
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("To OutputStream " + Bytes.asHex(mBuffer.array(), 0, limit()));
+    }
     out.write(mBuffer.array(), 0, limit());
   }
 

@@ -20,6 +20,8 @@ package com.cloudera.hadoop.hdfs.nfs.security;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.log4j.Logger;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
@@ -34,68 +36,61 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
+import com.google.common.base.Preconditions;
 
 public class GSSSecurityHandler extends SecurityHandler {
   protected static final Logger LOGGER = Logger.getLogger(GSSSecurityHandler.class);
-  protected GSSManager mManager = GSSManager.getInstance();
-  protected GSSContext mContext;
-  protected byte[] mToken;
-  protected int mSequenceNumber;
-  protected byte[] mContextID = Bytes.toBytes(NetUtils.nextRandomInt());
 
-  public GSSSecurityHandler() throws GSSException {
+  private final GSSManager mManager = GSSManager.getInstance();
+  private final GSSContext mContext;
+  private final byte[] mContextID;
+  private byte[] mToken;
+  private int mSequenceNumber;
+  
+  public GSSSecurityHandler(int contextID) throws GSSException {
     mContext = mManager.createContext((GSSCredential) null);
+    mContextID = Bytes.toBytes(contextID);
   }
 
-  @Override
-  public boolean hasAcceptableSecurity(RPCRequest request) {
-    return request.getCredentials() != null && request.getCredentials() instanceof CredentialsGSS;
-  }
-
-  @Override
-  public Pair<? extends Verifier, RPCBuffer> initializeContext(RPCRequest request, RPCBuffer buffer) throws NFS4Exception {
-    try {
-      if(!mContext.isEstablished()) {
-        int length = buffer.readUint32();
-        mToken = buffer.readBytes(length);
-        System.out.println("Reading token " + length + ": " + Bytes.asHex(mToken));
-        mToken = mContext.acceptSecContext(mToken, 0, mToken.length);
-        if(mToken == null) {
-          mToken = new byte[0];
-        }
-        System.out.println("Writing token " + mToken.length + ": " + Bytes.asHex(mToken));
-        System.out.println("Established " + mContext.isEstablished());
+  public Pair<? extends Verifier, RPCBuffer> initializeContext(RPCRequest request, RPCBuffer buffer) 
+      throws GSSException {
+    CredentialsGSS creds = (CredentialsGSS)request.getCredentials();
+    Preconditions.checkState(creds.getProcedure() == RPCSEC_GSS_INIT || 
+        creds.getProcedure() == RPCSEC_GSS_CONTINUE_INIT, "Proc is " + creds.getFlavor());
+    Preconditions.checkState(request.getVerifier() instanceof VerifierNone, 
+        String.valueOf(request.getVerifier()));
+    if(!mContext.isEstablished()) {        int length = buffer.readUint32();
+      mToken = buffer.readBytes(length);
+      System.out.println("Reading token " + length + ": " + Bytes.asHex(mToken));
+      mToken = mContext.acceptSecContext(mToken, 0, mToken.length);
+      if(mToken == null) {
+        mToken = new byte[0];
       }
-      
-      System.out.println(mContext.getSrcName());
-      GSSCredential cred = mContext.getDelegCred();
-      if(cred != null) {
-        System.out.println(cred.getName().getStringNameType());
-        System.out.println(cred.getName());
-      }
-
-      CredentialsGSS creds = (CredentialsGSS)request.getCredentials();
-      mSequenceNumber = creds.getSequenceNum();
-
-      RPCBuffer payload = new RPCBuffer();
-      payload.writeUint32(mContextID.length);
-      payload.writeBytes(mContextID);
-      payload.writeUint32(0); // major
-      payload.writeUint32(0); // minor
-      payload.writeUint32(128); // sequence window
-      payload.writeUint32(mToken.length);
-      payload.writeBytes(mToken);
-      byte[] sequenceNumber = Bytes.toBytes(128);
-      MessageProp msgProp = new MessageProp(false);
-      VerifierGSS verifier = new VerifierGSS();
-      verifier.set(mContext.getMIC(sequenceNumber, 0, sequenceNumber.length, msgProp));
-      return Pair.of(verifier, payload);
-    } catch(GSSException ex) {
-      LOGGER.warn("Error in initializeContext", ex);
-      throw new NFS4Exception(NFS4ERR_PERM, ex);
+      System.out.println("Writing token " + mToken.length + ": " + Bytes.asHex(mToken));
+      System.out.println("Established " + mContext.isEstablished());
     }
-  }
 
+    System.out.println("source " + mContext.getSrcName());
+    System.out.println("target " + mContext.getTargName());
+    
+    
+    mSequenceNumber = creds.getSequenceNum();
+
+    RPCBuffer payload = new RPCBuffer();
+    // contextID (handle) and token are null when major is not COMPLETE or CONTINUE_NEEDED
+    payload.writeUint32(mContextID.length);
+    payload.writeBytes(mContextID);
+    payload.writeUint32(0); // major
+    payload.writeUint32(0); // minor
+    payload.writeUint32(128); // sequence window
+    payload.writeUint32(mToken.length);
+    payload.writeBytes(mToken);
+    byte[] sequenceNumber = Bytes.toBytes(128);
+    MessageProp msgProp = new MessageProp(false);
+    VerifierGSS verifier = new VerifierGSS();
+    verifier.set(mContext.getMIC(sequenceNumber, 0, sequenceNumber.length, msgProp));
+    return Pair.of(verifier, payload);
+  }
   @Override
   public Verifier getVerifer(RPCRequest request) throws NFS4Exception {
     CredentialsGSS creds = (CredentialsGSS)request.getCredentials();
@@ -106,32 +101,32 @@ public class GSSSecurityHandler extends SecurityHandler {
     try {
       verifier.set(mContext.getMIC(sequenceNumber, 0, sequenceNumber.length, msgProp));
     } catch(GSSException ex) {
-      LOGGER.warn("Error in getMIC", ex);
+       LOGGER.warn("Error in getMIC", ex);
       throw new NFS4Exception(NFS4ERR_PERM, ex);
     }
     return verifier;
   }
-
-  @Override
-  public boolean isWrapRequired() {
-    return true;
-  }
-
-  @Override
-  public boolean isUnwrapRequired() {
-    return true;
-  }
-
   @Override
   public byte[] unwrap(byte[] data) throws NFS4Exception {
     try {
+      if(mContext.isEstablished()) {
+        try {
+          System.out.println("src " + mContext.getSrcName());
+          GSSCredential cred = mContext.getDelegCred();
+          if(cred != null) {
+            System.out.println("delegation cred type " + cred.getName().getStringNameType());
+            System.out.println("delegation cred name " + cred.getName());
+          }          
+        } catch (Exception e) {
+          e.printStackTrace(System.out);
+        }
+      }
       return mContext.unwrap(data, 0, data.length, new MessageProp(true));
     } catch(GSSException ex) {
       LOGGER.warn("Error in getMIC", ex);
       throw new NFS4Exception(NFS4ERR_PERM, ex);
     }
   }
-
   @Override
   public byte[] wrap(MessageBase response) throws NFS4Exception {
     RPCBuffer buffer = new RPCBuffer();
@@ -144,5 +139,17 @@ public class GSSSecurityHandler extends SecurityHandler {
       LOGGER.warn("Error in getMIC", ex);
       throw new NFS4Exception(NFS4ERR_PERM, ex);
     }
+  }
+  public byte[] getContextID() {
+    return mContextID;
+  }
+  @Override
+  public boolean isWrapRequired() {
+    return true;
+  }
+
+  @Override
+  public boolean isUnwrapRequired() {
+    return true;
   }
 }
