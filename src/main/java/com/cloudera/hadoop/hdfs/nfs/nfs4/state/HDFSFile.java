@@ -45,45 +45,21 @@ public class HDFSFile {
     this.mFileID = fileID;
   }
 
-  public synchronized OpenResource<HDFSInputStream> getInputStream(StateID stateID) {
-    if (mInputStreams.containsKey(stateID)) {
-      OpenResource<HDFSInputStream> file = mInputStreams.get(stateID);
-      file.setTimestamp(System.currentTimeMillis());
-      return file;
+  public synchronized void closeInputStream(StateID stateID) throws IOException {
+    OpenResource<?> resource = mInputStreams.remove(stateID);
+    if(resource != null) {
+      resource.close();
     }
-    return null;
   }
 
-  public synchronized void putInputStream(StateID stateID,
-      HDFSInputStream inputStream) {
-    mInputStreams.put(stateID, new OpenResource<HDFSInputStream>(stateID,
-        inputStream));
-  }
-
-  public synchronized boolean isOpen() {
-    return isOpenForWrite() || isOpenForRead();
-  }
-
-  public synchronized boolean isOpenForRead() {
-    return !mInputStreams.isEmpty();
-  }
-
-  public synchronized boolean isOpenForWrite() {
-    return getHDFSOutputStreamForWrite() != null;
-  }
-  public synchronized OpenResource<HDFSOutputStream> getHDFSOutputStream() {
-    if (mOutputStream != null) {
-      return mOutputStream.getSecond();
+  public synchronized void closeOutputStream(StateID stateID) throws IOException {
+    if(mOutputStream != null) {
+      OpenResource<HDFSOutputStream> res = mOutputStream.getSecond();
+      if(stateID.equals(mOutputStream.getFirst())) {
+        mOutputStream = null;
+        res.close();
+      }
     }
-    return null;
-  }
-  public synchronized OpenResource<HDFSOutputStream> getHDFSOutputStreamForWrite() {
-    if (mOutputStream != null) {
-      OpenResource<HDFSOutputStream> file = mOutputStream.getSecond();
-      file.setTimestamp(System.currentTimeMillis());
-      return file;
-    }
-    return null;
   }
 
   public synchronized void closeResourcesInactiveSince(long inactiveSince) 
@@ -104,20 +80,44 @@ public class HDFSFile {
       }
     }
   }
-  public synchronized void closeInputStream(StateID stateID) throws IOException {
-    OpenResource<?> resource = mInputStreams.remove(stateID);
-    if(resource != null) {
-      resource.close();
+
+  public synchronized OpenResource<HDFSOutputStream> getHDFSOutputStream() {
+    if (mOutputStream != null) {
+      return mOutputStream.getSecond();
     }
+    return null;
   }
-  public synchronized void closeOutputStream(StateID stateID) throws IOException {
-    if(mOutputStream != null) {
-      OpenResource<HDFSOutputStream> res = mOutputStream.getSecond();
-      if(stateID.equals(mOutputStream.getFirst())) {
-        mOutputStream = null;
-        res.close();
-      }
+
+  public synchronized OpenResource<HDFSOutputStream> getHDFSOutputStreamForWrite() {
+    if (mOutputStream != null) {
+      OpenResource<HDFSOutputStream> file = mOutputStream.getSecond();
+      file.setTimestamp(System.currentTimeMillis());
+      return file;
     }
+    return null;
+  }
+  public synchronized OpenResource<HDFSInputStream> getInputStream(StateID stateID) {
+    if (mInputStreams.containsKey(stateID)) {
+      OpenResource<HDFSInputStream> file = mInputStreams.get(stateID);
+      file.setTimestamp(System.currentTimeMillis());
+      return file;
+    }
+    return null;
+  }
+  public synchronized boolean isOpen() {
+    return isOpenForWrite() || isOpenForRead();
+  }
+
+  public synchronized boolean isOpenForRead() {
+    return !mInputStreams.isEmpty();
+  }
+  public synchronized boolean isOpenForWrite() {
+    return getHDFSOutputStreamForWrite() != null;
+  }
+  public synchronized void putInputStream(StateID stateID,
+      HDFSInputStream inputStream) {
+    mInputStreams.put(stateID, new OpenResource<HDFSInputStream>(stateID,
+        inputStream));
   }
   public synchronized void setHDFSOutputStream(StateID stateID, HDFSOutputStream outputStream) {
     mOutputStream = Pair.of(stateID, new OpenResource<HDFSOutputStream>(stateID, outputStream));

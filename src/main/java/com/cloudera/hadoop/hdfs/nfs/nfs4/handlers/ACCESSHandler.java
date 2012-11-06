@@ -30,12 +30,9 @@ import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.UserIDMapper;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.ACCESSRequest;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.ACCESSResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
-import com.cloudera.hadoop.hdfs.nfs.security.AuthenticatedCredentials;
 import com.google.common.annotations.VisibleForTesting;
 
 public class ACCESSHandler extends OperationRequestHandler<ACCESSRequest, ACCESSResponse> {
@@ -45,67 +42,6 @@ public class ACCESSHandler extends OperationRequestHandler<ACCESSRequest, ACCESS
   public static final int ACCESS_WRITE = 0x02;
   public static final int ACCESS_EXECUTE = 0x01;
 
-  @Override
-  protected ACCESSResponse doHandle(HDFSState hdfsState, Session session,
-      ACCESSRequest request) throws NFS4Exception, IOException {
-    if (session.getCurrentFileHandle() == null) {
-      throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
-    }
-    CompoundRequest compoundRequest = session.getCompoundRequest();
-    AuthenticatedCredentials creds = compoundRequest.getCredentials();
-    Path path = hdfsState.getPath(session.getCurrentFileHandle());
-    String user, group;
-    try {
-      UserIDMapper mapper = UserIDMapper.get(session.getConfiguration());
-      user = mapper.getUserForUID(session.getConfiguration(), creds.getUID(), null);
-      if (user == null) {
-        throw new Exception("Could not map " + creds.getUID() + " to user");
-      }
-      group = mapper.getGroupForGID(session.getConfiguration(), creds.getGID(), null);
-      if (group == null) {
-        throw new Exception("Could not map " + creds.getGID() + " to group");
-      }
-    } catch (Exception e) {
-      throw new NFS4Exception(NFS4ERR_SERVERFAULT, e);
-    }
-    FileSystem fs = session.getFileSystem();
-    FileStatus fileStatus = fs.getFileStatus(path);
-    FsPermission perms = fileStatus.getPermission();
-    //FsAction action = perms.getUserAction(); // always comes back ALL??
-
-    int permissions = perms.toShort();
-    int saved = permissions;
-    int rtn =  getPermsForUserGroup(user, group, fileStatus);
-    if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug("Checking access for '" + user + "' and path " + path
-          + " owned by '" + fileStatus.getOwner()
-          + "' permissions " + Integer.toBinaryString(saved)
-          + ", Returning " + Integer.toBinaryString(rtn));
-    }
-    int access = rtn & request.getAccess();
-    ACCESSResponse response = createResponse();
-    response.setStatus(NFS4_OK);
-    response.setAccess(access);
-    response.setSupported(access);
-    return response;
-  }
-
-  @VisibleForTesting
-  public static int getPermsForUserGroup(String user, String group, FileStatus fileStatus) {
-    FsPermission perms = fileStatus.getPermission();
-    int permissions = perms.toShort();    
-    boolean isOwner = user.equals(fileStatus.getOwner());
-    int rtn = getPerms(permissions, isOwner);
-    permissions = permissions >> 3;
-    if (group.equals(fileStatus.getGroup())) {
-      rtn |= getPerms(permissions, isOwner);
-    }
-    permissions = permissions >> 3;
-    if (user.equals(fileStatus.getOwner())) {
-      rtn |= getPerms(permissions, isOwner);
-    }
-    return rtn;
-  }
   @VisibleForTesting
   public static int getPerms(int permissions, boolean isOwner) {
     int rtn = 0;
@@ -125,13 +61,62 @@ public class ACCESSHandler extends OperationRequestHandler<ACCESSRequest, ACCESS
     }
     return rtn;
   }
+
+  @VisibleForTesting
+  public static int getPermsForUserGroup(String user, String[] groups, FileStatus fileStatus) {
+    FsPermission perms = fileStatus.getPermission();
+    int permissions = perms.toShort();    
+    boolean isOwner = user.equals(fileStatus.getOwner());
+    int rtn = getPerms(permissions, isOwner);
+    permissions = permissions >> 3;
+    for(String group : groups) {
+      if (group.equals(fileStatus.getGroup())) {
+        rtn |= getPerms(permissions, isOwner);
+      }      
+    }
+    permissions = permissions >> 3;
+    if (user.equals(fileStatus.getOwner())) {
+      rtn |= getPerms(permissions, isOwner);
+    }
+    return rtn;
+  }
   @VisibleForTesting
   public static boolean isSet(int access, int mode) {
     return (access & mode) == mode;
   }
-
   @Override
   protected ACCESSResponse createResponse() {
     return new ACCESSResponse();
+  }
+
+  @Override
+  protected ACCESSResponse doHandle(HDFSState hdfsState, Session session,
+      ACCESSRequest request) throws NFS4Exception, IOException {
+    if (session.getCurrentFileHandle() == null) {
+      throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
+    }
+    Path path = hdfsState.getPath(session.getCurrentFileHandle());
+    String user = session.getUser();
+    String groups[] = session.getGroups();
+    FileSystem fs = session.getFileSystem();
+    FileStatus fileStatus = fs.getFileStatus(path);
+    FsPermission perms = fileStatus.getPermission();
+    //FsAction action = perms.getUserAction(); // always comes back ALL??
+
+    int permissions = perms.toShort();
+    int saved = permissions;
+    int rtn =  getPermsForUserGroup(user, groups, fileStatus);
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Checking access for '" + user + "' and path " + path
+          + " owned by '" + fileStatus.getOwner()
+          + "' permissions " + Integer.toBinaryString(saved)
+          + ", Returning " + Integer.toBinaryString(rtn));
+    }
+    int access = rtn & request.getAccess();
+    ACCESSResponse response = createResponse();
+    response.setStatus(NFS4_OK);
+    response.setAccess(access);
+    response.setSupported(access);
+    return response;
   }
 }

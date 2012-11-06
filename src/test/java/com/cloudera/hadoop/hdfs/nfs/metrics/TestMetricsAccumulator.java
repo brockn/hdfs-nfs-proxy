@@ -37,11 +37,9 @@ public class TestMetricsAccumulator {
     accumulator = new MetricsAccumulator(publisher, 1000L);
   }
   @Test
-  public void testIncrementString() {
-    accumulator.incrementMetric("NFS_REQUESTS", 1);
-    Assert.assertEquals(1, accumulator.getMetric("NFS_REQUESTS"));
-    accumulator.incrementMetric("NFS_REQUESTS", 1);
-    Assert.assertEquals(2, accumulator.getMetric("NFS_REQUESTS"));
+  public void testGetWithoutIncrement() {
+    Assert.assertEquals(0, accumulator.getMetric("NFS_REQUESTS"));
+    Assert.assertEquals(0, accumulator.getMetric(NFS_COMPOUND_REQUESTS));
   }
 
   @Test
@@ -52,9 +50,11 @@ public class TestMetricsAccumulator {
     Assert.assertEquals(2, accumulator.getMetric(NFS_COMPOUND_REQUESTS));
   }
   @Test
-  public void testGetWithoutIncrement() {
-    Assert.assertEquals(0, accumulator.getMetric("NFS_REQUESTS"));
-    Assert.assertEquals(0, accumulator.getMetric(NFS_COMPOUND_REQUESTS));
+  public void testIncrementString() {
+    accumulator.incrementMetric("NFS_REQUESTS", 1);
+    Assert.assertEquals(1, accumulator.getMetric("NFS_REQUESTS"));
+    accumulator.incrementMetric("NFS_REQUESTS", 1);
+    Assert.assertEquals(2, accumulator.getMetric("NFS_REQUESTS"));
   }
   @Test
   public void testPublish() throws Exception {

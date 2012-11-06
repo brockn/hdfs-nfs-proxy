@@ -30,6 +30,12 @@ public class DirectoryList implements MessageBase {
 
   protected ImmutableList<DirectoryEntry> mDirEntries = ImmutableList.of();
   protected boolean mEOF;
+  public ImmutableList<DirectoryEntry> getDirEntries() {
+    return mDirEntries;
+  }
+  public boolean isEOF() {
+    return mEOF;
+  }
   @Override
   public void read(RPCBuffer buffer) {
     List<DirectoryEntry> entries = Lists.newArrayList();
@@ -41,6 +47,12 @@ public class DirectoryList implements MessageBase {
     mDirEntries = ImmutableList.copyOf(entries);
     mEOF = buffer.readBoolean();
   }
+  public void setDirEntries(List<DirectoryEntry> dirEntries) {
+    this.mDirEntries = ImmutableList.copyOf(dirEntries);
+  }
+  public void setEOF(boolean EOF) {
+    this.mEOF = EOF;
+  }
   @Override
   public void write(RPCBuffer buffer) {
     for(DirectoryEntry entry : mDirEntries) {
@@ -49,18 +61,6 @@ public class DirectoryList implements MessageBase {
     }
     buffer.writeBoolean(false);
     buffer.writeBoolean(mEOF);
-  }
-  public ImmutableList<DirectoryEntry> getDirEntries() {
-    return mDirEntries;
-  }
-  public void setDirEntries(List<DirectoryEntry> dirEntries) {
-    this.mDirEntries = ImmutableList.copyOf(dirEntries);
-  }
-  public boolean isEOF() {
-    return mEOF;
-  }
-  public void setEOF(boolean EOF) {
-    this.mEOF = EOF;
   }
 
 

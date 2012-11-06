@@ -33,9 +33,6 @@ public class ClientFactory {
   protected static final Map<Long, Client> mShortHandMap = Maps.newHashMap();
   protected static final Map<OpaqueData, Client> mClientMap = Maps.newHashMap();
 
-  public synchronized Client get(OpaqueData clientID) {
-    return mClientMap.get(clientID);
-  }
   public synchronized Client createIfNotExist(ClientID clientID) {
     if(mClientMap.containsKey(clientID.getOpaqueID())) {
       return null;
@@ -44,6 +41,9 @@ public class ClientFactory {
     mClientMap.put(clientID.getOpaqueID(), client);
     mShortHandMap.put(client.getShorthandID(), client);
     return client;
+  }
+  public synchronized Client get(OpaqueData clientID) {
+    return mClientMap.get(clientID);
   }
 
   public synchronized Client getByShortHand(Long shortHand) {

@@ -48,6 +48,59 @@ public class OPENRequest extends OperationRequest {
   protected int mClaimType;
   protected String mName;
 
+  public int getAccess() {
+    return mAccess;
+  }
+
+  public Bitmap getAttrs() {
+    return mAttrs;
+  }
+
+  public ImmutableList<Attribute> getAttrValues() {
+    return mAttrValues;
+  }
+
+  public int getClaimType() {
+    return mClaimType;
+  }
+
+  public long getClientID() {
+    return mClientID;
+  }
+
+  public int getCreateMode() {
+    return mCreateMode;
+  }
+
+  public int getDeny() {
+    return mDeny;
+  }
+
+  @Override
+  public int getID() {
+    return NFS4_OP_OPEN;
+  }
+
+  public String getName() {
+    return mName;
+  }
+
+  public int getOpenType() {
+    return mOpenType;
+  }
+
+  public OpaqueData getOwner() {
+    return mOwner;
+  }
+
+  public int getSeqID() {
+    return mSeqID;
+  }
+
+  public OpaqueData8 getVerifer() {
+    return mVerifer;
+  }
+
   @Override
   public void read(RPCBuffer buffer) {
     mSeqID = buffer.readUint32();
@@ -77,6 +130,54 @@ public class OPENRequest extends OperationRequest {
     mName = checkPath(buffer.readString());
   }
 
+  public void setAccess(int access) {
+    this.mAccess = access;
+  }
+
+  public void setAttrs(Bitmap attrs) {
+    this.mAttrs = attrs;
+  }
+
+  public void setAttrValues(ImmutableList<Attribute> attrValues) {
+    this.mAttrValues = attrValues;
+  }
+
+  public void setClaimType(int claimType) {
+    this.mClaimType = claimType;
+  }
+
+  public void setClientID(long clientID) {
+    this.mClientID = clientID;
+  }
+
+  public void setCreateMode(int createMode) {
+    this.mCreateMode = createMode;
+  }
+
+  public void setDeny(int deny) {
+    this.mDeny = deny;
+  }
+
+  public void setName(String name) {
+    this.mName = name;
+  }
+
+  public void setOpenType(int openType) {
+    this.mOpenType = openType;
+  }
+
+  public void setOwner(OpaqueData owner) {
+    this.mOwner = owner;
+  }
+
+  public void setSeqID(int seqID) {
+    this.mSeqID = seqID;
+  }
+
+  public void setVerifer(OpaqueData8 verifer) {
+    this.mVerifer = verifer;
+  }
+
   @Override
   public void write(RPCBuffer buffer) {
     buffer.writeUint32(mSeqID);
@@ -101,106 +202,5 @@ public class OPENRequest extends OperationRequest {
     }
     buffer.writeUint32(mClaimType);
     buffer.writeString(mName);
-  }
-
-  @Override
-  public int getID() {
-    return NFS4_OP_OPEN;
-  }
-
-  public int getSeqID() {
-    return mSeqID;
-  }
-
-  public void setSeqID(int seqID) {
-    this.mSeqID = seqID;
-  }
-
-  public int getAccess() {
-    return mAccess;
-  }
-
-  public void setAccess(int access) {
-    this.mAccess = access;
-  }
-
-  public int getDeny() {
-    return mDeny;
-  }
-
-  public void setDeny(int deny) {
-    this.mDeny = deny;
-  }
-
-  public long getClientID() {
-    return mClientID;
-  }
-
-  public void setClientID(long clientID) {
-    this.mClientID = clientID;
-  }
-
-  public OpaqueData getOwner() {
-    return mOwner;
-  }
-
-  public void setOwner(OpaqueData owner) {
-    this.mOwner = owner;
-  }
-
-  public int getOpenType() {
-    return mOpenType;
-  }
-
-  public void setOpenType(int openType) {
-    this.mOpenType = openType;
-  }
-
-  public int getCreateMode() {
-    return mCreateMode;
-  }
-
-  public void setCreateMode(int createMode) {
-    this.mCreateMode = createMode;
-  }
-
-  public Bitmap getAttrs() {
-    return mAttrs;
-  }
-
-  public void setAttrs(Bitmap attrs) {
-    this.mAttrs = attrs;
-  }
-
-  public ImmutableList<Attribute> getAttrValues() {
-    return mAttrValues;
-  }
-
-  public void setAttrValues(ImmutableList<Attribute> attrValues) {
-    this.mAttrValues = attrValues;
-  }
-
-  public OpaqueData8 getVerifer() {
-    return mVerifer;
-  }
-
-  public void setVerifer(OpaqueData8 verifer) {
-    this.mVerifer = verifer;
-  }
-
-  public int getClaimType() {
-    return mClaimType;
-  }
-
-  public void setClaimType(int claimType) {
-    this.mClaimType = claimType;
-  }
-
-  public String getName() {
-    return mName;
-  }
-
-  public void setName(String name) {
-    this.mName = name;
   }
 }

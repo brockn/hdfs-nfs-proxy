@@ -28,13 +28,14 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 public abstract class RPCHandler<REQUEST extends MessageBase, RESPONSE extends MessageBase> {
 
-  public abstract ListenableFuture<RESPONSE> process(final RPCRequest rpcRequest, final REQUEST request, final InetAddress clientAddress, final String sessionID);
+  public abstract REQUEST createRequest();
 
   public abstract RESPONSE createResponse();
 
-  public abstract REQUEST createRequest();
-
   public abstract void incrementMetric(Metric metric, long count);
+
+  public abstract ListenableFuture<RESPONSE> process(final RPCRequest rpcRequest, final REQUEST request, 
+      final InetAddress clientAddress, final String sessionID);
 
 
 }

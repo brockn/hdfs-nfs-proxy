@@ -28,15 +28,8 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class GETATTRRequest extends OperationRequest {
 
   protected Bitmap mAttrs;
-  @Override
-  public void read(RPCBuffer buffer) {
-    mAttrs = new Bitmap();
-    mAttrs.read(buffer);
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    mAttrs.write(buffer);
+  public Bitmap getAttrs() {
+    return mAttrs;
   }
 
   @Override
@@ -44,12 +37,19 @@ public class GETATTRRequest extends OperationRequest {
     return NFS4_OP_GETATTR;
   }
 
-  public Bitmap getAttrs() {
-    return mAttrs;
+  @Override
+  public void read(RPCBuffer buffer) {
+    mAttrs = new Bitmap();
+    mAttrs.read(buffer);
   }
 
   public void setAttrs(Bitmap attrs) {
     this.mAttrs = attrs;
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    mAttrs.write(buffer);
   }
 
 }

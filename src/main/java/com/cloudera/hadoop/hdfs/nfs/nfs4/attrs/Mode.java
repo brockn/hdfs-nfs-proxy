@@ -23,20 +23,10 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class Mode extends Attribute {
+  protected int mMode;
   public Mode() {
     super();
   }
-  protected int mMode;
-  @Override
-  public void read(RPCBuffer buffer) {
-    mMode = buffer.readUint32();
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint32(mMode);
-  }
-
   @Override
   public int getID() {
     return NFS4_FATTR4_MODE;
@@ -46,7 +36,17 @@ public class Mode extends Attribute {
     return mMode;
   }
 
+  @Override
+  public void read(RPCBuffer buffer) {
+    mMode = buffer.readUint32();
+  }
+
   public void setMode(int mode) {
     this.mMode = mode;
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeUint32(mMode);
   }
 }

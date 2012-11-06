@@ -32,6 +32,23 @@ public class SETCLIENTIDRequest extends OperationRequest {
   protected Callback mCallback;
   protected int mCallbackIdent;
 
+  public Callback getCallback() {
+    return mCallback;
+  }
+
+  public int getCallbackIdent() {
+    return mCallbackIdent;
+  }
+
+  public ClientID getClientID() {
+    return mClientID;
+  }
+
+  @Override
+  public int getID() {
+    return NFS4_OP_SETCLIENTID;
+  }
+
   @Override
   public void read(RPCBuffer buffer) {
     mClientID = new ClientID();
@@ -41,40 +58,23 @@ public class SETCLIENTIDRequest extends OperationRequest {
     mCallbackIdent = buffer.readUint32();
   }
 
-  @Override
-  public void write(RPCBuffer buffer) {
-    mClientID.write(buffer);
-    mCallback.write(buffer);
-    buffer.writeUint32(mCallbackIdent);
+  public void setCallback(Callback callback) {
+    this.mCallback = callback;
   }
 
-  @Override
-  public int getID() {
-    return NFS4_OP_SETCLIENTID;
-  }
-
-  public ClientID getClientID() {
-    return mClientID;
+  public void setCallbackIdent(int callbackIdent) {
+    this.mCallbackIdent = callbackIdent;
   }
 
   public void setClientID(ClientID clientID) {
     this.mClientID = clientID;
   }
 
-  public Callback getCallback() {
-    return mCallback;
-  }
-
-  public void setCallback(Callback callback) {
-    this.mCallback = callback;
-  }
-
-  public int getCallbackIdent() {
-    return mCallbackIdent;
-  }
-
-  public void setCallbackIdent(int callbackIdent) {
-    this.mCallbackIdent = callbackIdent;
+  @Override
+  public void write(RPCBuffer buffer) {
+    mClientID.write(buffer);
+    mCallback.write(buffer);
+    buffer.writeUint32(mCallbackIdent);
   }
 
 }

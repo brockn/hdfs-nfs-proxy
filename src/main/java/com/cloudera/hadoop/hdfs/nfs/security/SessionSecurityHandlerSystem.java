@@ -17,36 +17,39 @@
  * the License.
  */
 package com.cloudera.hadoop.hdfs.nfs.security;
-
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
-import org.apache.hadoop.conf.Configuration;
+
 import org.apache.log4j.Logger;
-import org.ietf.jgss.GSSException;
 
-import com.cloudera.hadoop.hdfs.nfs.Pair;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.NFS4Exception;
-import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.UserIDMapper;
+import com.cloudera.hadoop.hdfs.nfs.rpc.RPCException;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
-public class SecurityHandler {
-  protected static final Logger LOGGER = Logger.getLogger(SecurityHandler.class);
+public class SessionSecurityHandlerSystem extends SessionSecurityHandler<VerifierNone> {
+  protected static final Logger LOGGER = Logger.getLogger(SessionSecurityHandlerSystem.class);
+  private final UserIDMapper mUserIDMapper;
+  private final CredentialsSystem mCredentialsSystem;
+  public SessionSecurityHandlerSystem(CredentialsSystem credentialsSystem,
+      UserIDMapper userIDMapper) {
+    mCredentialsSystem = credentialsSystem;
+    mUserIDMapper = userIDMapper;
+  }
+  @Override
+  public String getUser() throws NFS4Exception {
+    try {
+      return mUserIDMapper.getUserForUID(mCredentialsSystem.getUID(), ANONYMOUS_USERNAME); 
+    } catch (Exception e) {
+      throw new NFS4Exception(NFS4ERR_SERVERFAULT, e);
+    }
+  }
 
-  public Verifier getVerifer(RPCRequest request) throws NFS4Exception {
+  @Override
+  public boolean shouldSilentlyDrop(RPCRequest request) {
+    return false;
+  }
+
+  @Override
+  public VerifierNone getVerifer(RPCRequest request) throws RPCException {
     return new VerifierNone();
-  }
-
-  public boolean isWrapRequired() {
-    return false;
-  }
-
-  public boolean isUnwrapRequired() {
-    return false;
-  }
-
-  public byte[] unwrap(byte[] data ) throws NFS4Exception {
-    throw new UnsupportedOperationException();
-  }
-  public byte[] wrap(MessageBase response) throws NFS4Exception {
-    throw new UnsupportedOperationException();
   }
 }

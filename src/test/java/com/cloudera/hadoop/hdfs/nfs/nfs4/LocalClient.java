@@ -24,11 +24,15 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
+import org.ietf.jgss.GSSManager;
 
 import com.cloudera.hadoop.hdfs.nfs.TestUtils;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CompoundResponse;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCTestUtil;
+import com.cloudera.hadoop.hdfs.nfs.security.SecurityHandlerFactory;
+import com.cloudera.hadoop.hdfs.nfs.security.SessionSecurityHandlerGSSFactory;
+import com.google.common.base.Supplier;
 import com.google.common.base.Throwables;
 
 public class LocalClient extends BaseClient {
@@ -37,7 +41,15 @@ public class LocalClient extends BaseClient {
 
   public LocalClient() throws NFS4Exception, IOException {
     Configuration conf = TestUtils.setupConf();
-    mServer = new NFS4Handler(conf);
+    SecurityHandlerFactory securityHandlerFactory = 
+        new SecurityHandlerFactory(
+        conf, new Supplier<GSSManager>() {
+          @Override
+          public GSSManager get() {
+            return GSSManager.getInstance();
+          }
+        }, new SessionSecurityHandlerGSSFactory());
+    mServer = new NFS4Handler(conf, securityHandlerFactory);
     initialize();
   }
 

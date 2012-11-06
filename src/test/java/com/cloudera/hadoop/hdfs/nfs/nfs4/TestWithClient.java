@@ -51,48 +51,45 @@ public class TestWithClient {
   private File testFile2;
   private final static String className = TestWithClient.class.getName();
 
-  @Before
-  public void setup() throws IOException {
-    TestUtils.buildTempDirDataFiles(6, TestUtils.tmpDirPathForTest);
-    testFile1 = TestUtils.createTempFile(null, true, 1024, className, null);
-    testFile2 = TestUtils.createTempFile(null, true, 1024, className, null);
-  }
-
-  @After
-  public void teardown() {
-    testFile1.delete();
-    testFile2.delete();
-  }
-
-  @Test
-  public void testNOENTLocal() throws IOException, InterruptedException, NFS4Exception {
-    testNOENT(new LocalClient());
-  }
-
-  @Test
-  public void testNOENTNetwork() throws IOException, InterruptedException, NFS4Exception {
-    testNOENT(new NetworkClient());
-  }
-
-  public void testNOENT(BaseClient client) throws IOException, InterruptedException, NFS4Exception {
+  protected void compareFileStatusFile(FileStatus fileStatus) throws IOException, InterruptedException {
     try {
-      client.listPath(new Path("/" + UUID.randomUUID().toString()));
-      fail("Expected no such file or directory");
-    } catch (NFS4Exception e) {
-      assertEquals(NFS4ERR_NOENT, e.getError());
-    } finally {
-      client.shutdown();
+      doCompareFileStatusFile(fileStatus);
+    } catch (AssertionError error) {
+      Thread.sleep(100L);
+      doCompareFileStatusFile(fileStatus);
     }
   }
 
-  @Test
-  public void testReadDirLocal() throws IOException, InterruptedException, NFS4Exception {
-    doReadDir(new LocalClient());
+  protected void doCompareFileStatusFile(FileStatus fileStatus) throws IOException {
+    File file = new File(fileStatus.path.toString());
+    String domain = NetUtils.getDomain(new Configuration(), LOCALHOST);
+    assertEquals(getOwner(file) + "@" + domain, fileStatus.getOwner());
+    assertEquals(getOwnerGroup(file) + "@" + domain, fileStatus.getOwnerGroup());
+    assertEquals(file.length(), fileStatus.getSize());
+    assertEquals(file.lastModified(), fileStatus.getMTime());
+    assertEquals(file.isDirectory(), fileStatus.isDir());
   }
 
-  @Test
-  public void testReadDirNetwork() throws IOException, InterruptedException, NFS4Exception {
-    doReadDir(new NetworkClient());
+  public void doLargeReadSize(BaseClient client) throws Exception {
+    BufferedReader reader = new BufferedReader(new InputStreamReader(client.forRead(new Path(testFile1.getCanonicalPath()), 1024 * 1024)));
+    int count = 0;
+    while (reader.read() != -1) {
+      count++;
+    }
+    reader.close();
+    client.shutdown();
+    assertTrue(count > 0);
+  }
+
+  public void doNormalReadSize(BaseClient client) throws Exception {
+    BufferedReader reader = new BufferedReader(new InputStreamReader(client.forRead(new Path(testFile1.getCanonicalPath()), NFS4_MAX_RWSIZE)));
+    int count = 0;
+    while (reader.read() != -1) {
+      count++;
+    }
+    reader.close();
+    client.shutdown();
+    assertTrue(count > 0);
   }
 
   public void doReadDir(BaseClient client) throws IOException, InterruptedException, NFS4Exception {
@@ -114,16 +111,6 @@ public class TestWithClient {
     client.shutdown();
   }
 
-  @Test
-  public void testSmallReadSizeLocal() throws Exception {
-    doSmallReadSize(new LocalClient());
-  }
-
-  @Test
-  public void testSmallReadSizeNetwork() throws Exception {
-    doSmallReadSize(new NetworkClient());
-  }
-
   public void doSmallReadSize(BaseClient client) throws Exception {
     BufferedReader reader = new BufferedReader(
         new InputStreamReader(
@@ -135,58 +122,6 @@ public class TestWithClient {
     reader.close();
     client.shutdown();
     assertTrue(count > 0);
-  }
-
-  @Test
-  public void testLargeReadSizeLocal() throws Exception {
-    doLargeReadSize(new LocalClient());
-  }
-
-  @Test
-  public void testLargeReadSizeNetwork() throws Exception {
-    doLargeReadSize(new NetworkClient());
-  }
-
-  public void doLargeReadSize(BaseClient client) throws Exception {
-    BufferedReader reader = new BufferedReader(new InputStreamReader(client.forRead(new Path(testFile1.getCanonicalPath()), 1024 * 1024)));
-    int count = 0;
-    while (reader.read() != -1) {
-      count++;
-    }
-    reader.close();
-    client.shutdown();
-    assertTrue(count > 0);
-  }
-
-  @Test
-  public void testNormalReadSizeLocal() throws Exception {
-    doNormalReadSize(new LocalClient());
-  }
-
-  @Test
-  public void testNormalReadSizeNetwork() throws Exception {
-    doNormalReadSize(new NetworkClient());
-  }
-
-  public void doNormalReadSize(BaseClient client) throws Exception {
-    BufferedReader reader = new BufferedReader(new InputStreamReader(client.forRead(new Path(testFile1.getCanonicalPath()), NFS4_MAX_RWSIZE)));
-    int count = 0;
-    while (reader.read() != -1) {
-      count++;
-    }
-    reader.close();
-    client.shutdown();
-    assertTrue(count > 0);
-  }
-
-  @Test
-  public void testWriteLocal() throws Exception {
-    doWrite(new LocalClient());
-  }
-
-  @Test
-  public void testWriteNetwork() throws Exception {
-    doWrite(new NetworkClient());
   }
 
   public void doWrite(BaseClient client) throws Exception {
@@ -253,22 +188,87 @@ public class TestWithClient {
     }
   }
 
-  protected void doCompareFileStatusFile(FileStatus fileStatus) throws IOException {
-    File file = new File(fileStatus.path.toString());
-    String domain = NetUtils.getDomain(new Configuration(), LOCALHOST);
-    assertEquals(getOwner(file) + "@" + domain, fileStatus.getOwner());
-    assertEquals(getOwnerGroup(file) + "@" + domain, fileStatus.getOwnerGroup());
-    assertEquals(file.length(), fileStatus.getSize());
-    assertEquals(file.lastModified(), fileStatus.getMTime());
-    assertEquals(file.isDirectory(), fileStatus.isDir());
+  @Before
+  public void setup() throws IOException {
+    TestUtils.buildTempDirDataFiles(6, TestUtils.tmpDirPathForTest);
+    testFile1 = TestUtils.createTempFile(null, true, 1024, className, null);
+    testFile2 = TestUtils.createTempFile(null, true, 1024, className, null);
   }
 
-  protected void compareFileStatusFile(FileStatus fileStatus) throws IOException, InterruptedException {
+  @After
+  public void teardown() {
+    testFile1.delete();
+    testFile2.delete();
+  }
+
+  @Test
+  public void testLargeReadSizeLocal() throws Exception {
+    doLargeReadSize(new LocalClient());
+  }
+
+  @Test
+  public void testLargeReadSizeNetwork() throws Exception {
+    doLargeReadSize(new NetworkClient());
+  }
+
+  public void testNOENT(BaseClient client) throws IOException, InterruptedException, NFS4Exception {
     try {
-      doCompareFileStatusFile(fileStatus);
-    } catch (AssertionError error) {
-      Thread.sleep(100L);
-      doCompareFileStatusFile(fileStatus);
+      client.listPath(new Path("/" + UUID.randomUUID().toString()));
+      fail("Expected no such file or directory");
+    } catch (NFS4Exception e) {
+      assertEquals(NFS4ERR_NOENT, e.getError());
+    } finally {
+      client.shutdown();
     }
+  }
+
+  @Test
+  public void testNOENTLocal() throws IOException, InterruptedException, NFS4Exception {
+    testNOENT(new LocalClient());
+  }
+
+  @Test
+  public void testNOENTNetwork() throws IOException, InterruptedException, NFS4Exception {
+    testNOENT(new NetworkClient());
+  }
+
+  @Test
+  public void testNormalReadSizeLocal() throws Exception {
+    doNormalReadSize(new LocalClient());
+  }
+
+  @Test
+  public void testNormalReadSizeNetwork() throws Exception {
+    doNormalReadSize(new NetworkClient());
+  }
+
+  @Test
+  public void testReadDirLocal() throws IOException, InterruptedException, NFS4Exception {
+    doReadDir(new LocalClient());
+  }
+
+  @Test
+  public void testReadDirNetwork() throws IOException, InterruptedException, NFS4Exception {
+    doReadDir(new NetworkClient());
+  }
+
+  @Test
+  public void testSmallReadSizeLocal() throws Exception {
+    doSmallReadSize(new LocalClient());
+  }
+
+  @Test
+  public void testSmallReadSizeNetwork() throws Exception {
+    doSmallReadSize(new NetworkClient());
+  }
+
+  @Test
+  public void testWriteLocal() throws Exception {
+    doWrite(new LocalClient());
+  }
+
+  @Test
+  public void testWriteNetwork() throws Exception {
+    doWrite(new NetworkClient());
   }
 }

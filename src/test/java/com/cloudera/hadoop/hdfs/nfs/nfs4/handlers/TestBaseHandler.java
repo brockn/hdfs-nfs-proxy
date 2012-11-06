@@ -35,6 +35,7 @@ import com.cloudera.hadoop.hdfs.nfs.TestUtils;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Callback;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.ClientID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.FixedUserIDMapper;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData8;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
@@ -94,6 +95,8 @@ public class TestBaseHandler {
     when(hdfsState.getPath(currentFileHandle)).thenReturn(new Path("/"));
     when(session.getCurrentFileHandle()).thenReturn(currentFileHandle);
     when(session.getConfiguration()).thenReturn(configuration);
+    when(session.getUser()).thenReturn(FixedUserIDMapper.getCurrentUser());
+    when(session.getGroups()).thenReturn(new String[] { FixedUserIDMapper.getCurrentGroup()});
     notdir = mock(FileStatus.class);
     when(notdir.isDir()).thenReturn(false);
 

@@ -68,10 +68,6 @@ public class TestUtils {
     });
   }
 
-  public static Configuration setupConf() throws IOException {
-    return setupConf(new Configuration());
-  }
-
   public static String buildTempDirDataFiles(
       final int numberOfFiles,
       final String path) throws IOException {
@@ -90,34 +86,11 @@ public class TestUtils {
     return (retVal);
   }
 
-  public static Configuration setupConf(Configuration conf) throws IOException {
-    if(conf.get(USER_ID_MAPPER_CLASS) == null) {
-      conf.set(USER_ID_MAPPER_CLASS, FixedUserIDMapper.class.getName());
-    }
-    return conf;
-  }
-
-  public static AuthenticatedCredentials newCredentials() {
-    CredentialsSystem creds = new CredentialsSystem();
-    creds.setUID(0);
-    creds.setGID(0);
-    creds.setAuxGIDs(new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-    return creds;
-  }
-
   public static void copy(MessageBase base, MessageBase copy) {
     RPCBuffer buffer = new RPCBuffer();
     base.write(buffer);
     buffer.flip();
     copy.read(buffer);
-  }
-
-  public static void deepEquals(MessageBase base, MessageBase copy) {
-    AtomicInteger count = new AtomicInteger(0);
-    deepEquals(base, copy, count);
-    if (count.get() <= 0) {
-      LOGGER.error("Did not test any methods for " + base.getClass().getName());
-    }
   }
 
   /**
@@ -170,6 +143,14 @@ public class TestUtils {
     LOGGER.debug("created " + size + " byte tmp file => " + retVal.getCanonicalPath());
 
     return (retVal);
+  }
+
+  public static void deepEquals(MessageBase base, MessageBase copy) {
+    AtomicInteger count = new AtomicInteger(0);
+    deepEquals(base, copy, count);
+    if (count.get() <= 0) {
+      LOGGER.error("Did not test any methods for " + base.getClass().getName());
+    }
   }
 
   protected static void deepEquals(MessageBase base, MessageBase copy, AtomicInteger count) {
@@ -238,5 +219,26 @@ public class TestUtils {
     } catch (Exception e) {
       throw Throwables.propagate(e);
     }
+  }
+
+  public static AuthenticatedCredentials newCredentials() {
+    CredentialsSystem creds = new CredentialsSystem();
+    creds.setUID(0);
+    creds.setGID(0);
+    creds.setAuxGIDs(new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+    return creds;
+  }
+
+  public static Configuration setupConf() throws IOException {
+    return setupConf(new Configuration());
+  }
+
+  public static Configuration setupConf(Configuration conf) throws IOException {
+    if(conf.get(USER_ID_MAPPER_CLASS) == null) {
+      conf.set(USER_ID_MAPPER_CLASS, FixedUserIDMapper.class.getName());
+    }
+    conf.set(ALLOWED_HOSTS, "*");
+    conf.set(SECURITY_FLAVOR, SECURITY_FLAVOR_DEFAULT);
+    return conf;
   }
 }

@@ -32,6 +32,31 @@ public class READDIRRequest extends OperationRequest {
   protected int mDirCount;
   protected int mMaxCount;
   protected Bitmap mAttrs;
+  public Bitmap getAttrs() {
+    return mAttrs;
+  }
+
+  public long getCookie() {
+    return mCookie;
+  }
+
+  public OpaqueData8 getCookieVerifer() {
+    return mCookieVerifer;
+  }
+
+  public int getDirCount() {
+    return mDirCount;
+  }
+
+  @Override
+  public int getID() {
+    return NFS4_OP_READDIR;
+  }
+
+  public int getMaxCount() {
+    return mMaxCount;
+  }
+
   @Override
   public void read(RPCBuffer buffer) {
     mCookie = buffer.readUint64();
@@ -43,6 +68,26 @@ public class READDIRRequest extends OperationRequest {
     mAttrs.read(buffer);
   }
 
+  public void setAttrs(Bitmap attrs) {
+    this.mAttrs = attrs;
+  }
+
+  public void setCookie(long cookie) {
+    this.mCookie = cookie;
+  }
+
+  public void setCookieVerifer(OpaqueData8 cookieVerifer) {
+    this.mCookieVerifer = cookieVerifer;
+  }
+
+  public void setDirCount(int dirCount) {
+    this.mDirCount = dirCount;
+  }
+
+  public void setMaxCount(int maxCount) {
+    this.mMaxCount = maxCount;
+  }
+
   @Override
   public void write(RPCBuffer buffer) {
     buffer.writeUint64(mCookie);
@@ -50,51 +95,6 @@ public class READDIRRequest extends OperationRequest {
     buffer.writeUint32(mDirCount);
     buffer.writeUint32(mMaxCount);
     mAttrs.write(buffer);
-  }
-
-  @Override
-  public int getID() {
-    return NFS4_OP_READDIR;
-  }
-
-  public long getCookie() {
-    return mCookie;
-  }
-
-  public void setCookie(long cookie) {
-    this.mCookie = cookie;
-  }
-
-  public OpaqueData8 getCookieVerifer() {
-    return mCookieVerifer;
-  }
-
-  public void setCookieVerifer(OpaqueData8 cookieVerifer) {
-    this.mCookieVerifer = cookieVerifer;
-  }
-
-  public int getDirCount() {
-    return mDirCount;
-  }
-
-  public void setDirCount(int dirCount) {
-    this.mDirCount = dirCount;
-  }
-
-  public int getMaxCount() {
-    return mMaxCount;
-  }
-
-  public void setMaxCount(int maxCount) {
-    this.mMaxCount = maxCount;
-  }
-
-  public Bitmap getAttrs() {
-    return mAttrs;
-  }
-
-  public void setAttrs(Bitmap attrs) {
-    this.mAttrs = attrs;
   }
 
 }

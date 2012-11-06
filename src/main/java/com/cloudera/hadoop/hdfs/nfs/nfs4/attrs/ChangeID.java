@@ -23,18 +23,12 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class ChangeID extends Attribute {
+  protected long mChangeID;
   public ChangeID() {
     super();
   }
-  protected long mChangeID;
-  @Override
-  public void read(RPCBuffer buffer) {
-    mChangeID = buffer.readUint64();
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint64(mChangeID);
+  public long getChangeID() {
+    return mChangeID;
   }
 
   @Override
@@ -42,11 +36,17 @@ public class ChangeID extends Attribute {
     return NFS4_FATTR4_CHANGE;
   }
 
-  public long getChangeID() {
-    return mChangeID;
+  @Override
+  public void read(RPCBuffer buffer) {
+    mChangeID = buffer.readUint64();
   }
 
   public void setChangeID(long changeID) {
     this.mChangeID = changeID;
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeUint64(mChangeID);
   }
 }

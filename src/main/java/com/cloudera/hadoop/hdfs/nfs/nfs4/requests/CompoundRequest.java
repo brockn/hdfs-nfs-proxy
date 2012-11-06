@@ -32,12 +32,31 @@ import com.google.common.collect.Lists;
 public class CompoundRequest implements MessageBase, RequiresCredentials {
 
   protected static final Logger LOGGER = Logger.getLogger(CompoundRequest.class);
+  public static CompoundRequest from(RPCBuffer buffer) {
+    CompoundRequest request = new CompoundRequest();
+    request.read(buffer);
+    return request;
+  }
   protected int mMinorVersion;
   protected byte[] mTags = new byte[0];
   protected AuthenticatedCredentials mCredentials;
+
   protected ImmutableList<OperationRequest> mOperations = ImmutableList.<OperationRequest>builder().build();
 
   public CompoundRequest() {
+  }
+
+  @Override
+  public AuthenticatedCredentials getCredentials() {
+    return mCredentials;
+  }
+
+  public int getMinorVersion() {
+    return mMinorVersion;
+  }
+
+  public ImmutableList<OperationRequest> getOperations() {
+    return mOperations;
   }
 
   @Override
@@ -59,19 +78,8 @@ public class CompoundRequest implements MessageBase, RequiresCredentials {
   }
 
   @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint32(mTags.length);
-    buffer.writeBytes(mTags);
-    buffer.writeUint32(mMinorVersion);
-    buffer.writeUint32(mOperations.size());
-    for (OperationRequest operation : mOperations) {
-      buffer.writeUint32(operation.getID());
-      operation.write(buffer);
-    }
-  }
-
-  public int getMinorVersion() {
-    return mMinorVersion;
+  public void setCredentials(AuthenticatedCredentials mCredentials) {
+    this.mCredentials = mCredentials;
   }
 
   public void setMinorVersion(int mMinorVersion) {
@@ -81,28 +89,20 @@ public class CompoundRequest implements MessageBase, RequiresCredentials {
   public void setOperations(List<OperationRequest> operations) {
     mOperations = ImmutableList.<OperationRequest>copyOf(operations);
   }
-
-  public ImmutableList<OperationRequest> getOperations() {
-    return mOperations;
-  }
-
-  @Override
-  public AuthenticatedCredentials getCredentials() {
-    return mCredentials;
-  }
-
   @Override
   public String toString() {
     return this.getClass().getName() + " = " + mOperations.toString();
   }
-  @Override
-  public void setCredentials(AuthenticatedCredentials mCredentials) {
-    this.mCredentials = mCredentials;
-  }
 
-  public static CompoundRequest from(RPCBuffer buffer) {
-    CompoundRequest request = new CompoundRequest();
-    request.read(buffer);
-    return request;
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeUint32(mTags.length);
+    buffer.writeBytes(mTags);
+    buffer.writeUint32(mMinorVersion);
+    buffer.writeUint32(mOperations.size());
+    for (OperationRequest operation : mOperations) {
+      buffer.writeUint32(operation.getID());
+      operation.write(buffer);
+    }
   }
 }

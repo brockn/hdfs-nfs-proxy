@@ -43,6 +43,11 @@ public class CREATEHandler extends OperationRequestHandler<CREATERequest, CREATE
   protected static final Logger LOGGER = Logger.getLogger(CREATEHandler.class);
 
   @Override
+  protected CREATEResponse createResponse() {
+    return new CREATEResponse();
+  }
+
+  @Override
   protected CREATEResponse doHandle(HDFSState hdfsState, Session session,
       CREATERequest request) throws NFS4Exception, IOException {
     if (session.getCurrentFileHandle() == null) {
@@ -80,10 +85,5 @@ public class CREATEHandler extends OperationRequestHandler<CREATERequest, CREATE
     response.setStatus(NFS4_OK);
     response.setAttrs(responseAttrs);
     return response;
-  }
-
-  @Override
-  protected CREATEResponse createResponse() {
-    return new CREATEResponse();
   }
 }

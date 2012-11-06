@@ -31,6 +31,18 @@ public class REMOVEResponse extends OperationResponse implements Status {
   protected int mStatus;
   protected ChangeInfo mChangeInfo;
 
+  public ChangeInfo getChangeInfo() {
+    return mChangeInfo;
+  }
+
+  @Override
+  public int getID() {
+    return NFS4_OP_REMOVE;
+  }
+  @Override
+  public int getStatus() {
+    return mStatus;
+  }
   @Override
   public void read(RPCBuffer buffer) {
     mStatus = buffer.readUint32();
@@ -39,6 +51,14 @@ public class REMOVEResponse extends OperationResponse implements Status {
       mChangeInfo.read(buffer);
     }
   }
+  public void setChangeInfo(ChangeInfo changeInfo) {
+    this.mChangeInfo = changeInfo;
+  }
+
+  @Override
+  public void setStatus(int status) {
+    this.mStatus = status;
+  }
 
   @Override
   public void write(RPCBuffer buffer) {
@@ -46,26 +66,6 @@ public class REMOVEResponse extends OperationResponse implements Status {
     if(mStatus == NFS4_OK) {
       mChangeInfo.write(buffer);
     }
-  }
-  @Override
-  public int getStatus() {
-    return mStatus;
-  }
-  @Override
-  public void setStatus(int status) {
-    this.mStatus = status;
-  }
-  @Override
-  public int getID() {
-    return NFS4_OP_REMOVE;
-  }
-
-  public ChangeInfo getChangeInfo() {
-    return mChangeInfo;
-  }
-
-  public void setChangeInfo(ChangeInfo changeInfo) {
-    this.mChangeInfo = changeInfo;
   }
 
 

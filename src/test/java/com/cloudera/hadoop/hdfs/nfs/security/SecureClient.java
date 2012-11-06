@@ -53,12 +53,24 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCTestUtil;
 
 public class SecureClient extends BaseClient {
 
+  public static void main(String[] args) throws Exception {
+
+    System.setProperty("java.security.krb5.realm", "LOCALDOMAIN");
+    System.setProperty("java.security.krb5.kdc", "localhost");
+    System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");
+    System.setProperty("java.security.auth.login.config", "sec.conf");
+
+
+    SecureClient client = new SecureClient();
+    client.shutdown();
+  }
   protected Socket mClient;
   protected InputStream mInputStream;
   protected OutputStream mOutputStream;
   protected OpaqueData mContextID;
   protected int mSequenceNumber = 0;
   protected int mSequenceWindow;
+
   protected GSSContext mContext;
 
   public SecureClient() throws Exception {
@@ -137,18 +149,6 @@ public class SecureClient extends BaseClient {
     initialize();
   }
 
-  protected void verify(int sequenceNumber, RPCResponse response) {
-    byte[] verifer = ((VerifierGSS) response.getVerifier()).get();
-    byte[] seqNumberBytes = Bytes.toBytes(sequenceNumber);
-    try {
-      mContext.verifyMIC(verifer, 0, verifer.length, seqNumberBytes, 0,
-          seqNumberBytes.length, new MessageProp(false));
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-
-  }
-
   protected byte[] createVerifer(RPCRequest request) {
     RPCBuffer buffer = new RPCBuffer();
     request.write(buffer);
@@ -165,31 +165,6 @@ public class SecureClient extends BaseClient {
       throw new RuntimeException(e);
     }
 
-  }
-
-  public byte[] wrap(MessageBase response) {
-    RPCBuffer buffer = new RPCBuffer();
-    response.write(buffer);
-    buffer.flip();
-    int length = buffer.length();
-    LOGGER.info("Reading " + length);
-    byte[] data = buffer.readBytes(length);
-    try {
-      return mContext.wrap(data, 0, data.length, new MessageProp(true));
-    } catch(GSSException ex) {
-      LOGGER.warn("Error in getMIC", ex);
-      throw new RuntimeException(ex);
-    }
-  }
-
-
-  public byte[] unwrap(byte[] data) {
-    try {
-      return mContext.unwrap(data, 0, data.length, new MessageProp(true));
-    } catch(GSSException ex) {
-      LOGGER.warn("Error in getMIC", ex);
-      throw new RuntimeException(ex);
-    }
   }
 
   @Override
@@ -251,6 +226,7 @@ public class SecureClient extends BaseClient {
     }
   }
 
+
   @Override
   public void shutdown() {
     try {
@@ -259,18 +235,42 @@ public class SecureClient extends BaseClient {
     }
   }
 
+  public byte[] unwrap(byte[] data) {
+    try {
+      return mContext.unwrap(data, 0, data.length, new MessageProp(true));
+    } catch(GSSException ex) {
+      LOGGER.warn("Error in getMIC", ex);
+      throw new RuntimeException(ex);
+    }
+  }
+
+  protected void verify(int sequenceNumber, RPCResponse response) {
+    byte[] verifer = ((VerifierGSS) response.getVerifier()).get();
+    byte[] seqNumberBytes = Bytes.toBytes(sequenceNumber);
+    try {
+      mContext.verifyMIC(verifer, 0, verifer.length, seqNumberBytes, 0,
+          seqNumberBytes.length, new MessageProp(false));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
+  }
 
 
 
-  public static void main(String[] args) throws Exception {
 
-    System.setProperty("java.security.krb5.realm", "LOCALDOMAIN");
-    System.setProperty("java.security.krb5.kdc", "localhost");
-    System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");
-    System.setProperty("java.security.auth.login.config", "sec.conf");
-
-
-    SecureClient client = new SecureClient();
-    client.shutdown();
+  public byte[] wrap(MessageBase response) {
+    RPCBuffer buffer = new RPCBuffer();
+    response.write(buffer);
+    buffer.flip();
+    int length = buffer.length();
+    LOGGER.info("Reading " + length);
+    byte[] data = buffer.readBytes(length);
+    try {
+      return mContext.wrap(data, 0, data.length, new MessageProp(true));
+    } catch(GSSException ex) {
+      LOGGER.warn("Error in getMIC", ex);
+      throw new RuntimeException(ex);
+    }
   }
 }

@@ -59,6 +59,18 @@ public class TestCREATEHandler extends TestBaseHandler {
     when(fs.mkdirs(child)).thenReturn(true);
   }
   @Test
+  public void testAlreadyExists() throws Exception {
+    when(fs.exists(child)).thenReturn(true);
+    Status response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_EXIST, response.getStatus());
+  }
+  @Test
+  public void testCreateNotDir() throws Exception {
+    request.setType(NFS4_REG);
+    Status response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_NOTSUPP, response.getStatus());
+  }
+  @Test
   public void testInvalidNameEmpty() throws Exception {
     request.setName("");
     Status response = handler.handle(hdfsState, session, request);
@@ -71,28 +83,16 @@ public class TestCREATEHandler extends TestBaseHandler {
     assertEquals(NFS4ERR_INVAL, response.getStatus());
   }
   @Test
-  public void testCreateNotDir() throws Exception {
-    request.setType(NFS4_REG);
+  public void testMkdirFails() throws Exception {
+    when(fs.mkdirs(child)).thenReturn(false);
     Status response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_NOTSUPP, response.getStatus());
+    assertEquals(NFS4ERR_IO, response.getStatus());
   }
   @Test
   public void testParentDoesNotExist() throws Exception {
     when(fs.exists(parent)).thenReturn(false);
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_STALE, response.getStatus());
-  }
-  @Test
-  public void testAlreadyExists() throws Exception {
-    when(fs.exists(child)).thenReturn(true);
-    Status response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_EXIST, response.getStatus());
-  }
-  @Test
-  public void testMkdirFails() throws Exception {
-    when(fs.mkdirs(child)).thenReturn(false);
-    Status response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_IO, response.getStatus());
   }
   @Test
   public void testSuccess() throws Exception {

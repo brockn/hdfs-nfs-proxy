@@ -19,45 +19,42 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.rpc;
 
-import org.apache.log4j.Logger;
-
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 
 /**
  * Represents fields common to both RPCResponse and RPCRequest
  */
 public abstract class RPCPacket implements MessageBase {
-  protected static final Logger LOGGER = Logger.getLogger(RPCPacket.class);
 
-  protected int mXid, mMessageType;
+  private int mXid, mMessageType;
 
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeInt(mXid);
-    buffer.writeInt(mMessageType);
+  public int getMessageType() {
+    return mMessageType;
+  }
+  public int getXid() {
+    return mXid;
+  }
+  public String getXidAsHexString() {
+    return Integer.toHexString(mXid);
   }
   @Override
   public void read(RPCBuffer buffer) {
     this.mXid = buffer.readInt();
     this.mMessageType = buffer.readInt();
   }
-  public String getXidAsHexString() {
-    return Integer.toHexString(mXid);
-  }
-  public int getXid() {
-    return mXid;
+  public void setMessageType(int messageType) {
+    this.mMessageType = messageType;
   }
   public void setXid(int xid) {
     this.mXid = xid;
   }
-  public int getMessageType() {
-    return mMessageType;
-  }
-  public void setMessageType(int messageType) {
-    this.mMessageType = messageType;
-  }
   @Override
   public String toString() {
     return "RPCPacket [mXid=" + mXid + ", mMessageType=" + mMessageType + "]";
+  }
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeInt(mXid);
+    buffer.writeInt(mMessageType);
   }
 }

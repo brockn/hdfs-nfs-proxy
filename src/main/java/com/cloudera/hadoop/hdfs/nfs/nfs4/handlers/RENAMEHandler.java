@@ -39,6 +39,11 @@ public class RENAMEHandler extends OperationRequestHandler<RENAMERequest, RENAME
   protected static final Logger LOGGER = Logger.getLogger(RENAMEHandler.class);
 
   @Override
+  protected RENAMEResponse createResponse() {
+    return new RENAMEResponse();
+  }
+
+  @Override
   protected RENAMEResponse doHandle(HDFSState hdfsState, Session session,
       RENAMERequest request) throws NFS4Exception, IOException {
     if (session.getCurrentFileHandle() == null || session.getSavedFileHandle() == null) {
@@ -94,10 +99,5 @@ public class RENAMEHandler extends OperationRequestHandler<RENAMERequest, RENAME
     response.setChangeInfoDest(ChangeInfo.newChangeInfo(true, beforeDest, afterDest));
     response.setStatus(NFS4_OK);
     return response;
-  }
-
-  @Override
-  protected RENAMEResponse createResponse() {
-    return new RENAMEResponse();
   }
 }

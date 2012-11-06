@@ -41,6 +41,11 @@ public class SETATTRHandler extends OperationRequestHandler<SETATTRRequest, SETA
   protected static final Logger LOGGER = Logger.getLogger(SETATTRHandler.class);
 
   @Override
+  protected SETATTRResponse createResponse() {
+    return new SETATTRResponse();
+  }
+
+  @Override
   protected SETATTRResponse doHandle(HDFSState hdfsState, Session session,
       SETATTRRequest request) throws NFS4Exception, IOException {
     if (session.getCurrentFileHandle() == null) {
@@ -56,10 +61,5 @@ public class SETATTRHandler extends OperationRequestHandler<SETATTRRequest, SETA
     response.setStatus(NFS4_OK);
     response.setAttrs(responseAttrs);
     return response;
-  }
-
-  @Override
-  protected SETATTRResponse createResponse() {
-    return new SETATTRResponse();
   }
 }

@@ -33,6 +33,11 @@ public class SAVEFHHandler extends OperationRequestHandler<SAVEFHRequest, SAVEFH
   protected static final Logger LOGGER = Logger.getLogger(SAVEFHHandler.class);
 
   @Override
+  protected SAVEFHResponse createResponse() {
+    return new SAVEFHResponse();
+  }
+
+  @Override
   protected SAVEFHResponse doHandle(HDFSState hdfsState, Session session,
       SAVEFHRequest request) throws NFS4Exception {
     if (session.getCurrentFileHandle() == null) {
@@ -42,10 +47,5 @@ public class SAVEFHHandler extends OperationRequestHandler<SAVEFHRequest, SAVEFH
     SAVEFHResponse response = createResponse();
     response.setStatus(NFS4_OK);
     return response;
-  }
-
-  @Override
-  protected SAVEFHResponse createResponse() {
-    return new SAVEFHResponse();
   }
 }

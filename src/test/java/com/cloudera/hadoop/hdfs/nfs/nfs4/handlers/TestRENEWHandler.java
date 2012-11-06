@@ -52,12 +52,6 @@ public class TestRENEWHandler extends TestBaseHandler {
   }
 
   @Test
-  public void testUnknownClientID() throws Exception {
-    request.setClientID(Long.MAX_VALUE);
-    Status response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_STALE_CLIENTID, response.getStatus());
-  }
-  @Test
   public void testKnownClientID() throws Exception {
     ClientFactory clientFactory = hdfsState.getClientFactory();
     ClientID clientID = new ClientID();
@@ -66,5 +60,11 @@ public class TestRENEWHandler extends TestBaseHandler {
     request.setClientID(client.getShorthandID());
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4_OK, response.getStatus());
+  }
+  @Test
+  public void testUnknownClientID() throws Exception {
+    request.setClientID(Long.MAX_VALUE);
+    Status response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_STALE_CLIENTID, response.getStatus());
   }
 }

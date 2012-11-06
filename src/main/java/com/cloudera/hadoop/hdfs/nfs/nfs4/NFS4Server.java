@@ -27,10 +27,14 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.ietf.jgss.GSSManager;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CompoundResponse;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCServer;
+import com.cloudera.hadoop.hdfs.nfs.security.SecurityHandlerFactory;
+import com.cloudera.hadoop.hdfs.nfs.security.SessionSecurityHandlerGSSFactory;
+import com.google.common.base.Supplier;
 
 /**
  * Class used to start the NFS Server. Uses NFS4Handler
@@ -57,10 +61,12 @@ public class NFS4Server extends Configured implements Tool {
     System.exit(ToolRunner.run(new Configuration(), new NFS4Server(), args));
   }
 
-  public void start(InetAddress address, int port) throws IOException {
-    mNFSServer = new NFS4Handler(getConf());
-    mRPCServer = new RPCServer<CompoundRequest, CompoundResponse>(mNFSServer, getConf(), address, port);
-    mRPCServer.start();
+  public int getPort() {
+    return mRPCServer.getPort();
+  }
+
+  public boolean isAlive() {
+    return mRPCServer.isAlive();
   }
 
   @Override
@@ -79,17 +85,24 @@ public class NFS4Server extends Configured implements Tool {
     }
     return 0;
   }
-
-  public boolean isAlive() {
-    return mRPCServer.isAlive();
-  }
   public void shutdown() throws IOException {
     mRPCServer.interrupt();
     mRPCServer.shutdown();
     mNFSServer.shutdown();
   }
-  public int getPort() {
-    return mRPCServer.getPort();
+  public void start(InetAddress address, int port) throws IOException {
+    SecurityHandlerFactory securityHandlerFactory = 
+        new SecurityHandlerFactory(getConf(), 
+            new Supplier<GSSManager>() {
+      @Override
+      public GSSManager get() {
+        return GSSManager.getInstance();
+      }
+    }, new SessionSecurityHandlerGSSFactory());
+
+    mNFSServer = new NFS4Handler(getConf(),securityHandlerFactory);
+    mRPCServer = new RPCServer<CompoundRequest, CompoundResponse>(mNFSServer, getConf(), securityHandlerFactory, address, port);
+    mRPCServer.start();
   }
 
 }

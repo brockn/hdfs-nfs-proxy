@@ -33,16 +33,16 @@ public class PUTFHHandler extends OperationRequestHandler<PUTFHRequest, PUTFHRes
   protected static final Logger LOGGER = Logger.getLogger(PUTFHHandler.class);
 
   @Override
+  protected PUTFHResponse createResponse() {
+    return new PUTFHResponse();
+  }
+
+  @Override
   protected PUTFHResponse doHandle(HDFSState hdfsState, Session session,
       PUTFHRequest request) throws NFS4Exception {
     session.setCurrentFileHandle(request.getFileHandle());
     PUTFHResponse response = createResponse();
     response.setStatus(NFS4_OK);
     return response;
-  }
-
-  @Override
-  protected PUTFHResponse createResponse() {
-    return new PUTFHResponse();
   }
 }

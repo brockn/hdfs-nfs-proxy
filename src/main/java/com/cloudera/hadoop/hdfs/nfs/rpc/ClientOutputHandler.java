@@ -73,7 +73,7 @@ class ClientOutputHandler extends Thread {
     while (!mShutdown) {
       RPCBuffer buffer = null;
       try {
-        buffer = mWorkQueue.poll(1L, TimeUnit.SECONDS);
+        buffer = mWorkQueue.poll(500L, TimeUnit.MILLISECONDS);
         if (buffer != null) {
           buffer.write(mOutputStream);
           mOutputStream.flush();
@@ -95,28 +95,18 @@ class ClientOutputHandler extends Thread {
         }
       }
     }
-    // process the rest of the queue in case the client
-    // does not plan to reconnect. If it does, the write
-    // will likely throw an exception and items will be
-    // processed by the next output stream handler
-    boolean run = true;
-    while (run) {
-      RPCBuffer buffer = null;
-      try {
-        buffer = mWorkQueue.poll();
+    // Process the remaining queue
+    try {
+      while(true) {
+        RPCBuffer buffer = mWorkQueue.poll();
         if (buffer == null) {
           break;
         }
         buffer.write(mOutputStream);
-        buffer = null;
-      } catch (Exception e) {
-        LOGGER.warn("OutputStreamHandler for " + mClientName + " got error on final write", e);
-        run = false;
-      } finally {
-        if (buffer != null) {
-          put(buffer);
-        }
       }
+    } catch (IOException e) {
+      LOGGER.info("OutputStreamHandler for " + mClientName + 
+          " got error on final write: " + e.getMessage());
     }
   }
 }

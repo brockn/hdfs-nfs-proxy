@@ -32,6 +32,21 @@ public class SETCLIENTIDResponse extends OperationResponse implements Status {
   protected long mClientID;
   protected OpaqueData8 mVerifer;
 
+  public long getClientID() {
+    return mClientID;
+  }
+
+  @Override
+  public int getID() {
+    return NFS4_OP_SETCLIENTID;
+  }
+  @Override
+  public int getStatus() {
+    return mStatus;
+  }
+  public OpaqueData8 getVerifer() {
+    return mVerifer;
+  }
   @Override
   public void read(RPCBuffer buffer) {
     mStatus = buffer.readUint32();
@@ -42,6 +57,19 @@ public class SETCLIENTIDResponse extends OperationResponse implements Status {
     }
   }
 
+  public void setClientID(long clientID) {
+    this.mClientID = clientID;
+  }
+
+  @Override
+  public void setStatus(int status) {
+    this.mStatus = status;
+  }
+
+  public void setVerifer(OpaqueData8 verifer) {
+    this.mVerifer = verifer;
+  }
+
   @Override
   public void write(RPCBuffer buffer) {
     buffer.writeUint32(mStatus);
@@ -49,33 +77,5 @@ public class SETCLIENTIDResponse extends OperationResponse implements Status {
       buffer.writeUint64(mClientID);
       mVerifer.write(buffer);
     }
-  }
-  @Override
-  public int getStatus() {
-    return mStatus;
-  }
-  @Override
-  public void setStatus(int status) {
-    this.mStatus = status;
-  }
-  @Override
-  public int getID() {
-    return NFS4_OP_SETCLIENTID;
-  }
-
-  public long getClientID() {
-    return mClientID;
-  }
-
-  public void setClientID(long clientID) {
-    this.mClientID = clientID;
-  }
-
-  public OpaqueData8 getVerifer() {
-    return mVerifer;
-  }
-
-  public void setVerifer(OpaqueData8 verifer) {
-    this.mVerifer = verifer;
   }
 }

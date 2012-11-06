@@ -28,16 +28,6 @@ public class LOOKUPRequest extends OperationRequest {
 
   protected String mName;
   @Override
-  public void read(RPCBuffer buffer) {
-    mName = checkPath(buffer.readString());
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeString(mName);
-  }
-
-  @Override
   public int getID() {
     return NFS4_OP_LOOKUP;
   }
@@ -45,7 +35,17 @@ public class LOOKUPRequest extends OperationRequest {
   public String getName() {
     return mName;
   }
+
+  @Override
+  public void read(RPCBuffer buffer) {
+    mName = checkPath(buffer.readString());
+  }
+
   public void setName(String name) {
     mName = name;
+  }
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeString(mName);
   }
 }

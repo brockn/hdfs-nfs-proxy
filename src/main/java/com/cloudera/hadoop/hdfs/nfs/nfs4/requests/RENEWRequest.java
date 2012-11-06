@@ -26,14 +26,8 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class RENEWRequest extends OperationRequest {
   protected long mClientID;
 
-  @Override
-  public void read(RPCBuffer buffer) {
-    mClientID = buffer.readLong();
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeLong(mClientID);
+  public long getClientID() {
+    return mClientID;
   }
 
   @Override
@@ -41,11 +35,17 @@ public class RENEWRequest extends OperationRequest {
     return NFS4_OP_RENEW;
   }
 
-  public long getClientID() {
-    return mClientID;
+  @Override
+  public void read(RPCBuffer buffer) {
+    mClientID = buffer.readLong();
   }
 
   public void setClientID(long clientID) {
     this.mClientID = clientID;
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeLong(mClientID);
   }
 }

@@ -39,14 +39,71 @@ import com.google.common.collect.Lists;
 
 public class TestACCESSHandler extends TestBaseHandler {
 
+  private static class PermTest {
+    final String user;
+    final String group;
+    final FsPermission perm;
+    final int result;
+    public PermTest(String user, String group, FsPermission perm, int result) {
+      this.user = user;
+      this.group = group;
+      this.perm = perm;
+      this.result = result;
+    }
+    @Override
+    public String toString() {
+      return "PermTest [user=" + user + ", group=" + group + ", perm=" + perm
+          + ", result=" + result + "]";
+    }
+  }
+  public static class TestUserIDMapper extends UserIDMapper implements Configurable {
+    Configuration conf;
+    @Override
+    public Configuration getConf() {
+      return conf;
+    }
+    @Override
+    public int getGIDForGroup(String user, int defaultGID)
+        throws Exception {
+      return conf.getInt(GID, 0);
+    }    
+    @Override
+    public String getGroupForGID(int gid,
+        String defaultGroup) throws Exception {
+      String s = conf.get(GROUP);
+      if(s.isEmpty()) {
+        return null;
+      }
+      return s;
+    }
+    @Override
+    public int getUIDForUser(String user, int defaultUID)
+        throws Exception {
+      return conf.getInt(UID, 0);
+    }
+    @Override
+    public String getUserForUID(int gid, String defaultUser)
+        throws Exception {
+      String s = conf.get(USER);
+      if(s.isEmpty()) {
+        return null;
+      }
+      return s;
+    }
+    @Override
+    public void setConf(Configuration conf) {
+      this.conf = conf;
+    }
+  }
   private static final String USER = "test.user";
   private static final String GROUP = "test.group";
+  
   private static final String UID = "test.uid";
   private static final String GID = "test.gid";
-  
-  private ACCESSHandler handler;
-  private ACCESSRequest request;
 
+  private ACCESSHandler handler;
+
+  private ACCESSRequest request;
   @Override
   @Before
   public void setup() throws Exception {
@@ -62,25 +119,7 @@ public class TestACCESSHandler extends TestBaseHandler {
     configuration.set(USER, "root");
     configuration.set(GROUP, "wheel");
   }
-
-  @Test
-  public void testNullUser() throws Exception {
-    configuration.set(USER, "");
-    ACCESSResponse response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_SERVERFAULT, response.getStatus());
-  }
-  @Test
-  public void testNullGroup() throws Exception {
-    configuration.set(GROUP, "");
-    ACCESSResponse response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_SERVERFAULT, response.getStatus());
-  }
-  @Test
-  public void testNoPerms() throws Exception {
-    ACCESSResponse response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4_OK, response.getStatus());
-    assertEquals(0, response.getAccess());
-  }
+  
   @Test
   public void testAllPerms() throws Exception {
     when(filePermissions.toShort()).thenReturn(new FsPermission(FsAction.ALL, 
@@ -90,6 +129,39 @@ public class TestACCESSHandler extends TestBaseHandler {
     assertEquals(ACCESSHandler.ACCESS_READ | ACCESSHandler.ACCESS_WRITE | 
         ACCESSHandler.ACCESS_EXECUTE, response.getAccess());
   }
+  
+  @Test
+  public void testGetPermsExecute() throws Exception {
+    int result1 = ACCESSHandler.getPerms(ACCESSHandler.ACCESS_EXECUTE, true);
+    int result2 = ACCESSHandler.getPerms(ACCESSHandler.ACCESS_EXECUTE, false);
+    assertEquals(result1, result2);
+    assertEquals(NFS_ACCESS_EXECUTE, result1);
+  }
+  
+  @Test
+  public void testGetPermsRead() throws Exception {
+    int result1 = ACCESSHandler.getPerms(ACCESSHandler.ACCESS_READ, true);
+    int result2 = ACCESSHandler.getPerms(ACCESSHandler.ACCESS_READ, false);
+    assertEquals(result1, result2);
+    assertEquals(result1, NFS_ACCESS_READ | NFS_ACCESS_LOOKUP);
+  }
+  @Test
+  public void testGetPermsWrite() throws Exception {
+    int result1 = ACCESSHandler.getPerms(ACCESSHandler.ACCESS_WRITE, true);
+    int result2 = ACCESSHandler.getPerms(ACCESSHandler.ACCESS_WRITE, false);
+    assertFalse(result1 == result2);
+    assertEquals(NFS_ACCESS_MODIFY | NFS_ACCESS_EXTEND | NFS_ACCESS_DELETE, result1);
+    assertEquals(NFS_ACCESS_MODIFY | NFS_ACCESS_EXTEND, result2);
+  }
+  
+
+  @Test
+  public void testNoPerms() throws Exception {
+    ACCESSResponse response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4_OK, response.getStatus());
+    assertEquals(0, response.getAccess());
+  }
+  
   
   @Test
   public void testPerms() throws Exception {
@@ -172,7 +244,7 @@ public class TestACCESSHandler extends TestBaseHandler {
     perms.add(new PermTest("root", "wheel", 
         new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.NONE), 
         0));
-    // all for user/group but not user/group
+    // all for user/group but not user/groups
     perms.add(new PermTest("notroot", "notwheel", 
         new FsPermission(FsAction.ALL, FsAction.ALL,  FsAction.NONE), 
         0));    
@@ -198,94 +270,11 @@ public class TestACCESSHandler extends TestBaseHandler {
   
     for(PermTest permTest : perms) {
       when(filePermissions.toShort()).thenReturn(permTest.perm.toShort());
-      int result = ACCESSHandler.getPermsForUserGroup(permTest.user, permTest.group, fileStatus);
+      int result = ACCESSHandler.getPermsForUserGroup(permTest.user, 
+          new String[] {permTest.group}, fileStatus);
       assertEquals(permTest.toString(), 
           Integer.toBinaryString(permTest.result), 
           Integer.toBinaryString(result));
-    }
-  }
-  
-  @Test
-  public void testGetPermsRead() throws Exception {
-    int result1 = ACCESSHandler.getPerms(ACCESSHandler.ACCESS_READ, true);
-    int result2 = ACCESSHandler.getPerms(ACCESSHandler.ACCESS_READ, false);
-    assertEquals(result1, result2);
-    assertEquals(result1, NFS_ACCESS_READ | NFS_ACCESS_LOOKUP);
-  }
-  
-  @Test
-  public void testGetPermsWrite() throws Exception {
-    int result1 = ACCESSHandler.getPerms(ACCESSHandler.ACCESS_WRITE, true);
-    int result2 = ACCESSHandler.getPerms(ACCESSHandler.ACCESS_WRITE, false);
-    assertFalse(result1 == result2);
-    assertEquals(NFS_ACCESS_MODIFY | NFS_ACCESS_EXTEND | NFS_ACCESS_DELETE, result1);
-    assertEquals(NFS_ACCESS_MODIFY | NFS_ACCESS_EXTEND, result2);
-  }
-  @Test
-  public void testGetPermsExecute() throws Exception {
-    int result1 = ACCESSHandler.getPerms(ACCESSHandler.ACCESS_EXECUTE, true);
-    int result2 = ACCESSHandler.getPerms(ACCESSHandler.ACCESS_EXECUTE, false);
-    assertEquals(result1, result2);
-    assertEquals(NFS_ACCESS_EXECUTE, result1);
-  }
-  
-
-  private static class PermTest {
-    final String user;
-    final String group;
-    final FsPermission perm;
-    final int result;
-    public PermTest(String user, String group, FsPermission perm, int result) {
-      this.user = user;
-      this.group = group;
-      this.perm = perm;
-      this.result = result;
-    }
-    @Override
-    public String toString() {
-      return "PermTest [user=" + user + ", group=" + group + ", perm=" + perm
-          + ", result=" + result + "]";
-    }
-  }
-  
-  
-  public static class TestUserIDMapper extends UserIDMapper implements Configurable {
-    Configuration conf;
-    @Override
-    public void setConf(Configuration conf) {
-      this.conf = conf;
-    }
-    @Override
-    public Configuration getConf() {
-      return conf;
-    }    
-    @Override
-    public int getGIDForGroup(Configuration conf, String user, int defaultGID)
-        throws Exception {
-      return conf.getInt(GID, 0);
-    }
-    @Override
-    public int getUIDForUser(Configuration conf, String user, int defaultUID)
-        throws Exception {
-      return conf.getInt(UID, 0);
-    }
-    @Override
-    public String getGroupForGID(Configuration conf, int gid,
-        String defaultGroup) throws Exception {
-      String s = conf.get(GROUP);
-      if(s.isEmpty()) {
-        return null;
-      }
-      return s;
-    }
-    @Override
-    public String getUserForUID(Configuration conf, int gid, String defaultUser)
-        throws Exception {
-      String s = conf.get(USER);
-      if(s.isEmpty()) {
-        return null;
-      }
-      return s;
     }
   }
 }

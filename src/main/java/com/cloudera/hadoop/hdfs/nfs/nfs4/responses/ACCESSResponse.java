@@ -31,6 +31,23 @@ public class ACCESSResponse extends OperationResponse implements Status {
   protected int mSupported;
   protected int mAccess;
 
+  public int getAccess() {
+    return mAccess;
+  }
+
+  @Override
+  public int getID() {
+    return NFS4_OP_ACCESS;
+  }
+  @Override
+  public int getStatus() {
+    return mStatus;
+  }
+
+  public int getSupported() {
+    return mSupported;
+  }
+
   @Override
   public void read(RPCBuffer buffer) {
     mStatus = buffer.readUint32();
@@ -40,6 +57,17 @@ public class ACCESSResponse extends OperationResponse implements Status {
     }
   }
 
+  public void setAccess(int access) {
+    this.mAccess = access;
+  }
+
+  @Override
+  public void setStatus(int status) {
+    this.mStatus = status;
+  }
+  public void setSupported(int supported) {
+    this.mSupported = supported;
+  }
   @Override
   public void write(RPCBuffer buffer) {
     buffer.writeUint32(mStatus);
@@ -47,33 +75,5 @@ public class ACCESSResponse extends OperationResponse implements Status {
       buffer.writeUint32(mSupported);
       buffer.writeUint32(mAccess);
     }
-  }
-  public int getAccess() {
-    return mAccess;
-  }
-
-  public void setAccess(int access) {
-    this.mAccess = access;
-  }
-
-  public int getSupported() {
-    return mSupported;
-  }
-
-  public void setSupported(int supported) {
-    this.mSupported = supported;
-  }
-
-  @Override
-  public int getStatus() {
-    return mStatus;
-  }
-  @Override
-  public void setStatus(int status) {
-    this.mStatus = status;
-  }
-  @Override
-  public int getID() {
-    return NFS4_OP_ACCESS;
   }
 }

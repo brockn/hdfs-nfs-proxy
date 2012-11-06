@@ -37,19 +37,8 @@ public class CLOSEHandler extends OperationRequestHandler<CLOSERequest, CLOSERes
   protected static final Logger LOGGER = Logger.getLogger(CLOSEHandler.class);
 
   @Override
-  public boolean wouldBlock(HDFSState hdfsState, Session session, CLOSERequest request) {
-    try {
-      if(session.getCurrentFileHandle() != null) {
-        WriteOrderHandler writeOrderHanlder = hdfsState.getWriteOrderHandler(session.getCurrentFileHandle());
-        if(writeOrderHanlder != null) {
-          return writeOrderHanlder.closeWouldBlock();          
-        }
-      }
-    } catch(IOException e) {
-      LOGGER.warn("Expection handing wouldBlock. Client error will " +
-          "be returned on call to doHandle", e);
-    }
-    return false;
+  protected CLOSEResponse createResponse() {
+    return new CLOSEResponse();
   }
   @Override
   protected CLOSEResponse doHandle(HDFSState hdfsState, Session session,
@@ -66,7 +55,18 @@ public class CLOSEHandler extends OperationRequestHandler<CLOSERequest, CLOSERes
   }
 
   @Override
-  protected CLOSEResponse createResponse() {
-    return new CLOSEResponse();
+  public boolean wouldBlock(HDFSState hdfsState, Session session, CLOSERequest request) {
+    try {
+      if(session.getCurrentFileHandle() != null) {
+        WriteOrderHandler writeOrderHanlder = hdfsState.getWriteOrderHandler(session.getCurrentFileHandle());
+        if(writeOrderHanlder != null) {
+          return writeOrderHanlder.closeWouldBlock();          
+        }
+      }
+    } catch(IOException e) {
+      LOGGER.warn("Expection handing wouldBlock. Client error will " +
+          "be returned on call to doHandle", e);
+    }
+    return false;
   }
 }

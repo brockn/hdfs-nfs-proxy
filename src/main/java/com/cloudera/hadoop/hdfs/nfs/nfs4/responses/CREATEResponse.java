@@ -33,6 +33,21 @@ public class CREATEResponse extends OperationResponse implements Status {
   protected ChangeInfo mChangeInfo;
   protected Bitmap mAttrs;
 
+  public Bitmap getAttrs() {
+    return mAttrs;
+  }
+
+  public ChangeInfo getChangeInfo() {
+    return mChangeInfo;
+  }
+  @Override
+  public int getID() {
+    return NFS4_OP_CREATE;
+  }
+  @Override
+  public int getStatus() {
+    return mStatus;
+  }
   @Override
   public void read(RPCBuffer buffer) {
     mStatus = buffer.readUint32();
@@ -44,6 +59,18 @@ public class CREATEResponse extends OperationResponse implements Status {
     }
   }
 
+  public void setAttrs(Bitmap attrs) {
+    mAttrs = attrs;
+  }
+
+  public void setChangeInfo(ChangeInfo changeInfo) {
+    this.mChangeInfo = changeInfo;
+  }
+
+  @Override
+  public void setStatus(int status) {
+    this.mStatus = status;
+  }
   @Override
   public void write(RPCBuffer buffer) {
     buffer.writeUint32(mStatus);
@@ -51,32 +78,5 @@ public class CREATEResponse extends OperationResponse implements Status {
       mChangeInfo.write(buffer);
       mAttrs.write(buffer);
     }
-  }
-  @Override
-  public int getStatus() {
-    return mStatus;
-  }
-  @Override
-  public void setStatus(int status) {
-    this.mStatus = status;
-  }
-  @Override
-  public int getID() {
-    return NFS4_OP_CREATE;
-  }
-
-  public ChangeInfo getChangeInfo() {
-    return mChangeInfo;
-  }
-
-  public void setChangeInfo(ChangeInfo changeInfo) {
-    this.mChangeInfo = changeInfo;
-  }
-
-  public void setAttrs(Bitmap attrs) {
-    mAttrs = attrs;
-  }
-  public Bitmap getAttrs() {
-    return mAttrs;
   }
 }

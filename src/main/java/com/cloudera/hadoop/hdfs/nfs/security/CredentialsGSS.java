@@ -21,30 +21,48 @@ package com.cloudera.hadoop.hdfs.nfs.security;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
-
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 /**
  * Implementation of RPC AUTH_GSS
  */
-public class CredentialsGSS extends Credentials implements AuthenticatedCredentials {
-
-  protected static final Logger LOGGER = Logger.getLogger(CredentialsGSS.class);
-
-  protected int mVersion;
-  protected int mProcedure;
-  protected int mSequenceNum;
-  protected int mService;
-  protected OpaqueData mContext;
+public class CredentialsGSS extends AuthenticatedCredentials {
+  private int mVersion;
+  private int mProcedure;
+  private int mSequenceNum;
+  private int mService;
+  private OpaqueData mContext;
 
   public CredentialsGSS() {
     super();
     this.mCredentialsLength = 0;
   }
 
+  public OpaqueData getContext() {
+    return mContext;
+  }
+
+  @Override
+  public int getFlavor() {
+    return RPC_AUTH_GSS;
+  }
+
+  public int getProcedure() {
+    return mProcedure;
+  }
+
+  public int getSequenceNum() {
+    return mSequenceNum;
+  }
+
+  public int getService() {
+    return mService;
+  }
+
+  public int getVersion() {
+    return mVersion;
+  }
 
   @Override
   public void read(RPCBuffer buffer) {
@@ -59,6 +77,31 @@ public class CredentialsGSS extends Credentials implements AuthenticatedCredenti
     int length = buffer.readUint32();
     mContext = new OpaqueData(length);
     mContext.read(buffer);
+  }
+
+  public void setContext(byte[] data) {
+    OpaqueData opaqueData = new OpaqueData(data.length);
+    opaqueData.setData(data);
+    setContext(opaqueData);
+  }
+
+  public void setContext(OpaqueData context) {
+    this.mContext = context;
+  }
+
+  public void setProcedure(int procedure) {
+    this.mProcedure = procedure;
+  }
+
+  public void setSequenceNum(int sequenceNum) {
+    this.mSequenceNum = sequenceNum;
+  }
+
+  public void setService(int service) {
+    this.mService = service;
+  }
+  public void setVersion(int version) {
+    this.mVersion = version;
   }
 
   @Override
@@ -80,84 +123,4 @@ public class CredentialsGSS extends Credentials implements AuthenticatedCredenti
 
     buffer.putInt(offset, mCredentialsLength);
   }
-
-
-
-  public int getVersion() {
-    return mVersion;
-  }
-
-
-  public void setVersion(int version) {
-    this.mVersion = version;
-  }
-
-
-  public int getProcedure() {
-    return mProcedure;
-  }
-
-
-  public void setProcedure(int procedure) {
-    this.mProcedure = procedure;
-  }
-
-
-  public int getSequenceNum() {
-    return mSequenceNum;
-  }
-
-
-  public void setSequenceNum(int sequenceNum) {
-    this.mSequenceNum = sequenceNum;
-  }
-
-
-  public int getService() {
-    return mService;
-  }
-
-
-  public void setService(int service) {
-    this.mService = service;
-  }
-
-
-  public OpaqueData getContext() {
-    return mContext;
-  }
-
-  public void setContext(byte[] data) {
-    OpaqueData opaqueData = new OpaqueData(data.length);
-    opaqueData.setData(data);
-    setContext(opaqueData);
-  }
-  public void setContext(OpaqueData context) {
-    this.mContext = context;
-  }
-
-
-  @Override
-  public int getFlavor() {
-    return RPC_AUTH_GSS;
-  }
-
-
-  @Override
-  public int getUID() {
-    return 500;
-  }
-
-
-  @Override
-  public int getGID() {
-    return 500;
-  }
-
-
-  @Override
-  public String getUsername(Configuration conf) throws Exception {
-    return "noland";
-  }
-
 }

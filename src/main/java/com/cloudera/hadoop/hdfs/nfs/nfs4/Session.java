@@ -42,8 +42,10 @@ public class Session {
   protected final InetAddress mClientAddress;
   protected final String mSessionID;
   protected final int mXID;
+  private final String mUser;
+  private final String[] mGroups;
   public Session(int xid, CompoundRequest compoundRequest, Configuration configuration, 
-      FileSystem fileSystem, InetAddress clientAddress, String sessionID)
+      FileSystem fileSystem, InetAddress clientAddress, String sessionID, String user, String[] groups)
       throws IOException {
     mXID = xid;
     mCompoundRequest = compoundRequest;
@@ -51,42 +53,50 @@ public class Session {
     mFileSystem = fileSystem;
     mClientAddress = clientAddress;
     mSessionID = sessionID;
-  }
-  public String getXIDAsHexString() {
-    return Integer.toHexString(mXID);
-  }
-  public int getXID() {
-    return mXID;
-  }
-  public FileHandle getCurrentFileHandle() {
-    return mCurrentFileHandle;
-  }
-
-  public void setCurrentFileHandle(FileHandle currentFileHandle) {
-    this.mCurrentFileHandle = currentFileHandle;
-  }
-
-  public FileHandle getSavedFileHandle() {
-    return mSavedFileHandle;
-  }
-
-  public void setSavedFileHandle(FileHandle savedFileHandle) {
-    this.mSavedFileHandle = savedFileHandle;
-  }
-  public Configuration getConfiguration() {
-    return mConfiguration;
-  }
-  public CompoundRequest getCompoundRequest() {
-    return mCompoundRequest;
-  }
-  public FileSystem getFileSystem() {
-    return mFileSystem;
+    mUser = user;
+    mGroups = groups;
   }
   public InetAddress getClientAddress() {
     return mClientAddress;
   }
+  public CompoundRequest getCompoundRequest() {
+    return mCompoundRequest;
+  }
+  public Configuration getConfiguration() {
+    return mConfiguration;
+  }
+
+  public FileHandle getCurrentFileHandle() {
+    return mCurrentFileHandle;
+  }
+
+  public FileSystem getFileSystem() {
+    return mFileSystem;
+  }
+
+  public String[] getGroups() {
+    return mGroups;
+  }
+  public FileHandle getSavedFileHandle() {
+    return mSavedFileHandle;
+  }
   public String getSessionID() {
     return mSessionID;
+  }
+  public String getUser() {
+    return mUser;
+  }
+  public int getXID() {
+    return mXID;
+  }
+  public String getXIDAsHexString() {
+    return Integer.toHexString(mXID);
+  }
+  public void setCurrentFileHandle(FileHandle currentFileHandle) {
+    this.mCurrentFileHandle = currentFileHandle;
+  }
+  public void setSavedFileHandle(FileHandle savedFileHandle) {
+    this.mSavedFileHandle = savedFileHandle;
   }
   @Override
   public String toString() {

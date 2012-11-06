@@ -28,17 +28,8 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class SETCLIENTIDCONFIRMRequest extends OperationRequest {
   protected long mClientID;
   protected OpaqueData8 mVerifer;
-  @Override
-  public void read(RPCBuffer buffer) {
-    mClientID = buffer.readUint64();
-    mVerifer = new OpaqueData8();
-    mVerifer.read(buffer);
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint64(mClientID);
-    mVerifer.write(buffer);
+  public long getClientID() {
+    return mClientID;
   }
 
   @Override
@@ -46,20 +37,29 @@ public class SETCLIENTIDCONFIRMRequest extends OperationRequest {
     return NFS4_OP_SETCLIENTID_CONFIRM;
   }
 
-  public long getClientID() {
-    return mClientID;
+  public OpaqueData8 getVerifer() {
+    return mVerifer;
+  }
+
+  @Override
+  public void read(RPCBuffer buffer) {
+    mClientID = buffer.readUint64();
+    mVerifer = new OpaqueData8();
+    mVerifer.read(buffer);
   }
 
   public void setClientID(long clientID) {
     this.mClientID = clientID;
   }
 
-  public OpaqueData8 getVerifer() {
-    return mVerifer;
-  }
-
   public void setVerifer(OpaqueData8 verifer) {
     this.mVerifer = verifer;
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeUint64(mClientID);
+    mVerifer.write(buffer);
   }
 
 }

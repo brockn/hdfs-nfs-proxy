@@ -40,6 +40,11 @@ public class READHandler extends OperationRequestHandler<READRequest, READRespon
   protected static final Logger LOGGER = Logger.getLogger(READHandler.class);
 
   @Override
+  protected READResponse createResponse() {
+    return new READResponse();
+  }
+
+  @Override
   protected READResponse doHandle(HDFSState hdfsState, Session session,
       READRequest request) throws NFS4Exception, IOException {
     if (session.getCurrentFileHandle() == null) {
@@ -85,10 +90,5 @@ public class READHandler extends OperationRequestHandler<READRequest, READRespon
       response.setStatus(NFS4_OK);
       return response;
     }
-  }
-
-  @Override
-  protected READResponse createResponse() {
-    return new READResponse();
   }
 }

@@ -52,6 +52,11 @@ public class READDIRHandler extends OperationRequestHandler<READDIRRequest, READ
   protected static final Logger LOGGER = Logger.getLogger(READDIRHandler.class);
 
   @Override
+  protected READDIRResponse createResponse() {
+    return new READDIRResponse();
+  }
+
+  @Override
   protected READDIRResponse doHandle(HDFSState hdfsState, Session session,
       READDIRRequest request) throws NFS4Exception, IOException {
     if (session.getCurrentFileHandle() == null) {
@@ -153,10 +158,5 @@ public class READDIRHandler extends OperationRequestHandler<READDIRRequest, READ
     entry.setAttrs(pair.getFirst());
     entry.setAttrValues(pair.getSecond());
     return entry;
-  }
-
-  @Override
-  protected READDIRResponse createResponse() {
-    return new READDIRResponse();
   }
 }

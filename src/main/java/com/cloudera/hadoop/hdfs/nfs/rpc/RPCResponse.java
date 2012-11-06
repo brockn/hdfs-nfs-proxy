@@ -31,19 +31,70 @@ public class RPCResponse extends RPCPacket {
   protected static final Logger LOGGER = Logger.getLogger(RPCResponse.class);
 
   protected int mReplyState, mAcceptState, mAuthState;
-  protected int mVerifierFlavor;
   protected Verifier mVerifier;
 
   public RPCResponse() {
 
   }
   public RPCResponse(int xid, int rpcVersion) {
-    this.mXid = xid;
-    this.mMessageType = RPC_MESSAGE_TYPE_REPLY;
+    setXid(xid);
+    setMessageType(RPC_MESSAGE_TYPE_REPLY);
     this.mReplyState = RPC_REPLY_STATE_ACCEPT;
     this.mAcceptState = RPC_ACCEPT_STATE_ACCEPT;
   }
 
+  public int getAcceptState() {
+    return mAcceptState;
+  }
+
+  public int getAuthState() {
+    return mAuthState;
+  }
+  public int getReplyState() {
+    return mReplyState;
+  }
+  public Verifier getVerifier() {
+    return mVerifier;
+  }
+  @Override
+  public void read(RPCBuffer buffer) {
+    super.read(buffer);
+    this.mReplyState = buffer.readUint32();
+    /*
+     * It looks like if reply state is not
+     * accept, the next value acceptState
+     */
+    if(mReplyState == RPC_REPLY_STATE_ACCEPT) {
+      int verifierFlavor = buffer.readUint32();
+      mVerifier = Verifier.readVerifier(verifierFlavor, buffer);
+      mAcceptState = buffer.readUint32();
+    } else if(mReplyState == RPC_REPLY_STATE_DENIED) {
+      mAcceptState = buffer.readUint32();
+      if(mAcceptState == RPC_REJECT_AUTH_ERROR) {
+        mAuthState = buffer.readUint32();
+      }
+    }
+  }
+  public void setAcceptState(int acceptState) {
+    this.mAcceptState = acceptState;
+  }
+  public void setAuthState(int authState) {
+    this.mAuthState = authState;
+  }
+  public void setReplyState(int replyState) {
+    this.mReplyState = replyState;
+  }
+  public void setVerifier(Verifier verifier) {
+    mVerifier = verifier;
+  }
+  @Override
+  public String toString() {
+    return "RPCResponse [getVerifier()=" + getVerifier() + ", getAuthState()="
+        + getAuthState() + getAcceptState() + ", getReplyState()="
+        + getReplyState() + ", getXidAsHexString()=" + getXidAsHexString()
+        + ", getXid()=" + getXid() + ", getMessageType()=" + getMessageType()
+        + "]";
+  }
   @Override
   public void write(RPCBuffer buffer) {
     super.write(buffer);
@@ -54,7 +105,7 @@ public class RPCResponse extends RPCPacket {
      * accept, the next value acceptState
      */
     if(mReplyState == RPC_REPLY_STATE_ACCEPT) {
-      buffer.writeUint32(mVerifierFlavor);
+      buffer.writeUint32(mVerifier.getFlavor());
       mVerifier.write(buffer);
       buffer.writeUint32(mAcceptState);
     } else if(mReplyState == RPC_REPLY_STATE_DENIED) {
@@ -64,70 +115,5 @@ public class RPCResponse extends RPCPacket {
       }
 
     }
-  }
-
-  @Override
-  public void read(RPCBuffer buffer) {
-    super.read(buffer);
-    this.mReplyState = buffer.readUint32();
-    /*
-     * It looks like if reply state is not
-     * accept, the next value acceptState
-     */
-    if(mReplyState == RPC_REPLY_STATE_ACCEPT) {
-      mVerifierFlavor = buffer.readUint32();
-      mVerifier = Verifier.readVerifier(mVerifierFlavor, buffer);
-      mAcceptState = buffer.readUint32();
-    } else if(mReplyState == RPC_REPLY_STATE_DENIED) {
-      mAcceptState = buffer.readUint32();
-      if(mAcceptState == RPC_REJECT_AUTH_ERROR) {
-        mAuthState = buffer.readUint32();
-      }
-    }
-  }
-  public Verifier getVerifier() {
-    return mVerifier;
-  }
-  public void setVerifier(Verifier verifier) {
-    if(verifier == null) {
-      mVerifier = null;
-      mVerifierFlavor = 0;
-    } else {
-      mVerifier = verifier;
-      mVerifierFlavor = mVerifier.getFlavor();
-    }
-  }
-  public int getAuthState() {
-    return mAuthState;
-  }
-  public void setAuthState(int authState) {
-    this.mAuthState = authState;
-  }
-  @Override
-  public String toString() {
-    return "RPCResponse [getVerifier()=" + getVerifier() + ", getAuthState()="
-        + getAuthState() + ", getVerifierFlavor()=" + getVerifierFlavor()
-        + ", getAcceptState()=" + getAcceptState() + ", getReplyState()="
-        + getReplyState() + ", getXidAsHexString()=" + getXidAsHexString()
-        + ", getXid()=" + getXid() + ", getMessageType()=" + getMessageType()
-        + "]";
-  }
-  public int getVerifierFlavor() {
-    return mVerifierFlavor;
-  }
-  public void setVerifierFlavor(int verifierFlavor) {
-    this.mVerifierFlavor = verifierFlavor;
-  }
-  public int getAcceptState() {
-    return mAcceptState;
-  }
-  public void setAcceptState(int acceptState) {
-    this.mAcceptState = acceptState;
-  }
-  public int getReplyState() {
-    return mReplyState;
-  }
-  public void setReplyState(int replyState) {
-    this.mReplyState = replyState;
   }
 }

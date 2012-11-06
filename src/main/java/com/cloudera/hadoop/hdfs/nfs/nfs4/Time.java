@@ -34,33 +34,33 @@ public class Time implements MessageBase {
     this.mSeconds = seconds;
     this.mNanoSeconds = nanoSeconds;
   }
+  public int getNanoSeconds() {
+    return mNanoSeconds;
+  }
+
+  public long getSeconds() {
+    return mSeconds;
+  }
   @Override
   public void read(RPCBuffer buffer) {
     mSeconds = buffer.readUint64();
     mNanoSeconds = buffer.readUint32();
+  }
+  public void setNanoSeconds(int mNanoSeconds) {
+    this.mNanoSeconds = mNanoSeconds;
+  }
+  public void setSeconds(long mSeconds) {
+    this.mSeconds = mSeconds;
+  }
+  public long toMilliseconds() {
+    long time = mSeconds * 1000L;
+    time += mNanoSeconds / 1000000L;
+    return time;
   }
 
   @Override
   public void write(RPCBuffer buffer) {
     buffer.writeUint64(mSeconds);
     buffer.writeUint32(mNanoSeconds);
-  }
-  public long getSeconds() {
-    return mSeconds;
-  }
-  public void setSeconds(long mSeconds) {
-    this.mSeconds = mSeconds;
-  }
-  public int getNanoSeconds() {
-    return mNanoSeconds;
-  }
-  public void setNanoSeconds(int mNanoSeconds) {
-    this.mNanoSeconds = mNanoSeconds;
-  }
-
-  public long toMilliseconds() {
-    long time = mSeconds * 1000L;
-    time += mNanoSeconds / 1000000L;
-    return time;
   }
 }

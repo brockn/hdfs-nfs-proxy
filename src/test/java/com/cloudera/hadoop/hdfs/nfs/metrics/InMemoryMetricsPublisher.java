@@ -29,14 +29,14 @@ public class InMemoryMetricsPublisher implements MetricPublisher {
   public InMemoryMetricsPublisher() {
     mLatest = Maps.newConcurrentMap();
   }
+  public Map<String, Long> getValues() {
+    return mLatest;
+  }
   @Override
   public void publish(Map<String, Long> values) {
     for(String key : values.keySet()) {
       long current = mLatest.containsKey(key) ? mLatest.get(key) : 0L;
       mLatest.put(key, current + values.get(key));      
     }
-  }
-  public Map<String, Long> getValues() {
-    return mLatest;
   }
 }

@@ -30,36 +30,36 @@ public class CLOSERequest extends OperationRequest {
   protected StateID mStateID;
 
   @Override
-  public void read(RPCBuffer buffer) {
-    mSeqID = buffer.readUint32();
-    mStateID = new StateID();
-    mStateID.read(buffer);
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint32(mSeqID);
-    mStateID.write(buffer);
-  }
-
-  @Override
   public int getID() {
     return NFS4_OP_CLOSE;
-  }
-
-  public StateID getStateID() {
-    return mStateID;
-  }
-
-  public void setStateID(StateID stateID) {
-    this.mStateID = stateID;
   }
 
   public int getSeqID() {
     return mSeqID;
   }
 
+  public StateID getStateID() {
+    return mStateID;
+  }
+
+  @Override
+  public void read(RPCBuffer buffer) {
+    mSeqID = buffer.readUint32();
+    mStateID = new StateID();
+    mStateID.read(buffer);
+  }
+
   public void setSeqID(int seqID) {
     this.mSeqID = seqID;
+  }
+
+  public void setStateID(StateID stateID) {
+    this.mStateID = stateID;
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeUint32(mSeqID);
+    mStateID.write(buffer);
   }
 }

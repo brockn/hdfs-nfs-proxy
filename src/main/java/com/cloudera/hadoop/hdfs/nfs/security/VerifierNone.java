@@ -26,6 +26,11 @@ public class VerifierNone extends Verifier {
 
 
   @Override
+  public int getFlavor() {
+    return RPC_VERIFIER_NULL;
+  }
+
+  @Override
   public void read(RPCBuffer buffer) {
     int length = buffer.readUint32();
     if(length != 0) {
@@ -34,16 +39,11 @@ public class VerifierNone extends Verifier {
   }
 
   @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint32(0);
-  }
-
-  @Override
-  public int getFlavor() {
-    return RPC_VERIFIER_NULL;
-  }
-  @Override
   public String toString() {
     return "VerifierNone [getFlavor()=" + getFlavor() + "]";
+  }
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeUint32(0);
   }
 }

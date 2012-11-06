@@ -33,41 +33,54 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 @SuppressWarnings({"rawtypes","unchecked"})
 public class AsyncTaskExecutor<T> {
-  protected static final Logger LOGGER = Logger.getLogger(AsyncTaskExecutor.class);
+  @VisibleForTesting
+  static class DelayedRunnable extends FutureTask<Void> implements Delayed {
+    private final long delayMS;
+    private final long start;
+    public DelayedRunnable(Runnable delegate) {
+      this(delegate, 0L);
+    }
+    public DelayedRunnable(Runnable delegate, long delayMS) {
+      super(delegate, null);
+      this.delayMS = delayMS;
+      this.start = System.currentTimeMillis();
+    }
+    @Override
+    public int compareTo(Delayed other) {
+      long d = (getDelay(TimeUnit.NANOSECONDS) - other.getDelay(TimeUnit.NANOSECONDS));
+      return (d == 0) ? 0 : ((d < 0) ? -1 : 1);
+    }
 
-  private static final AtomicInteger instanceCounter = new AtomicInteger(0);
-  private final BlockingQueue queue;
-  private final ThreadPoolExecutor executor;
-  
-  public AsyncTaskExecutor() {
-    queue = new DelayQueue();
-    /* 
-     * We must override newTaskFor to prevent a cast class exception here:
-     * 
-     * java.lang.ClassCastException: java.util.concurrent.FutureTask cannot be cast to java.util.concurrent.Delayed
-     *  at java.util.concurrent.DelayQueue.offer(DelayQueue.java:39)
-     *  at java.util.concurrent.ThreadPoolExecutor.execute(ThreadPoolExecutor.java:653)
-     *  at java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:78)
-     *  at com.cloudera.hadoop.hdfs.nfs.nfs4.AsyncTaskExecutor.schedule(AsyncTaskExecutor.java:50)
-     */
-    executor = new ThreadPoolExecutor(10, 500, 5L, TimeUnit.SECONDS, 
-        queue, new ThreadFactoryBuilder().setDaemon(true).
-        setNameFormat("AsyncTaskExecutor-" + instanceCounter.incrementAndGet() + "-%d")
-        .build()) {
-      @Override
-      @SuppressWarnings("hiding")
-      protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
-        if(runnable instanceof DelayedRunnable) {
-          return (FutureTask<T>)runnable;
-        }
-        return new FutureTask<T>(runnable, value);
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj)
+        return true;
+      return false;
+    }
+    @Override
+    public long getDelay(TimeUnit unit) {
+      long elapsed = System.currentTimeMillis() - start;
+      if(elapsed >= delayMS) {
+        return 0L;
       }
-    };
+      return unit.convert(delayMS - elapsed, TimeUnit.MILLISECONDS);
+    }
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + (int) (delayMS ^ (delayMS >>> 32));
+      result = prime * result + (int) (start ^ (start >>> 32));
+      return result;
+    }
+    @Override
+    public String toString() {
+      return "DelayedRunnable [delayMS=" + delayMS + ", getDelay(ms)=" + getDelay(TimeUnit.MILLISECONDS) + "]";
+    }
+    
+    
   }
-  
-  public void schedule(final AsyncFuture<T> task) {
-    executor.submit(new DelayedRunnable(new TaskRunnable(queue, task)));
-  }
+
   private static class TaskRunnable implements Runnable {
     private final AsyncFuture<?> task;
     private final BlockingQueue queue;
@@ -95,51 +108,38 @@ public class AsyncTaskExecutor<T> {
       }
     }
   }
-  @VisibleForTesting
-  static class DelayedRunnable extends FutureTask<Void> implements Delayed {
-    private final long delayMS;
-    private final long start;
-    public DelayedRunnable(Runnable delegate) {
-      this(delegate, 0L);
-    }
-    public DelayedRunnable(Runnable delegate, long delayMS) {
-      super(delegate, null);
-      this.delayMS = delayMS;
-      this.start = System.currentTimeMillis();
-    }
-    @Override
-    public int compareTo(Delayed other) {
-      long d = (getDelay(TimeUnit.NANOSECONDS) - other.getDelay(TimeUnit.NANOSECONDS));
-      return (d == 0) ? 0 : ((d < 0) ? -1 : 1);
-    }
-
-    @Override
-    public int hashCode() {
-      final int prime = 31;
-      int result = 1;
-      result = prime * result + (int) (delayMS ^ (delayMS >>> 32));
-      result = prime * result + (int) (start ^ (start >>> 32));
-      return result;
-    }
-    @Override
-    public boolean equals(Object obj) {
-      if (this == obj)
-        return true;
-      return false;
-    }
-    @Override
-    public long getDelay(TimeUnit unit) {
-      long elapsed = System.currentTimeMillis() - start;
-      if(elapsed >= delayMS) {
-        return 0L;
+  protected static final Logger LOGGER = Logger.getLogger(AsyncTaskExecutor.class);
+  private static final AtomicInteger instanceCounter = new AtomicInteger(0);
+  
+  private final BlockingQueue queue;
+  
+  private final ThreadPoolExecutor executor;
+  public AsyncTaskExecutor() {
+    queue = new DelayQueue();
+    /* 
+     * We must override newTaskFor to prevent a cast class exception here:
+     * 
+     * java.lang.ClassCastException: java.util.concurrent.FutureTask cannot be cast to java.util.concurrent.Delayed
+     *  at java.util.concurrent.DelayQueue.offer(DelayQueue.java:39)
+     *  at java.util.concurrent.ThreadPoolExecutor.execute(ThreadPoolExecutor.java:653)
+     *  at java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:78)
+     *  at com.cloudera.hadoop.hdfs.nfs.nfs4.AsyncTaskExecutor.schedule(AsyncTaskExecutor.java:50)
+     */
+    executor = new ThreadPoolExecutor(10, 500, 5L, TimeUnit.SECONDS, 
+        queue, new ThreadFactoryBuilder().setDaemon(true).
+        setNameFormat("AsyncTaskExecutor-" + instanceCounter.incrementAndGet() + "-%d")
+        .build()) {
+      @Override
+      @SuppressWarnings("hiding")
+      protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
+        if(runnable instanceof DelayedRunnable) {
+          return (FutureTask<T>)runnable;
+        }
+        return new FutureTask<T>(runnable, value);
       }
-      return unit.convert(delayMS - elapsed, TimeUnit.MILLISECONDS);
-    }
-    @Override
-    public String toString() {
-      return "DelayedRunnable [delayMS=" + delayMS + ", getDelay(ms)=" + getDelay(TimeUnit.MILLISECONDS) + "]";
-    }
-    
-    
+    };
+  }
+  public void schedule(final AsyncFuture<T> task) {
+    executor.submit(new DelayedRunnable(new TaskRunnable(queue, task)));
   }
 }

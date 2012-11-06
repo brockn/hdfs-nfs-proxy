@@ -33,6 +33,34 @@ public class WRITERequest extends OperationRequest {
   protected int mStart;
   protected int mLength;
 
+  public byte[] getData() {
+    return mData;
+  }
+
+  @Override
+  public int getID() {
+    return NFS4_OP_WRITE;
+  }
+
+  public int getLength() {
+    return mLength;
+  }
+
+
+  public long getOffset() {
+    return mOffset;
+  }
+  public int getStable() {
+    return mStable;
+  }
+  public int getStart() {
+    return mStart;
+  }
+
+  public StateID getStateID() {
+    return mStateID;
+  }
+
   @Override
   public void read(RPCBuffer buffer) {
     mStateID = new StateID();
@@ -44,6 +72,29 @@ public class WRITERequest extends OperationRequest {
     mLength = mData.length;
   }
 
+  public void setData(byte[] data, int start, int length) {
+    this.mData = data;
+    this.mStart = start;
+    this.mLength = length;
+  }
+  public void setOffset(long offset) {
+    this.mOffset = offset;
+  }
+
+  public void setStable(int stable) {
+    this.mStable = stable;
+  }
+
+  public void setStateID(StateID stateID) {
+    this.mStateID = stateID;
+  }
+
+  @Override
+  public String toString() {
+    return "WRITERequest [mStateID=" + mStateID + ", mOffset=" + mOffset
+        + ", mStable=" + mStable + ", mLength=" + mLength + "]";
+  }
+
   @Override
   public void write(RPCBuffer buffer) {
     mStateID.write(buffer);
@@ -51,56 +102,5 @@ public class WRITERequest extends OperationRequest {
     buffer.writeUint32(mStable);
     buffer.writeUint32(mLength);
     buffer.writeBytes(mData, mStart, mLength);
-  }
-
-  @Override
-  public int getID() {
-    return NFS4_OP_WRITE;
-  }
-
-
-  public int getStart() {
-    return mStart;
-  }
-  public int getLength() {
-    return mLength;
-  }
-  public byte[] getData() {
-    return mData;
-  }
-
-  public StateID getStateID() {
-    return mStateID;
-  }
-
-  public void setStateID(StateID stateID) {
-    this.mStateID = stateID;
-  }
-
-  public void setData(byte[] data, int start, int length) {
-    this.mData = data;
-    this.mStart = start;
-    this.mLength = length;
-  }
-  public long getOffset() {
-    return mOffset;
-  }
-
-  public void setOffset(long offset) {
-    this.mOffset = offset;
-  }
-
-  public int getStable() {
-    return mStable;
-  }
-
-  public void setStable(int stable) {
-    this.mStable = stable;
-  }
-
-  @Override
-  public String toString() {
-    return "WRITERequest [mStateID=" + mStateID + ", mOffset=" + mOffset
-        + ", mStable=" + mStable + ", mLength=" + mLength + "]";
   }
 }

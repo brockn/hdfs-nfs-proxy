@@ -23,7 +23,6 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
@@ -35,12 +34,8 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public abstract class Credentials implements MessageBase {
   protected static final Logger LOGGER = Logger.getLogger(Credentials.class);
 
-  public Credentials() {
-
-  }
   protected static final String HOSTNAME;
   protected int mCredentialsLength;
-
   static {
     try {
       String s = InetAddress.getLocalHost().getHostName();
@@ -53,11 +48,6 @@ public abstract class Credentials implements MessageBase {
       throw new RuntimeException(e);
     }
   }
-
-  public abstract int getFlavor();
-
-
-  public abstract String getUsername(Configuration conf)  throws Exception;
 
   public static Credentials readCredentials(int flavor, RPCBuffer buffer) {
     Credentials credentials;
@@ -73,4 +63,11 @@ public abstract class Credentials implements MessageBase {
     credentials.read(buffer);
     return credentials;
   }
+
+  public Credentials() {
+
+  }
+
+
+  public abstract int getFlavor();
 }

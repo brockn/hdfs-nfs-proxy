@@ -40,45 +40,8 @@ public class CREATERequest extends OperationRequest {
   protected String mName;
   protected Bitmap mAttrs;
   protected ImmutableList<Attribute> mAttrValues;
-  @Override
-  public void read(RPCBuffer buffer) {
-    mType = buffer.readUint32();
-    mName = checkPath(buffer.readString());
-    Pair<Bitmap, ImmutableList<Attribute>> pair = Attribute.readAttrs(buffer);
-    mAttrs = pair.getFirst();
-    mAttrValues = pair.getSecond();
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint32(mType);
-    buffer.writeString(mName);
-    Attribute.writeAttrs(buffer, mAttrs, mAttrValues);
-  }
-
-  @Override
-  public int getID() {
-    return NFS4_OP_CREATE;
-  }
-
-  public String getName() {
-    return mName;
-  }
-  public void setName(String name) {
-    mName = name;
-  }
-  public int getType() {
-    return mType;
-  }
-  public void setType(int type) {
-    mType = type;
-  }
   public Bitmap getAttrs() {
     return mAttrs;
-  }
-
-  public void setAttrs(Bitmap attrs) {
-    this.mAttrs = attrs;
   }
 
   public ImmutableMap<Integer, Attribute> getAttrValues() {
@@ -89,7 +52,44 @@ public class CREATERequest extends OperationRequest {
     return ImmutableMap.copyOf(rtn);
   }
 
+  @Override
+  public int getID() {
+    return NFS4_OP_CREATE;
+  }
+
+  public String getName() {
+    return mName;
+  }
+  public int getType() {
+    return mType;
+  }
+  @Override
+  public void read(RPCBuffer buffer) {
+    mType = buffer.readUint32();
+    mName = checkPath(buffer.readString());
+    Pair<Bitmap, ImmutableList<Attribute>> pair = Attribute.readAttrs(buffer);
+    mAttrs = pair.getFirst();
+    mAttrValues = pair.getSecond();
+  }
+  public void setAttrs(Bitmap attrs) {
+    this.mAttrs = attrs;
+  }
   public void setAttrValues(List<Attribute> attributes) {
     this.mAttrValues = ImmutableList.copyOf(attributes);
+  }
+
+  public void setName(String name) {
+    mName = name;
+  }
+
+  public void setType(int type) {
+    mType = type;
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeUint32(mType);
+    buffer.writeString(mName);
+    Attribute.writeAttrs(buffer, mAttrs, mAttrValues);
   }
 }

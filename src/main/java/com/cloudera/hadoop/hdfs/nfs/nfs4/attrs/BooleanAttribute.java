@@ -25,21 +25,21 @@ public abstract class BooleanAttribute extends Attribute {
 
   protected boolean mValue;
 
+  public boolean get() {
+    return mValue;
+  }
+
   @Override
   public void read(RPCBuffer buffer) {
     mValue = buffer.readBoolean();
   }
 
+  public void set(boolean value) {
+    mValue = value;
+  }
+
   @Override
   public void write(RPCBuffer buffer) {
     buffer.writeBoolean(mValue);
-  }
-
-  public boolean get() {
-    return mValue;
-  }
-
-  public void set(boolean value) {
-    mValue = value;
   }
 }

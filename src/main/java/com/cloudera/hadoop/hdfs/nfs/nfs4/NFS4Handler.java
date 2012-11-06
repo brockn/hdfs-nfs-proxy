@@ -45,7 +45,9 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSStateBackgroundWorker;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCHandler;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
 import com.cloudera.hadoop.hdfs.nfs.security.AuthenticatedCredentials;
-import com.cloudera.hadoop.hdfs.nfs.security.Credentials;
+import com.cloudera.hadoop.hdfs.nfs.security.SecurityHandlerFactory;
+import com.cloudera.hadoop.hdfs.nfs.security.SessionSecurityHandler;
+import com.cloudera.hadoop.hdfs.nfs.security.Verifier;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
@@ -59,6 +61,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   protected static final Logger LOGGER = Logger.getLogger(NFS4Handler.class);
   private final Configuration mConfiguration;
+  private final SecurityHandlerFactory mSecurityHandlerFactory;
   private final FileSystem mFileSystem;
   private final MetricsAccumulator mMetrics;
   private final AsyncTaskExecutor<CompoundResponse> executor;
@@ -66,13 +69,6 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   private final HDFSStateBackgroundWorker mHDFSStateBackgroundWorker;
   private final File[] mTempDirs;
   
-  /**
-   * Create a handler object with a default configuration object
-   * @throws IOException 
-   */
-  public NFS4Handler() throws IOException {
-    this(new Configuration());
-  }
 
   /**
    * Create a handler with the configuration passed into the constructor
@@ -80,8 +76,10 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
    * @param configuration
    * @throws IOException 
    */
-  public NFS4Handler(Configuration configuration) throws IOException {
+  public NFS4Handler(Configuration configuration, 
+      SecurityHandlerFactory securityHandlerFactory) throws IOException {
     mConfiguration = configuration;
+    mSecurityHandlerFactory = securityHandlerFactory;
     mFileSystem = FileSystem.get(mConfiguration);
     mMetrics = new MetricsAccumulator(new LogMetricPublisher(LOGGER), 
         TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES));
@@ -134,59 +132,9 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     mHDFSStateBackgroundWorker.start();
     executor = new AsyncTaskExecutor<CompoundResponse>();
   }
-  public void shutdown() throws IOException {
-    mHDFSState.close();
-    for(File tempDir : mTempDirs) {
-      try {
-        PathUtils.fullyDelete(tempDir);
-      } catch (IOException e) {
-        LOGGER.warn("Error deleting " + tempDir, e);
-      }
-    }
-  }
-
-  /**
-   * Process a CompoundRequest and return a CompoundResponse.
-   */
   @Override
-  public ListenableFuture<CompoundResponse> process(final RPCRequest rpcRequest,
-      final CompoundRequest compoundRequest, final InetAddress clientAddress,
-      final String sessionID) {
-    Credentials creds = (Credentials) compoundRequest.getCredentials();
-    // FIXME below is a hack regarding CredentialsUnix
-    if (creds == null || !(creds instanceof AuthenticatedCredentials)) {
-      CompoundResponse response = new CompoundResponse();
-      response.setStatus(NFS4ERR_WRONGSEC);
-      return Futures.immediateFuture(response);
-    }
-    try {
-      UserGroupInformation sudoUgi;
-      String username = creds.getUsername(mConfiguration);
-      if (UserGroupInformation.isSecurityEnabled()) {
-        sudoUgi = UserGroupInformation.createProxyUser(username,
-            UserGroupInformation.getCurrentUser());
-      } else {
-        sudoUgi = UserGroupInformation.createRemoteUser(username);
-      }
-      Session session = new Session(rpcRequest.getXid(), compoundRequest,
-          mConfiguration, mFileSystem, clientAddress, sessionID);
-      NFS4AsyncFuture task = new NFS4AsyncFuture(mHDFSState, session, sudoUgi);
-      executor.schedule(task);
-      return task;
-    } catch (Exception ex) {
-      LOGGER.warn(sessionID + " Unhandled Exception", ex);
-      CompoundResponse response = new CompoundResponse();
-      LOGGER.warn(sessionID + " Setting SERVERFAULT for " + clientAddress
-          + " for " + compoundRequest.getOperations());
-      response.setStatus(NFS4ERR_SERVERFAULT);
-      return Futures.immediateFuture(response);
-    }
-  }
-
-
-  @Override
-  public void incrementMetric(Metric metric, long count) {
-    mMetrics.incrementMetric(metric, count);
+  public CompoundRequest createRequest() {
+    return new CompoundRequest();
   }
 
   /**
@@ -201,7 +149,67 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   }
 
   @Override
-  public CompoundRequest createRequest() {
-    return new CompoundRequest();
+  public void incrementMetric(Metric metric, long count) {
+    mMetrics.incrementMetric(metric, count);
+  }
+
+  /**
+   * Process a CompoundRequest and return a CompoundResponse.
+   */
+  @Override
+  public ListenableFuture<CompoundResponse> process(final RPCRequest rpcRequest,
+      final CompoundRequest compoundRequest, final InetAddress clientAddress,
+      final String sessionID) {
+    AuthenticatedCredentials creds = compoundRequest.getCredentials();
+    if (creds == null) {
+      CompoundResponse response = new CompoundResponse();
+      response.setStatus(NFS4ERR_WRONGSEC);
+      return Futures.immediateFuture(response);
+    }
+    try {
+      SessionSecurityHandler<? extends Verifier> securityHandler = 
+          mSecurityHandlerFactory.getSecurityHandler(creds);
+      final String username = securityHandler.getUser();
+      UserGroupInformation sudoUgi;
+      if (UserGroupInformation.isSecurityEnabled()) {
+        sudoUgi = UserGroupInformation.createProxyUser(username,
+            UserGroupInformation.getCurrentUser());
+      } else {
+        sudoUgi = UserGroupInformation.createRemoteUser(username);
+      }
+      if(LOGGER.isDebugEnabled()) {
+        String msg = "Request for Username = " + username + ", UGI = " + sudoUgi;
+        LOGGER.debug(msg);
+      }
+      Session session = new Session(rpcRequest.getXid(), compoundRequest,
+          mConfiguration, mFileSystem, clientAddress, sessionID,
+          sudoUgi.getShortUserName(), sudoUgi.getGroupNames());
+      NFS4AsyncFuture task = new NFS4AsyncFuture(mHDFSState, session, sudoUgi);
+      executor.schedule(task);
+      return task;
+    } catch (NFS4Exception ex) {
+      LOGGER.warn(sessionID, ex);
+      CompoundResponse response = new CompoundResponse();
+      response.setStatus(ex.getError());
+      return Futures.immediateFuture(response);
+    } catch (Exception ex) {
+      LOGGER.warn(sessionID + " Unhandled Exception", ex);
+      CompoundResponse response = new CompoundResponse();
+      LOGGER.warn(sessionID + " Setting SERVERFAULT for " + clientAddress
+          + " for " + compoundRequest.getOperations());
+      response.setStatus(NFS4ERR_SERVERFAULT);
+      return Futures.immediateFuture(response);
+    }
+  }
+
+  public void shutdown() throws IOException {
+    mHDFSState.close();
+    for(File tempDir : mTempDirs) {
+      try {
+        PathUtils.fullyDelete(tempDir);
+      } catch (IOException e) {
+        LOGGER.warn("Error deleting " + tempDir, e);
+      }
+    }
   }
 }

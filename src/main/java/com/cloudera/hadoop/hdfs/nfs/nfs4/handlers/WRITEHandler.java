@@ -45,25 +45,8 @@ public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITERes
 
   protected static final Logger LOGGER = Logger.getLogger(WRITEHandler.class);
   @Override
-  public boolean wouldBlock(HDFSState hdfsState, Session session, WRITERequest request) {
-    /*
-     * I have observed NFS clients which will send some writes with
-     * a sync flag and some other without a sync flag. I believe this
-     * is when feels the nfs server is responding slow or when
-     * the nfs server sends errors. I know for a fact it will 
-     * will do this during the error condition to try and bubble
-     * the error back up to the writer.
-     * 
-     * However, in the case where we have not received the pre-req writes
-     * we cannot honor the sync flag. This should only occur when the
-     * kernel adds the sync flag to write, not when someone calls fsync
-     * on the stream.
-     * 
-     * We could honor this by queuing this write but it's observed that 
-     * clients (ubuntu 12.10) will stop sending write requests waiting
-     * for the response to the previous requests.
-     */
-    return false;
+  protected WRITEResponse createResponse() {
+    return new WRITEResponse();
   }
   @Override
   protected WRITEResponse doHandle(HDFSState hdfsState, Session session,
@@ -114,7 +97,24 @@ public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITERes
   }
 
   @Override
-  protected WRITEResponse createResponse() {
-    return new WRITEResponse();
+  public boolean wouldBlock(HDFSState hdfsState, Session session, WRITERequest request) {
+    /*
+     * I have observed NFS clients which will send some writes with
+     * a sync flag and some other without a sync flag. I believe this
+     * is when feels the nfs server is responding slow or when
+     * the nfs server sends errors. I know for a fact it will 
+     * will do this during the error condition to try and bubble
+     * the error back up to the writer.
+     * 
+     * However, in the case where we have not received the pre-req writes
+     * we cannot honor the sync flag. This should only occur when the
+     * kernel adds the sync flag to write, not when someone calls fsync
+     * on the stream.
+     * 
+     * We could honor this by queuing this write but it's observed that 
+     * clients (ubuntu 12.10) will stop sending write requests waiting
+     * for the response to the previous requests.
+     */
+    return false;
   }
 }

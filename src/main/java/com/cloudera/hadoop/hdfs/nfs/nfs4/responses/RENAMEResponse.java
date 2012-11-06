@@ -32,6 +32,21 @@ public class RENAMEResponse extends OperationResponse implements Status {
   protected ChangeInfo mChangeInfoSource;
   protected ChangeInfo mChangeInfoDest;
 
+  public ChangeInfo getChangeInfoDest() {
+    return mChangeInfoDest;
+  }
+
+  public ChangeInfo getChangeInfoSource() {
+    return mChangeInfoSource;
+  }
+  @Override
+  public int getID() {
+    return NFS4_OP_RENAME;
+  }
+  @Override
+  public int getStatus() {
+    return mStatus;
+  }
   @Override
   public void read(RPCBuffer buffer) {
     mStatus = buffer.readUint32();
@@ -43,6 +58,19 @@ public class RENAMEResponse extends OperationResponse implements Status {
     }
   }
 
+  public void setChangeInfoDest(ChangeInfo changeInfo) {
+    this.mChangeInfoDest = changeInfo;
+  }
+
+  public void setChangeInfoSource(ChangeInfo changeInfo) {
+    this.mChangeInfoSource = changeInfo;
+  }
+
+  @Override
+  public void setStatus(int status) {
+    this.mStatus = status;
+  }
+
   @Override
   public void write(RPCBuffer buffer) {
     buffer.writeUint32(mStatus);
@@ -50,34 +78,6 @@ public class RENAMEResponse extends OperationResponse implements Status {
       mChangeInfoSource.write(buffer);
       mChangeInfoDest.write(buffer);
     }
-  }
-  @Override
-  public int getStatus() {
-    return mStatus;
-  }
-  @Override
-  public void setStatus(int status) {
-    this.mStatus = status;
-  }
-  @Override
-  public int getID() {
-    return NFS4_OP_RENAME;
-  }
-
-  public ChangeInfo getChangeInfoSource() {
-    return mChangeInfoSource;
-  }
-
-  public void setChangeInfoSource(ChangeInfo changeInfo) {
-    this.mChangeInfoSource = changeInfo;
-  }
-
-  public ChangeInfo getChangeInfoDest() {
-    return mChangeInfoDest;
-  }
-
-  public void setChangeInfoDest(ChangeInfo changeInfo) {
-    this.mChangeInfoDest = changeInfo;
   }
 
 }

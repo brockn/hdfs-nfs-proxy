@@ -43,9 +43,26 @@ public abstract class OperationRequestHandler<IN extends OperationRequest, OUT e
 
   protected static final Logger LOGGER = Logger.getLogger(OperationRequestHandler.class);
 
-  public boolean wouldBlock(HDFSState server, Session session, IN request) {
-    return false;
-  }
+  /**
+   * @return a response object of the correct type. Used so the handle()
+   * method can return an object of the correct type when an error is
+   * encountered.
+   */
+  protected abstract OUT createResponse();
+  /**
+   * Implementing classes actually handle the request in this method.
+   *
+   * @param server
+   * @param session
+   * @param request
+   * @return
+   * @throws NFS4Exception
+   * @throws IOException
+   * @throws UnsupportedOperationException
+   */
+  protected abstract OUT doHandle(HDFSState hdfsState, Session session, IN request)
+      throws NFS4Exception, IOException, UnsupportedOperationException;
+
   /**
    * Handle request and any exception throwing during the process.
    *
@@ -90,24 +107,7 @@ public abstract class OperationRequestHandler<IN extends OperationRequest, OUT e
     }
   }
 
-  /**
-   * Implementing classes actually handle the request in this method.
-   *
-   * @param server
-   * @param session
-   * @param request
-   * @return
-   * @throws NFS4Exception
-   * @throws IOException
-   * @throws UnsupportedOperationException
-   */
-  protected abstract OUT doHandle(HDFSState hdfsState, Session session, IN request)
-      throws NFS4Exception, IOException, UnsupportedOperationException;
-
-  /**
-   * @return a response object of the correct type. Used so the handle()
-   * method can return an object of the correct type when an error is
-   * encountered.
-   */
-  protected abstract OUT createResponse();
+  public boolean wouldBlock(HDFSState server, Session session, IN request) {
+    return false;
+  }
 }

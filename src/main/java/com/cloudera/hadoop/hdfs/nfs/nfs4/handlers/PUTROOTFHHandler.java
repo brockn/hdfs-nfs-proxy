@@ -36,16 +36,16 @@ public class PUTROOTFHHandler extends OperationRequestHandler<PUTROOTFHRequest, 
   protected static final Logger LOGGER = Logger.getLogger(PUTROOTFHHandler.class);
 
   @Override
+  protected PUTROOTFHResponse createResponse() {
+    return new PUTROOTFHResponse();
+  }
+
+  @Override
   protected PUTROOTFHResponse doHandle(HDFSState hdfsState, Session session,
       PUTROOTFHRequest request) throws NFS4Exception, IOException {
     session.setCurrentFileHandle(hdfsState.getOrCreateFileHandle(new Path("/")));
     PUTROOTFHResponse response = createResponse();
     response.setStatus(NFS4_OK);
     return response;
-  }
-
-  @Override
-  protected PUTROOTFHResponse createResponse() {
-    return new PUTROOTFHResponse();
   }
 }

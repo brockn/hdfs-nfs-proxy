@@ -50,6 +50,12 @@ public class TestREMOVEHandler extends TestBaseHandler {
 
   }
   @Test
+  public void testDeleteFails() throws Exception {
+    when(hdfsState.delete(path)).thenReturn(false);
+    Status response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_PERM, response.getStatus());
+  }
+  @Test
   public void testInvalidName() throws Exception {
     request.setName("");
     Status response = handler.handle(hdfsState, session, request);
@@ -59,6 +65,7 @@ public class TestREMOVEHandler extends TestBaseHandler {
     response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_INVAL, response.getStatus());
   }
+  
   @Test
   public void testNoCurrentFileHandle() throws Exception {
     when(session.getCurrentFileHandle()).thenReturn(null);
@@ -71,13 +78,6 @@ public class TestREMOVEHandler extends TestBaseHandler {
     when(hdfsState.fileExists(path)).thenReturn(false);
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_NOENT, response.getStatus());
-  }
-  
-  @Test
-  public void testDeleteFails() throws Exception {
-    when(hdfsState.delete(path)).thenReturn(false);
-    Status response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_PERM, response.getStatus());
   }
   
   @Test

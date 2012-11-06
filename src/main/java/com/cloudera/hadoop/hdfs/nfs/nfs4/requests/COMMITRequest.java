@@ -27,16 +27,8 @@ public class COMMITRequest extends OperationRequest {
   protected long mOffset;
   protected int mCount;
 
-  @Override
-  public void read(RPCBuffer buffer) {
-    mOffset = buffer.readUint64();
-    mCount = buffer.readUint32();
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint64(mOffset);
-    buffer.writeUint32(mCount);
+  public int getCount() {
+    return mCount;
   }
 
   @Override
@@ -48,16 +40,24 @@ public class COMMITRequest extends OperationRequest {
     return mOffset;
   }
 
-  public void setOffset(long offset) {
-    this.mOffset = offset;
-  }
-
-  public int getCount() {
-    return mCount;
+  @Override
+  public void read(RPCBuffer buffer) {
+    mOffset = buffer.readUint64();
+    mCount = buffer.readUint32();
   }
 
   public void setCount(int count) {
     this.mCount = count;
+  }
+
+  public void setOffset(long offset) {
+    this.mOffset = offset;
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeUint64(mOffset);
+    buffer.writeUint32(mCount);
   }
 
 

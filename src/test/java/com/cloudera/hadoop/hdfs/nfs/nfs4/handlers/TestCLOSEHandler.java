@@ -61,23 +61,23 @@ public class TestCLOSEHandler extends TestBaseHandler {
     Assert.assertSame(stateID, response.getStateID());
   }
   @Test
-  public void testWouldBlockIOException() throws Exception {
-    when(writeOrderHandler.closeWouldBlock()).thenThrow(new IOException());
-    Assert.assertFalse(handler.wouldBlock(hdfsState, session, request));
-  }
-  @Test
   public void testWouldBlock() throws Exception {
     when(writeOrderHandler.closeWouldBlock()).thenReturn(true);
     Assert.assertTrue(handler.wouldBlock(hdfsState, session, request));
   }
   @Test
-  public void testWouldNotBlock() throws Exception {
-    when(writeOrderHandler.closeWouldBlock()).thenReturn(false);
+  public void testWouldBlockIOException() throws Exception {
+    when(writeOrderHandler.closeWouldBlock()).thenThrow(new IOException());
     Assert.assertFalse(handler.wouldBlock(hdfsState, session, request));
   }
   @Test
   public void testWouldBlockNullFileHandle() throws Exception {
     when(session.getCurrentFileHandle()).thenReturn(null);
+    Assert.assertFalse(handler.wouldBlock(hdfsState, session, request));
+  }
+  @Test
+  public void testWouldNotBlock() throws Exception {
+    when(writeOrderHandler.closeWouldBlock()).thenReturn(false);
     Assert.assertFalse(handler.wouldBlock(hdfsState, session, request));
   }
 }

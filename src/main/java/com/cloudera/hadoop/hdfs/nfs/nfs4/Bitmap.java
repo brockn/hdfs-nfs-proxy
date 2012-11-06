@@ -34,6 +34,20 @@ public class Bitmap implements MessageBase {
 
   protected static final int DEFAULT_NUM_BITS = 64;
   protected BitSet mMask = new BitSet(DEFAULT_NUM_BITS);
+  public void clear(int bitIndex) {
+    mMask.clear(bitIndex);
+  }
+
+  public BitSet getMask() {
+    return mMask;
+  }
+
+  public boolean isEmpty() {
+    return mMask.isEmpty();
+  }
+  public boolean isSet(int bitIndex) {
+    return mMask.get(bitIndex);
+  }
   @Override
   public void read(RPCBuffer buffer) {
     mMask = new BitSet(DEFAULT_NUM_BITS);
@@ -49,6 +63,19 @@ public class Bitmap implements MessageBase {
         bitIndex++;
       }
     }
+  }
+  
+  public void set(int bitIndex) {
+    mMask.set(bitIndex);
+  }
+
+  public int size() {
+    return mMask.size();
+  }
+
+  @Override
+  public String toString() {
+    return String.valueOf(mMask);
   }
 
   @Override
@@ -70,32 +97,5 @@ public class Bitmap implements MessageBase {
       }
       buffer.writeInt(target);
     }
-  }
-
-  public boolean isEmpty() {
-    return mMask.isEmpty();
-  }
-  public int size() {
-    return mMask.size();
-  }
-  public void set(int bitIndex) {
-    mMask.set(bitIndex);
-  }
-  
-  public void clear(int bitIndex) {
-    mMask.clear(bitIndex);
-  }
-
-  public boolean isSet(int bitIndex) {
-    return mMask.get(bitIndex);
-  }
-
-  public BitSet getMask() {
-    return mMask;
-  }
-
-  @Override
-  public String toString() {
-    return String.valueOf(mMask);
   }
 }

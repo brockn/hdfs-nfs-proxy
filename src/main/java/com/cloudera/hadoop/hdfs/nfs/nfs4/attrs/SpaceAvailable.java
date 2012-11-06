@@ -23,18 +23,12 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class SpaceAvailable extends Attribute {
+  protected long mValue;
   public SpaceAvailable() {
     super();
   }
-  protected long mValue;
-  @Override
-  public void read(RPCBuffer buffer) {
-    mValue = buffer.readUint64();
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint64(mValue);
+  public long get() {
+    return mValue;
   }
 
   @Override
@@ -42,12 +36,18 @@ public class SpaceAvailable extends Attribute {
     return NFS4_FATTR4_SPACE_AVAIL;
   }
 
-  public long get() {
-    return mValue;
+  @Override
+  public void read(RPCBuffer buffer) {
+    mValue = buffer.readUint64();
   }
 
   public void set(long value) {
     this.mValue = value;
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeUint64(mValue);
   }
 
 }

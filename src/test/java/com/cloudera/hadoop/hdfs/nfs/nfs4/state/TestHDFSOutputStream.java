@@ -43,6 +43,32 @@ public class TestHDFSOutputStream {
   }
   
   @Test
+  public void testClose() throws Exception {
+    out.close();
+    verify(outputStream).close();    
+  }
+  @Test
+  public void testGetPos() throws Exception {
+    out.write(1);
+    byte[] buffer = new byte[436];
+    out.write(buffer);
+    out.write(buffer, 0, buffer.length);
+    Assert.assertEquals(buffer.length * 2 + 1, out.getPos());
+  }
+  @Test
+  public void testMisc() throws Exception {
+    Assert.assertSame(fileHandle, out.getFileHandle());
+    out.toString();
+  }
+  
+  @Test
+  public void testSync() throws Exception {
+    Assert.assertEquals(0L, out.getLastOperation());
+    out.sync();
+    verify(outputStream).sync();    
+    Assert.assertTrue(System.currentTimeMillis() - out.getLastOperation() <= 1000L);
+  }
+  @Test
   public void testWrite1() throws Exception {
     Assert.assertEquals(0L, out.getLastOperation());
     byte[] buffer = new byte[436];
@@ -65,31 +91,5 @@ public class TestHDFSOutputStream {
     out.write(x);
     verify(outputStream, times(1)).write(x);
     Assert.assertTrue(System.currentTimeMillis() - out.getLastOperation() <= 1000L);
-  }
-  
-  @Test
-  public void testGetPos() throws Exception {
-    out.write(1);
-    byte[] buffer = new byte[436];
-    out.write(buffer);
-    out.write(buffer, 0, buffer.length);
-    Assert.assertEquals(buffer.length * 2 + 1, out.getPos());
-  }
-  @Test
-  public void testClose() throws Exception {
-    out.close();
-    verify(outputStream).close();    
-  }
-  @Test
-  public void testSync() throws Exception {
-    Assert.assertEquals(0L, out.getLastOperation());
-    out.sync();
-    verify(outputStream).sync();    
-    Assert.assertTrue(System.currentTimeMillis() - out.getLastOperation() <= 1000L);
-  }
-  @Test
-  public void testMisc() throws Exception {
-    Assert.assertSame(fileHandle, out.getFileHandle());
-    out.toString();
   }
 }

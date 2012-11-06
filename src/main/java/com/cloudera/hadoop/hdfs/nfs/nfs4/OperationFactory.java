@@ -133,6 +133,21 @@ public class OperationFactory {
       .put(NFS4_OP_WRITE, new Holder(WRITERequest.class, WRITEResponse.class, new WRITEHandler()))
       .build();
 
+  protected static void checkSupported(int id) {
+    if(!isSupported(id)) {
+      throw new UnsupportedOperationException("NFS Operation " + id);
+    }
+  }
+  /**
+   * Get the stateless handler for for a specific request type.
+   * @param id
+   * @return a stateless handler for which accepts this request type
+   */
+  @SuppressWarnings("unchecked")
+  public static <IN extends OperationRequest, OUT extends OperationResponse> OperationRequestHandler<IN, OUT> getHandler(int id) {
+    checkSupported(id);
+    return (OperationRequestHandler<IN, OUT>) operations.get(id).handler;
+  }
   /**
    * @param id
    * @return true if id is a supported operation
@@ -140,11 +155,7 @@ public class OperationFactory {
   public static boolean isSupported(int id) {
     return operations.containsKey(id);
   }
-  protected static void checkSupported(int id) {
-    if(!isSupported(id)) {
-      throw new UnsupportedOperationException("NFS Operation " + id);
-    }
-  }
+
   /**
    * Parse a request identified by id from buffer into a NFS specific operation request.
    * @param buffer to read request from
@@ -181,17 +192,6 @@ public class OperationFactory {
     } catch (IllegalAccessException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  /**
-   * Get the stateless handler for for a specific request type.
-   * @param id
-   * @return a stateless handler for which accepts this request type
-   */
-  @SuppressWarnings("unchecked")
-  public static <IN extends OperationRequest, OUT extends OperationResponse> OperationRequestHandler<IN, OUT> getHandler(int id) {
-    checkSupported(id);
-    return (OperationRequestHandler<IN, OUT>) operations.get(id).handler;
   }
 
 }

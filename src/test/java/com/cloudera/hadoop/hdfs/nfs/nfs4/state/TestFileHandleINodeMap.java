@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.hadoop.thirdparty.guava.common.base.Charsets;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -31,6 +30,7 @@ import org.junit.Test;
 
 import com.cloudera.hadoop.hdfs.nfs.PathUtils;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
+import com.google.common.base.Charsets;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
@@ -57,11 +57,6 @@ public class TestFileHandleINodeMap {
   }
   
   @Test
-  public void testNullWhenEmpty() throws Exception {
-    Assert.assertNull(fileHandleINodeMap.getINodeByFileHandle(fh1));
-    Assert.assertNull(fileHandleINodeMap.getFileHandleByPath(inode1.getPath()));
-  }
-  @Test
   public void testLookup() throws Exception {
     fileHandleINodeMap.put(fh1, inode1);
     fileHandleINodeMap.put(fh2, inode2);
@@ -78,7 +73,25 @@ public class TestFileHandleINodeMap {
     Assert.assertEquals(fh1, fileHandleINodeMap.getFileHandleByPath(inode1.getPath()));
     Assert.assertEquals(fh2, fileHandleINodeMap.getFileHandleByPath(inode2.getPath()));    
   }
+  @Test
+  public void testNullWhenEmpty() throws Exception {
+    Assert.assertNull(fileHandleINodeMap.getINodeByFileHandle(fh1));
+    Assert.assertNull(fileHandleINodeMap.getFileHandleByPath(inode1.getPath()));
+  }
   
+  @Test
+  public void testRemove() throws Exception {
+    fileHandleINodeMap.put(fh1, inode1);
+    Assert.assertNotNull(fileHandleINodeMap.getINodeByFileHandle(fh1));
+    fileHandleINodeMap.remove(fh1);
+    
+    fileHandleINodeMap.close();
+    fileHandleINodeMap = new FileHandleINodeMap(file);
+    
+    Assert.assertNull(fileHandleINodeMap.getINodeByFileHandle(fh1));
+    Assert.assertNull(fileHandleINodeMap.getFileHandleByPath(inode1.getPath()));
+    Assert.assertTrue(fileHandleINodeMap.getFileHandlesNotValidatedSince(0L).size() == 0);
+  }
   @Test
   public void testValidationTime() throws Exception {
     fileHandleINodeMap.put(fh1, inode1);
@@ -94,18 +107,5 @@ public class TestFileHandleINodeMap {
     Set<FileHandle> stillActiveFileHandles = Sets.newHashSet(oldFileHandles.keySet());
     fileHandleINodeMap.updateValidationTime(stillActiveFileHandles);
     Assert.assertTrue(fileHandleINodeMap.getINodeByFileHandle(fh1).getCreationTime() > inode1.getCreationTime());
-  }
-  @Test
-  public void testRemove() throws Exception {
-    fileHandleINodeMap.put(fh1, inode1);
-    Assert.assertNotNull(fileHandleINodeMap.getINodeByFileHandle(fh1));
-    fileHandleINodeMap.remove(fh1);
-    
-    fileHandleINodeMap.close();
-    fileHandleINodeMap = new FileHandleINodeMap(file);
-    
-    Assert.assertNull(fileHandleINodeMap.getINodeByFileHandle(fh1));
-    Assert.assertNull(fileHandleINodeMap.getFileHandleByPath(inode1.getPath()));
-    Assert.assertTrue(fileHandleINodeMap.getFileHandlesNotValidatedSince(0L).size() == 0);
   }
 }

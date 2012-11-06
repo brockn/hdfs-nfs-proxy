@@ -29,13 +29,32 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 public class MetricsAccumulator {
-  protected static final Logger LOGGER = Logger.getLogger(MetricsAccumulator.class);
+  private static class MetricsLoggerTask extends Thread {
+    private final MetricsAccumulator mMetrics;
+    private final long mSleepIntervalMS;
+    public MetricsLoggerTask(MetricsAccumulator metrics, long sleepIntervalMS) {
+      mMetrics = metrics;
+      mSleepIntervalMS = sleepIntervalMS;
+    }
+    @Override
+    public void run() {
+      try {
+        while (true) {
+          Thread.sleep(mSleepIntervalMS);
+          mMetrics.publish();
+        }
+      } catch (Exception e) {
+        LOGGER.error("Metrics Printer Quitting", e);
+      }
+    }
+  }
 
+  protected static final Logger LOGGER = Logger.getLogger(MetricsAccumulator.class);
   private final Map<String, AtomicLong> mAdhocMetrics = Maps.newHashMap();
   private final Map<Metric, AtomicLong> mMetrics = Maps.newHashMap();
   private final MetricsLoggerTask mMetricsPrinter;
-  private final MetricPublisher mMetricPublisher;
   
+  private final MetricPublisher mMetricPublisher;
   public MetricsAccumulator(MetricPublisher metricPublisher, long sleepIntervalMS) {
     mMetricPublisher = metricPublisher;
     mMetricsPrinter = new MetricsLoggerTask(this, sleepIntervalMS);
@@ -44,27 +63,15 @@ public class MetricsAccumulator {
     mMetricsPrinter.start();
   }
   /**
-   * Increment an adoc metric
+   * Get a specific metric value
    */
-  public synchronized void incrementMetric(String name, long count) {
-    name = name.toUpperCase();
-    AtomicLong counter = mAdhocMetrics.get(name);
-    if(counter == null) {
-      counter = new AtomicLong(0);
-      mAdhocMetrics.put(name, counter);
-    }
-    counter.addAndGet(count);
-  }
-  /**
-   * Increment a specific metric
-   */
-  public synchronized void incrementMetric(Metric metric, long count) {
+  public synchronized long getMetric(Metric metric) {
     AtomicLong counter = mMetrics.get(metric);
     if (counter == null) {
       counter = new AtomicLong(0);
       mMetrics.put(metric, counter);
     }
-    counter.addAndGet(count);
+    return counter.get();
   }
   /**
    * Get adhoc metric value, returning 0 if it does not exist
@@ -79,15 +86,28 @@ public class MetricsAccumulator {
     return counter.get();
   }
   /**
-   * Get a specific metric value
+   * Increment a specific metric
    */
-  public synchronized long getMetric(Metric metric) {
+  public synchronized void incrementMetric(Metric metric, long count) {
     AtomicLong counter = mMetrics.get(metric);
     if (counter == null) {
       counter = new AtomicLong(0);
       mMetrics.put(metric, counter);
     }
-    return counter.get();
+    counter.addAndGet(count);
+  }
+  
+  /**
+   * Increment an adoc metric
+   */
+  public synchronized void incrementMetric(String name, long count) {
+    name = name.toUpperCase();
+    AtomicLong counter = mAdhocMetrics.get(name);
+    if(counter == null) {
+      counter = new AtomicLong(0);
+      mAdhocMetrics.put(name, counter);
+    }
+    counter.addAndGet(count);
   }
   
   private synchronized void publish() {
@@ -113,25 +133,5 @@ public class MetricsAccumulator {
       }
     }
     mMetricPublisher.publish(values);
-  }
-  
-  private static class MetricsLoggerTask extends Thread {
-    private final MetricsAccumulator mMetrics;
-    private final long mSleepIntervalMS;
-    public MetricsLoggerTask(MetricsAccumulator metrics, long sleepIntervalMS) {
-      mMetrics = metrics;
-      mSleepIntervalMS = sleepIntervalMS;
-    }
-    @Override
-    public void run() {
-      try {
-        while (true) {
-          Thread.sleep(mSleepIntervalMS);
-          mMetrics.publish();
-        }
-      } catch (Exception e) {
-        LOGGER.error("Metrics Printer Quitting", e);
-      }
-    }
   }
 }

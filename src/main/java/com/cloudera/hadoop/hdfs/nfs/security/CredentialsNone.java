@@ -20,7 +20,6 @@ package com.cloudera.hadoop.hdfs.nfs.security;
 
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
@@ -35,12 +34,17 @@ public class CredentialsNone extends Credentials {
     this.mCredentialsLength = 0;
   }
   @Override
+  public int getFlavor() {
+    return RPC_AUTH_NULL;
+  }
+  @Override
   public void read(RPCBuffer buffer) {
     mCredentialsLength = buffer.readInt();
     if (mCredentialsLength != 0) {
       throw new RuntimeException("Length of " + this + " should be 0");
     }
   }
+
   @Override
   public void write(RPCBuffer buffer) {
     if (mCredentialsLength != 0) {
@@ -49,13 +53,4 @@ public class CredentialsNone extends Credentials {
     buffer.writeInt(mCredentialsLength);
   }
 
-  @Override
-  public int getFlavor() {
-    return RPC_AUTH_NULL;
-  }
-
-  @Override
-  public String getUsername(Configuration conf) throws Exception{
-    return ANONYMOUS_USERNAME;
-  }
 }

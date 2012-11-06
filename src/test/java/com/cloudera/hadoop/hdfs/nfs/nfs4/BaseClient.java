@@ -78,262 +78,19 @@ import com.google.common.collect.Maps;
 public abstract class BaseClient {
 
   protected static final Logger LOGGER = Logger.getLogger(BaseClient.class);
+  protected static <T> T getResponse(OperationResponse operationResponse, Class<T> clazz) {
+    assertEquals(clazz, operationResponse.getClass());
+    assertEquals(NFS4_OK, operationResponse.getStatus());
+    return clazz.cast(operationResponse);
+  }
   protected long clientID = 0;
   protected OpaqueData8 clientVerifer;
   protected Path ROOT = new Path("/");
   protected Map<FileHandle, StateID> mFileHandleStateID = Maps.newHashMap();
   protected Map<Path, FileHandle> mPathFileHandleMap = Maps.newHashMap();
   protected Map<FileHandle, Path> mFileHandlePathMap = Maps.newHashMap();
+
   protected Map<FileHandle, ImmutableMap<Integer, Attribute>> mFileHandleAttributeMap = Maps.newHashMap();
-
-  protected void initialize() throws NFS4Exception {
-    CompoundRequest compoundRequest = newRequest();
-    List<OperationRequest> operations = Lists.newArrayList();
-    operations.add(new PUTROOTFHRequest());
-    operations.add(new GETFHRequest());
-
-    compoundRequest.setOperations(operations);
-
-    List<OperationResponse> operationResponses = getResult(compoundRequest);
-
-    getResponse(operationResponses.remove(0), PUTROOTFHResponse.class);
-
-    GETFHResponse getFHResponse = getResponse(operationResponses.remove(0), GETFHResponse.class);
-    FileHandle fileHandle = getFHResponse.getFileHandle();
-    mPathFileHandleMap.put(ROOT, fileHandle);
-    mFileHandlePathMap.put(fileHandle, ROOT);
-    getAttrs(ROOT);
-  }
-
-  protected abstract CompoundResponse doMakeRequest(CompoundRequest request) throws IOException;
-
-  public void shutdown() {
-  }
-
-  /**
-   * Copies the message to byes and reads it back in again. Should execute
-   * both serialization and deserialization code.
-   *
-   * @param message
-   * @return message
-   */
-  @SuppressWarnings("unchecked")
-  protected <T extends MessageBase> T serde(T message) {
-    RPCBuffer buffer = new RPCBuffer();
-    message.write(buffer);
-    buffer.flip();
-    try {
-      MessageBase result = message.getClass().newInstance();      
-      result.read(buffer);
-      if(result instanceof RequiresCredentials) {
-        RequiresCredentials requiresCredentials = (RequiresCredentials)result;
-        requiresCredentials.setCredentials(((RequiresCredentials)message).getCredentials());
-      }
-      //TestUtils.deepEquals(message, result);
-      return (T)result;
-    } catch (RuntimeException x) {
-      LOGGER.warn("Error reading buffer: " + LogUtils.dump(message), x);
-      throw x;
-    } catch (Exception x) {
-      throw Throwables.propagate(x);
-    }
-  }
-
-  /**
-   * Makes request to server returning result without checking the status of
-   * the response.
-   *
-   * @param request
-   * @return CompoundResponse
-   */
-  protected CompoundResponse makeRequest(CompoundRequest request) {
-    request = serde(request);
-    CompoundResponse response;
-    try {
-      response = doMakeRequest(request);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-    return serde(response);
-  }
-
-  /**
-   * Makes request to server and converts response to a list of
-   * OperationResponses. Status information is checked and an assertion error
-   * is thrown if not OK.
-   *
-   * @param request
-   * @return CompoundResponse
-   */
-  protected List<OperationResponse> getResult(CompoundRequest request) throws NFS4Exception {
-    CompoundResponse response = makeRequest(request);
-    if (response.getStatus() != NFS4_OK) {
-      throw new NFS4Exception(response.getStatus());
-    }
-    assertEquals(request.getOperations().size(), response.getOperations().size());
-    response = serde(response);
-    assertEquals(request.getOperations().size(), response.getOperations().size());
-    return Lists.newArrayList(response.getOperations());
-  }
-
-  protected FileHandle lookup(Path path) throws NFS4Exception {
-    Path parent;
-    LOGGER.info("Lookup on " + path);
-    if (path.equals(ROOT)) {
-      parent = path;
-    } else {
-      parent = path.getParent();
-    }
-    FileHandle parentFileHandle = mPathFileHandleMap.get(parent);
-    if (parentFileHandle == null) {
-      parentFileHandle = lookup(parent);
-    }
-
-    if (parent.equals(path)) {
-      return parentFileHandle;
-    }
-
-    CompoundRequest compoundRequest = newRequest();
-    List<OperationRequest> operations = Lists.newArrayList();
-    PUTFHRequest putFhRequest = new PUTFHRequest();
-    putFhRequest.setFileHandle(parentFileHandle);
-    operations.add(putFhRequest);
-    LOOKUPRequest lookupRequest = new LOOKUPRequest();
-    lookupRequest.setName(path.getName());
-    operations.add(lookupRequest);
-
-    operations.add(new GETFHRequest());
-    operations.add(newGETATTRRequest());
-
-    compoundRequest.setOperations(operations);
-
-    List<OperationResponse> operationResponses = getResult(compoundRequest);
-
-    getResponse(operationResponses.remove(0), PUTFHResponse.class);
-    getResponse(operationResponses.remove(0), LOOKUPResponse.class);
-    GETFHResponse getFHResponse = getResponse(operationResponses.remove(0), GETFHResponse.class);
-    FileHandle fileHandle = getFHResponse.getFileHandle();
-    mPathFileHandleMap.put(path, fileHandle);
-    mFileHandlePathMap.put(fileHandle, path);
-    GETATTRResponse getAttrResponse = getResponse(operationResponses.remove(0), GETATTRResponse.class);
-    mFileHandleAttributeMap.put(fileHandle, getAttrResponse.getAttrValues());
-    return fileHandle;
-  }
-
-  protected static <T> T getResponse(OperationResponse operationResponse, Class<T> clazz) {
-    assertEquals(clazz, operationResponse.getClass());
-    assertEquals(NFS4_OK, operationResponse.getStatus());
-    return clazz.cast(operationResponse);
-  }
-
-  public ImmutableList<Path> listPath(Path path) throws NFS4Exception {
-
-    FileHandle fileHandle = lookup(path);
-
-    boolean eof = false;
-    long cookie = 0;
-    OpaqueData8 verifer = new OpaqueData8(0);
-    List<Path> paths = Lists.newArrayList();
-    Bitmap supportedAttrs = Attribute.getSupported();
-    supportedAttrs.clear(NFS4_FATTR4_TIME_ACCESS_SET);
-    supportedAttrs.clear(NFS4_FATTR4_TIME_MODIFY_SET);
-    while (!eof) {
-
-      CompoundRequest compoundRequest = newRequest();
-      List<OperationRequest> operations = Lists.newArrayList();
-      PUTFHRequest putFhRequest = new PUTFHRequest();
-      putFhRequest.setFileHandle(fileHandle);
-      operations.add(putFhRequest);
-
-
-      READDIRRequest readdirRequest = new READDIRRequest();
-      readdirRequest.setCookie(cookie);
-      readdirRequest.setCookieVerifer(verifer);
-      readdirRequest.setDirCount(1024);
-      readdirRequest.setMaxCount(8192);
-      readdirRequest.setAttrs(supportedAttrs);
-      operations.add(readdirRequest);
-
-
-      compoundRequest.setOperations(operations);
-      List<OperationResponse> operationResponses = getResult(compoundRequest);
-
-      getResponse(operationResponses.remove(0), PUTFHResponse.class);
-      READDIRResponse readDirResponse = getResponse(operationResponses.remove(0), READDIRResponse.class);
-      verifer = readDirResponse.getCookieVerifer();
-      eof = readDirResponse.getDirectoryList().isEOF();
-
-      for (DirectoryEntry entry : readDirResponse.getDirectoryList().getDirEntries()) {
-        assertEquals(entry.getAttrs(), entry.getAttrs());
-        Map<Integer, Attribute> attrs = entry.getAttrValues();
-        // ensure the attributes we are getting back are supported
-        for(Integer key : attrs.keySet()) {
-          Assert.assertTrue(String.valueOf(key), supportedAttrs.isSet(key));
-          Attribute attr = attrs.get(key);
-          Assert.assertTrue(String.valueOf(key), supportedAttrs.isSet(attr.getID()));
-        }
-        cookie = entry.getCookie();
-        paths.add(new Path(path, entry.getName()));
-      }
-    }
-    return ImmutableList.copyOf(paths);
-  }
-
-  protected GETATTRRequest newGETATTRRequest() {
-    GETATTRRequest getAttrRequest = new GETATTRRequest();
-    Bitmap requestAttrs = new Bitmap();
-    requestAttrs.set(NFS4_FATTR4_TYPE);
-    requestAttrs.set(NFS4_FATTR4_CHANGE);
-    requestAttrs.set(NFS4_FATTR4_SIZE);
-    requestAttrs.set(NFS4_FATTR4_FSID);
-    requestAttrs.set(NFS4_FATTR4_FILEID);
-    requestAttrs.set(NFS4_FATTR4_MODE);
-    requestAttrs.set(NFS4_FATTR4_OWNER);
-    requestAttrs.set(NFS4_FATTR4_OWNER_GROUP);
-    requestAttrs.set(NFS4_FATTR4_RAWDEV);
-    requestAttrs.set(NFS4_FATTR4_SPACE_USED);
-    requestAttrs.set(NFS4_FATTR4_TIME_ACCESS);
-    requestAttrs.set(NFS4_FATTR4_TIME_METADATA);
-    requestAttrs.set(NFS4_FATTR4_TIME_MODIFY);
-    getAttrRequest.setAttrs(requestAttrs);
-    return getAttrRequest;
-  }
-
-  protected CompoundRequest newRequest() {
-    CompoundRequest compoundRequest = new CompoundRequest();
-    compoundRequest.setCredentials(TestUtils.newCredentials());
-    return compoundRequest;
-  }
-
-  protected void setClientIDIfUnset() throws NFS4Exception {
-    if (this.clientID == 0) {
-      CompoundRequest compoundRequest = newRequest();
-      List<OperationRequest> operations = Lists.newArrayList();
-      SETCLIENTIDRequest setClientIDRequest = new SETCLIENTIDRequest();
-      setClientIDRequest.setCallbackIdent(0);
-      Callback callback = new Callback();
-      callback.setAddr("addr");
-      callback.setNetID("netid");
-      callback.setCallbackProgram(0);
-      setClientIDRequest.setCallback(callback);
-      ClientID clientID = new ClientID();
-      OpaqueData8 verifer = new OpaqueData8();
-      verifer.setData("aaaabbbb".getBytes());
-      clientID.setVerifer(verifer);
-      OpaqueData id = new OpaqueData(10);
-      id.setData("localhost".getBytes());
-      clientID.setOpaqueID(id);
-      setClientIDRequest.setClientID(clientID);
-      operations.add(setClientIDRequest);
-
-      compoundRequest.setOperations(operations);
-      List<OperationResponse> operationResponses = getResult(compoundRequest);
-      SETCLIENTIDResponse setClientIDResponse = getResponse(operationResponses.remove(0), SETCLIENTIDResponse.class);
-      doConfirmClientID(setClientIDResponse.getClientID(), setClientIDResponse.getVerifer());
-      this.clientID = setClientIDResponse.getClientID();
-      this.clientVerifer = setClientIDResponse.getVerifer();
-    }
-  }
 
   protected void doConfirmClientID(long clientID, OpaqueData8 verifer) throws NFS4Exception {
     CompoundRequest compoundRequest = newRequest();
@@ -346,6 +103,8 @@ public abstract class BaseClient {
     List<OperationResponse> operationResponses = getResult(compoundRequest);
     getResponse(operationResponses.remove(0), SETCLIENTIDCONFIRMResponse.class);
   }
+
+  protected abstract CompoundResponse doMakeRequest(CompoundRequest request) throws IOException;
 
   protected StateID doOpen(FileHandle parentFileHandle, String name,
       int access, int openType) throws NFS4Exception {
@@ -401,90 +160,6 @@ public abstract class BaseClient {
     return openConfirmresponse.getStateID();
   }
 
-  public OutputStream forWrite(final Path path) throws Exception {
-    setClientIDIfUnset();
-
-    final FileHandle parentFileHandle = checkNotNull(lookup(path.getParent()));
-    final StateID stateID = checkNotNull(doOpen(parentFileHandle, path.getName(),
-        NFS4_OPEN4_SHARE_ACCESS_WRITE, NFS4_OPEN4_CREATE));
-    final FileHandle fileHandle = checkNotNull(mPathFileHandleMap.get(path));
-
-    return new OutputStream() {
-
-      protected long fileOffset = 0L;
-
-      @Override
-      public void write(int b) throws IOException {
-        CompoundRequest compoundRequest = newRequest();
-        List<OperationRequest> operations = Lists.newArrayList();
-        PUTFHRequest putFhRequest = new PUTFHRequest();
-        putFhRequest.setFileHandle(fileHandle);
-        operations.add(putFhRequest);
-
-        WRITERequest writeRequest = new WRITERequest();
-        byte[] data = new byte[1];
-        data[0] = (byte) b;
-        writeRequest.setData(data, 0, data.length);
-        writeRequest.setOffset(fileOffset);
-        writeRequest.setStable(NFS4_COMMIT_UNSTABLE4);
-        writeRequest.setStateID(stateID);
-
-        operations.add(writeRequest);
-
-        compoundRequest.setOperations(operations);
-        List<OperationResponse> operationResponses;
-        try {
-          operationResponses = getResult(compoundRequest);
-        } catch (NFS4Exception e) {
-          throw new RuntimeException(e);
-        }
-        getResponse(operationResponses.remove(0), PUTFHResponse.class);
-
-        WRITEResponse writeResponse = getResponse(operationResponses.remove(0), WRITEResponse.class);
-        if (writeResponse.getCount() != data.length) {
-          throw new IOException("Write failed: " + writeResponse.getCount());
-        }
-        fileOffset++;
-      }
-
-      @Override
-      public void close() throws IOException {
-
-        CompoundRequest compoundRequest = newRequest();
-        List<OperationRequest> operations = Lists.newArrayList();
-        PUTFHRequest putFhRequest = new PUTFHRequest();
-        putFhRequest.setFileHandle(fileHandle);
-        operations.add(putFhRequest);
-
-        COMMITRequest commitRequest = new COMMITRequest();
-        commitRequest.setCount(0);
-        commitRequest.setOffset(0);
-        operations.add(commitRequest);
-
-        CLOSERequest closeRequest = new CLOSERequest();
-        closeRequest.setSeqID(stateID.getSeqID() + 1);
-        closeRequest.setStateID(stateID);
-        operations.add(closeRequest);
-
-        compoundRequest.setOperations(operations);
-        List<OperationResponse> operationResponses;
-        try {
-          operationResponses = getResult(compoundRequest);
-        } catch (NFS4Exception e) {
-          throw new RuntimeException(e);
-        }
-        getResponse(operationResponses.remove(0), PUTFHResponse.class);
-
-        getResponse(operationResponses.remove(0), COMMITResponse.class);
-
-        CLOSEResponse closeResponse = getResponse(operationResponses.remove(0), CLOSEResponse.class);
-
-
-        mFileHandleStateID.put(fileHandle, closeResponse.getStateID());
-      }
-    };
-  }
-
   public InputStream forRead(final Path path, final int readSize) throws Exception {
     setClientIDIfUnset();
 
@@ -503,6 +178,35 @@ public abstract class BaseClient {
       protected byte[] buffer = new byte[readSize];
       protected int bufferOffset;
       protected int bufferLength;
+
+      @Override
+      public void close() throws IOException {
+
+        CompoundRequest compoundRequest = newRequest();
+        List<OperationRequest> operations = Lists.newArrayList();
+        PUTFHRequest putFhRequest = new PUTFHRequest();
+        putFhRequest.setFileHandle(fileHandle);
+        operations.add(putFhRequest);
+
+        CLOSERequest closeRequest = new CLOSERequest();
+        closeRequest.setSeqID(stateID.getSeqID() + 1);
+        closeRequest.setStateID(stateID);
+        operations.add(closeRequest);
+
+        compoundRequest.setOperations(operations);
+        List<OperationResponse> operationResponses;
+        try {
+          operationResponses = getResult(compoundRequest);
+        } catch (NFS4Exception e) {
+          throw new RuntimeException(e);
+        }
+        getResponse(operationResponses.remove(0), PUTFHResponse.class);
+
+        CLOSEResponse closeResponse = getResponse(operationResponses.remove(0), CLOSEResponse.class);
+
+
+        mFileHandleStateID.put(fileHandle, closeResponse.getStateID());
+      }
 
       @Override
       public int read() throws IOException {
@@ -545,6 +249,20 @@ public abstract class BaseClient {
         System.arraycopy(data, readResponse.getStart(), buffer, bufferOffset, bufferLength);
         return read();
       }
+    };
+  }
+
+  public OutputStream forWrite(final Path path) throws Exception {
+    setClientIDIfUnset();
+
+    final FileHandle parentFileHandle = checkNotNull(lookup(path.getParent()));
+    final StateID stateID = checkNotNull(doOpen(parentFileHandle, path.getName(),
+        NFS4_OPEN4_SHARE_ACCESS_WRITE, NFS4_OPEN4_CREATE));
+    final FileHandle fileHandle = checkNotNull(mPathFileHandleMap.get(path));
+
+    return new OutputStream() {
+
+      protected long fileOffset = 0L;
 
       @Override
       public void close() throws IOException {
@@ -554,6 +272,11 @@ public abstract class BaseClient {
         PUTFHRequest putFhRequest = new PUTFHRequest();
         putFhRequest.setFileHandle(fileHandle);
         operations.add(putFhRequest);
+
+        COMMITRequest commitRequest = new COMMITRequest();
+        commitRequest.setCount(0);
+        commitRequest.setOffset(0);
+        operations.add(commitRequest);
 
         CLOSERequest closeRequest = new CLOSERequest();
         closeRequest.setSeqID(stateID.getSeqID() + 1);
@@ -569,10 +292,46 @@ public abstract class BaseClient {
         }
         getResponse(operationResponses.remove(0), PUTFHResponse.class);
 
+        getResponse(operationResponses.remove(0), COMMITResponse.class);
+
         CLOSEResponse closeResponse = getResponse(operationResponses.remove(0), CLOSEResponse.class);
 
 
         mFileHandleStateID.put(fileHandle, closeResponse.getStateID());
+      }
+
+      @Override
+      public void write(int b) throws IOException {
+        CompoundRequest compoundRequest = newRequest();
+        List<OperationRequest> operations = Lists.newArrayList();
+        PUTFHRequest putFhRequest = new PUTFHRequest();
+        putFhRequest.setFileHandle(fileHandle);
+        operations.add(putFhRequest);
+
+        WRITERequest writeRequest = new WRITERequest();
+        byte[] data = new byte[1];
+        data[0] = (byte) b;
+        writeRequest.setData(data, 0, data.length);
+        writeRequest.setOffset(fileOffset);
+        writeRequest.setStable(NFS4_COMMIT_UNSTABLE4);
+        writeRequest.setStateID(stateID);
+
+        operations.add(writeRequest);
+
+        compoundRequest.setOperations(operations);
+        List<OperationResponse> operationResponses;
+        try {
+          operationResponses = getResult(compoundRequest);
+        } catch (NFS4Exception e) {
+          throw new RuntimeException(e);
+        }
+        getResponse(operationResponses.remove(0), PUTFHResponse.class);
+
+        WRITEResponse writeResponse = getResponse(operationResponses.remove(0), WRITEResponse.class);
+        if (writeResponse.getCount() != data.length) {
+          throw new IOException("Write failed: " + writeResponse.getCount());
+        }
+        fileOffset++;
       }
     };
   }
@@ -604,5 +363,246 @@ public abstract class BaseClient {
 
   public FileStatus getFileStatus(Path path) throws NFS4Exception {
     return new FileStatus(path, getAttrs(path));
+  }
+
+  /**
+   * Makes request to server and converts response to a list of
+   * OperationResponses. Status information is checked and an assertion error
+   * is thrown if not OK.
+   *
+   * @param request
+   * @return CompoundResponse
+   */
+  protected List<OperationResponse> getResult(CompoundRequest request) throws NFS4Exception {
+    CompoundResponse response = makeRequest(request);
+    if (response.getStatus() != NFS4_OK) {
+      throw new NFS4Exception(response.getStatus());
+    }
+    assertEquals(request.getOperations().size(), response.getOperations().size());
+    response = serde(response);
+    assertEquals(request.getOperations().size(), response.getOperations().size());
+    return Lists.newArrayList(response.getOperations());
+  }
+
+  protected void initialize() throws NFS4Exception {
+    CompoundRequest compoundRequest = newRequest();
+    List<OperationRequest> operations = Lists.newArrayList();
+    operations.add(new PUTROOTFHRequest());
+    operations.add(new GETFHRequest());
+
+    compoundRequest.setOperations(operations);
+
+    List<OperationResponse> operationResponses = getResult(compoundRequest);
+
+    getResponse(operationResponses.remove(0), PUTROOTFHResponse.class);
+
+    GETFHResponse getFHResponse = getResponse(operationResponses.remove(0), GETFHResponse.class);
+    FileHandle fileHandle = getFHResponse.getFileHandle();
+    mPathFileHandleMap.put(ROOT, fileHandle);
+    mFileHandlePathMap.put(fileHandle, ROOT);
+    getAttrs(ROOT);
+  }
+
+  public ImmutableList<Path> listPath(Path path) throws NFS4Exception {
+
+    FileHandle fileHandle = lookup(path);
+
+    boolean eof = false;
+    long cookie = 0;
+    OpaqueData8 verifer = new OpaqueData8(0);
+    List<Path> paths = Lists.newArrayList();
+    Bitmap supportedAttrs = Attribute.getSupported();
+    supportedAttrs.clear(NFS4_FATTR4_TIME_ACCESS_SET);
+    supportedAttrs.clear(NFS4_FATTR4_TIME_MODIFY_SET);
+    while (!eof) {
+
+      CompoundRequest compoundRequest = newRequest();
+      List<OperationRequest> operations = Lists.newArrayList();
+      PUTFHRequest putFhRequest = new PUTFHRequest();
+      putFhRequest.setFileHandle(fileHandle);
+      operations.add(putFhRequest);
+
+
+      READDIRRequest readdirRequest = new READDIRRequest();
+      readdirRequest.setCookie(cookie);
+      readdirRequest.setCookieVerifer(verifer);
+      readdirRequest.setDirCount(1024);
+      readdirRequest.setMaxCount(8192);
+      readdirRequest.setAttrs(supportedAttrs);
+      operations.add(readdirRequest);
+
+
+      compoundRequest.setOperations(operations);
+      List<OperationResponse> operationResponses = getResult(compoundRequest);
+
+      getResponse(operationResponses.remove(0), PUTFHResponse.class);
+      READDIRResponse readDirResponse = getResponse(operationResponses.remove(0), READDIRResponse.class);
+      verifer = readDirResponse.getCookieVerifer();
+      eof = readDirResponse.getDirectoryList().isEOF();
+
+      for (DirectoryEntry entry : readDirResponse.getDirectoryList().getDirEntries()) {
+        assertEquals(entry.getAttrs(), entry.getAttrs());
+        Map<Integer, Attribute> attrs = entry.getAttrValues();
+        // ensure the attributes we are getting back are supported
+        for(Integer key : attrs.keySet()) {
+          Assert.assertTrue(String.valueOf(key), supportedAttrs.isSet(key));
+          Attribute attr = attrs.get(key);
+          Assert.assertTrue(String.valueOf(key), supportedAttrs.isSet(attr.getID()));
+        }
+        cookie = entry.getCookie();
+        paths.add(new Path(path, entry.getName()));
+      }
+    }
+    return ImmutableList.copyOf(paths);
+  }
+
+  protected FileHandle lookup(Path path) throws NFS4Exception {
+    Path parent;
+    LOGGER.info("Lookup on " + path);
+    if (path.equals(ROOT)) {
+      parent = path;
+    } else {
+      parent = path.getParent();
+    }
+    FileHandle parentFileHandle = mPathFileHandleMap.get(parent);
+    if (parentFileHandle == null) {
+      parentFileHandle = lookup(parent);
+    }
+
+    if (parent.equals(path)) {
+      return parentFileHandle;
+    }
+
+    CompoundRequest compoundRequest = newRequest();
+    List<OperationRequest> operations = Lists.newArrayList();
+    PUTFHRequest putFhRequest = new PUTFHRequest();
+    putFhRequest.setFileHandle(parentFileHandle);
+    operations.add(putFhRequest);
+    LOOKUPRequest lookupRequest = new LOOKUPRequest();
+    lookupRequest.setName(path.getName());
+    operations.add(lookupRequest);
+
+    operations.add(new GETFHRequest());
+    operations.add(newGETATTRRequest());
+
+    compoundRequest.setOperations(operations);
+
+    List<OperationResponse> operationResponses = getResult(compoundRequest);
+
+    getResponse(operationResponses.remove(0), PUTFHResponse.class);
+    getResponse(operationResponses.remove(0), LOOKUPResponse.class);
+    GETFHResponse getFHResponse = getResponse(operationResponses.remove(0), GETFHResponse.class);
+    FileHandle fileHandle = getFHResponse.getFileHandle();
+    mPathFileHandleMap.put(path, fileHandle);
+    mFileHandlePathMap.put(fileHandle, path);
+    GETATTRResponse getAttrResponse = getResponse(operationResponses.remove(0), GETATTRResponse.class);
+    mFileHandleAttributeMap.put(fileHandle, getAttrResponse.getAttrValues());
+    return fileHandle;
+  }
+
+  /**
+   * Makes request to server returning result without checking the status of
+   * the response.
+   *
+   * @param request
+   * @return CompoundResponse
+   */
+  protected CompoundResponse makeRequest(CompoundRequest request) {
+    request = serde(request);
+    CompoundResponse response;
+    try {
+      response = doMakeRequest(request);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return serde(response);
+  }
+
+  protected GETATTRRequest newGETATTRRequest() {
+    GETATTRRequest getAttrRequest = new GETATTRRequest();
+    Bitmap requestAttrs = new Bitmap();
+    requestAttrs.set(NFS4_FATTR4_TYPE);
+    requestAttrs.set(NFS4_FATTR4_CHANGE);
+    requestAttrs.set(NFS4_FATTR4_SIZE);
+    requestAttrs.set(NFS4_FATTR4_FSID);
+    requestAttrs.set(NFS4_FATTR4_FILEID);
+    requestAttrs.set(NFS4_FATTR4_MODE);
+    requestAttrs.set(NFS4_FATTR4_OWNER);
+    requestAttrs.set(NFS4_FATTR4_OWNER_GROUP);
+    requestAttrs.set(NFS4_FATTR4_RAWDEV);
+    requestAttrs.set(NFS4_FATTR4_SPACE_USED);
+    requestAttrs.set(NFS4_FATTR4_TIME_ACCESS);
+    requestAttrs.set(NFS4_FATTR4_TIME_METADATA);
+    requestAttrs.set(NFS4_FATTR4_TIME_MODIFY);
+    getAttrRequest.setAttrs(requestAttrs);
+    return getAttrRequest;
+  }
+
+  protected CompoundRequest newRequest() {
+    CompoundRequest compoundRequest = new CompoundRequest();
+    compoundRequest.setCredentials(TestUtils.newCredentials());
+    return compoundRequest;
+  }
+
+  /**
+   * Copies the message to byes and reads it back in again. Should execute
+   * both serialization and deserialization code.
+   *
+   * @param message
+   * @return message
+   */
+  @SuppressWarnings("unchecked")
+  protected <T extends MessageBase> T serde(T message) {
+    RPCBuffer buffer = new RPCBuffer();
+    message.write(buffer);
+    buffer.flip();
+    try {
+      MessageBase result = message.getClass().newInstance();      
+      result.read(buffer);
+      if(result instanceof RequiresCredentials) {
+        RequiresCredentials requiresCredentials = (RequiresCredentials)result;
+        requiresCredentials.setCredentials(((RequiresCredentials)message).getCredentials());
+      }
+      //TestUtils.deepEquals(message, result);
+      return (T)result;
+    } catch (RuntimeException x) {
+      LOGGER.warn("Error reading buffer: " + LogUtils.dump(message), x);
+      throw x;
+    } catch (Exception x) {
+      throw Throwables.propagate(x);
+    }
+  }
+
+  protected void setClientIDIfUnset() throws NFS4Exception {
+    if (this.clientID == 0) {
+      CompoundRequest compoundRequest = newRequest();
+      List<OperationRequest> operations = Lists.newArrayList();
+      SETCLIENTIDRequest setClientIDRequest = new SETCLIENTIDRequest();
+      setClientIDRequest.setCallbackIdent(0);
+      Callback callback = new Callback();
+      callback.setAddr("addr");
+      callback.setNetID("netid");
+      callback.setCallbackProgram(0);
+      setClientIDRequest.setCallback(callback);
+      ClientID clientID = new ClientID();
+      OpaqueData8 verifer = new OpaqueData8();
+      verifer.setData("aaaabbbb".getBytes());
+      clientID.setVerifer(verifer);
+      OpaqueData id = new OpaqueData(10);
+      id.setData("localhost".getBytes());
+      clientID.setOpaqueID(id);
+      setClientIDRequest.setClientID(clientID);
+      operations.add(setClientIDRequest);
+
+      compoundRequest.setOperations(operations);
+      List<OperationResponse> operationResponses = getResult(compoundRequest);
+      SETCLIENTIDResponse setClientIDResponse = getResponse(operationResponses.remove(0), SETCLIENTIDResponse.class);
+      doConfirmClientID(setClientIDResponse.getClientID(), setClientIDResponse.getVerifer());
+      this.clientID = setClientIDResponse.getClientID();
+      this.clientVerifer = setClientIDResponse.getVerifer();
+    }
+  }
+
+  public void shutdown() {
   }
 }

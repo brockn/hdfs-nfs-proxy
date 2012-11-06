@@ -67,22 +67,28 @@ public class TestREADDIRHandler extends TestBaseHandler {
   }
 
   @Test
-  public void testDirDoesNotExist() throws Exception {
-    when(fs.getFileStatus(dir)).thenReturn(notdir);
+  public void testBadCookie() throws Exception {
+    request.setCookie(Long.MAX_VALUE);
     READDIRResponse response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_NOTDIR, response.getStatus());
+    assertEquals(NFS4ERR_BAD_COOKIE, response.getStatus());
   }
   @Test
-  public void testMessageSizeTooSmall() throws Exception {
-    request.setMaxCount(0);
+  public void testBadCookieHigh() throws Exception {
+    request.setCookie(Long.MAX_VALUE);
     READDIRResponse response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_TOOSMALL, response.getStatus());
+    assertEquals(NFS4ERR_BAD_COOKIE, response.getStatus());
   }
   @Test
-  public void testListReturnsNull() throws Exception {
-    when(fs.listStatus(dir)).thenReturn(null);
+  public void testBadCookieLow() throws Exception {
+    request.setCookie(99);
     READDIRResponse response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4_OK, response.getStatus());
+    assertEquals(NFS4ERR_BAD_COOKIE, response.getStatus());
+  }
+  @Test
+  public void testBadVerifer() throws Exception {
+    request.setCookieVerifer(new OpaqueData8(99));
+    READDIRResponse response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_NOT_SAME, response.getStatus());
   }
   @Test
   public void testBasicList() throws Exception {
@@ -96,28 +102,10 @@ public class TestREADDIRHandler extends TestBaseHandler {
     assertEquals("3", entries.get(3).getName());
   }
   @Test
-  public void testBadVerifer() throws Exception {
-    request.setCookieVerifer(new OpaqueData8(99));
+  public void testDirDoesNotExist() throws Exception {
+    when(fs.getFileStatus(dir)).thenReturn(notdir);
     READDIRResponse response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_NOT_SAME, response.getStatus());
-  }
-  @Test
-  public void testBadCookie() throws Exception {
-    request.setCookie(Long.MAX_VALUE);
-    READDIRResponse response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_BAD_COOKIE, response.getStatus());
-  }
-  @Test
-  public void testBadCookieLow() throws Exception {
-    request.setCookie(99);
-    READDIRResponse response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_BAD_COOKIE, response.getStatus());
-  }
-  @Test
-  public void testBadCookieHigh() throws Exception {
-    request.setCookie(Long.MAX_VALUE);
-    READDIRResponse response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_BAD_COOKIE, response.getStatus());
+    assertEquals(NFS4ERR_NOTDIR, response.getStatus());
   }
   @Test
   public void testListRequiringMultipleRequests() throws Exception {
@@ -148,5 +136,17 @@ public class TestREADDIRHandler extends TestBaseHandler {
     for (int index = 0; index < stati.length; index++) {
       assertEquals(stati[index].getPath().getName(), entries.get(index).getName());
     }
+  }
+  @Test
+  public void testListReturnsNull() throws Exception {
+    when(fs.listStatus(dir)).thenReturn(null);
+    READDIRResponse response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4_OK, response.getStatus());
+  }
+  @Test
+  public void testMessageSizeTooSmall() throws Exception {
+    request.setMaxCount(0);
+    READDIRResponse response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_TOOSMALL, response.getStatus());
   }
 }

@@ -24,6 +24,7 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.hadoop.util.Shell;
@@ -32,16 +33,17 @@ import org.apache.hadoop.util.Shell;
  * Implementing classes need to map RPC UID's to String usernames
  * and String usernames to UIDs. Same for group information.
  */
-public abstract class UserIDMapper {
+public abstract class UserIDMapper implements Configurable {
 
-  public abstract int getGIDForGroup(Configuration conf, String user, int defaultGID) throws Exception;
-  public abstract int getUIDForUser(Configuration conf, String user, int defaultUID) throws Exception;
-
-  public abstract String getGroupForGID(Configuration conf, int gid, String defaultGroup) throws Exception;
-  public abstract String getUserForUID(Configuration conf, int gid, String defaultUser) throws Exception;
-
+  private Configuration mConfiguration;
+  public void setConf(Configuration conf) {
+    mConfiguration = conf;
+  }
+  public Configuration getConf() {
+    return mConfiguration;
+  }
+  
   protected static final Map<Class<?>, UserIDMapper> classUserIdMapperMap = new HashMap<Class<?>, UserIDMapper>();
-
   public static synchronized UserIDMapper get(Configuration conf) {
     boolean cache = conf.getBoolean(USER_ID_MAPPER_CACHE, true);
     Class<?> clazz = conf.getClass(USER_ID_MAPPER_CLASS, UserIDMapperSystem.class, UserIDMapper.class);
@@ -56,7 +58,6 @@ public abstract class UserIDMapper {
     return (UserIDMapper)ReflectionUtils.newInstance(clazz, conf);
   }
 
-  
   /**
    * @return String username associated with the current process
    */
@@ -71,4 +72,12 @@ public abstract class UserIDMapper {
     }
     return user;
   }
+  public abstract int getGIDForGroup(String user, int defaultGID) throws Exception;
+
+  public abstract String getGroupForGID(int gid, String defaultGroup) throws Exception;
+
+  public abstract int getUIDForUser(String user, int defaultUID) throws Exception;
+
+  
+  public abstract String getUserForUID(int gid, String defaultUser) throws Exception;
 }

@@ -42,6 +42,28 @@ public class HDFSOutputStream extends OutputStream {
     this.lastOperation = 0L;
   }
   @Override
+  public void close() throws IOException {
+    outputStream.close();
+  }
+  public FileHandle getFileHandle() {
+    return fileHandle;
+  }
+  public long getLastOperation() {
+    return lastOperation;
+  }
+  public long getPos()  {
+    return position;
+  }
+  public void sync() throws IOException {
+    lastOperation = System.currentTimeMillis();
+    outputStream.sync();
+  }
+  @Override
+  public String toString() {
+    return "HDFSOutputStream [outputStream=" + outputStream + ", filename="
+        + filename + ", position=" + position + "]";
+  }
+  @Override
   public void write(byte b[]) throws IOException {
     write(b, 0, b.length);
   }
@@ -56,27 +78,5 @@ public class HDFSOutputStream extends OutputStream {
     outputStream.write(b);
     position++;
     lastOperation = System.currentTimeMillis();
-  }
-  public long getPos()  {
-    return position;
-  }
-  public long getLastOperation() {
-    return lastOperation;
-  }
-  public FileHandle getFileHandle() {
-    return fileHandle;
-  }
-  public void sync() throws IOException {
-    lastOperation = System.currentTimeMillis();
-    outputStream.sync();
-  }
-  @Override
-  public String toString() {
-    return "HDFSOutputStream [outputStream=" + outputStream + ", filename="
-        + filename + ", position=" + position + "]";
-  }
-  @Override
-  public void close() throws IOException {
-    outputStream.close();
   }
 }

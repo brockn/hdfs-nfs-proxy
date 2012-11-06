@@ -41,6 +41,11 @@ public class REMOVEHandler extends OperationRequestHandler<REMOVERequest, REMOVE
   protected static final Logger LOGGER = Logger.getLogger(REMOVEHandler.class);
 
   @Override
+  protected REMOVEResponse createResponse() {
+    return new REMOVEResponse();
+  }
+
+  @Override
   protected REMOVEResponse doHandle(HDFSState hdfsState, Session session,
       REMOVERequest request) throws NFS4Exception, IOException {
     if (session.getCurrentFileHandle() == null) {
@@ -80,10 +85,5 @@ public class REMOVEHandler extends OperationRequestHandler<REMOVERequest, REMOVE
     response.setChangeInfo(changeInfo);
     response.setStatus(NFS4_OK);
     return response;
-  }
-
-  @Override
-  protected REMOVEResponse createResponse() {
-    return new REMOVEResponse();
   }
 }

@@ -25,19 +25,12 @@ import java.util.Arrays;
 
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class FileHandle extends Attribute {
+  protected byte[] mFileHandle;
   public FileHandle() {
     super();
   }
-  protected byte[] mFileHandle;
-  @Override
-  public void read(RPCBuffer buffer) {
-    mFileHandle = buffer.readBytes();
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint32(mFileHandle.length);
-    buffer.writeBytes(mFileHandle);
+  public byte[] getFileHandle() {
+    return Arrays.copyOf(mFileHandle, mFileHandle.length);
   }
 
   @Override
@@ -45,12 +38,19 @@ public class FileHandle extends Attribute {
     return NFS4_FATTR4_FILEHANDLE;
   }
 
-  public byte[] getFileHandle() {
-    return Arrays.copyOf(mFileHandle, mFileHandle.length);
+  @Override
+  public void read(RPCBuffer buffer) {
+    mFileHandle = buffer.readBytes();
   }
 
   public void set(byte[] fileHandle) {
     this.mFileHandle =  Arrays.copyOf(fileHandle, fileHandle.length);
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeUint32(mFileHandle.length);
+    buffer.writeBytes(mFileHandle);
   }
 
 }

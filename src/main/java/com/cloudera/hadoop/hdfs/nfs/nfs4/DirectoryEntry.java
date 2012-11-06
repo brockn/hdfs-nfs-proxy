@@ -36,28 +36,8 @@ public class DirectoryEntry implements MessageBase {
   protected Bitmap mAttrs;
   protected ImmutableList<Attribute> mAttrValues;
 
-  @Override
-  public void read(RPCBuffer buffer) {
-    mCookie = buffer.readUint64();
-    mName = buffer.readString();
-    Pair<Bitmap, ImmutableList<Attribute>> pair = Attribute.readAttrs(buffer);
-    mAttrs = pair.getFirst();
-    mAttrValues = pair.getSecond();
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint64(mCookie);
-    buffer.writeString(mName);
-    Attribute.writeAttrs(buffer, mAttrs, mAttrValues);
-  }
-
   public Bitmap getAttrs() {
     return mAttrs;
-  }
-
-  public void setAttrs(Bitmap attrs) {
-    this.mAttrs = attrs;
   }
 
   public ImmutableMap<Integer, Attribute> getAttrValues() {
@@ -68,23 +48,43 @@ public class DirectoryEntry implements MessageBase {
     return ImmutableMap.copyOf(rtn);
   }
 
-  public void setAttrValues(List<Attribute> attributes) {
-    this.mAttrValues = ImmutableList.copyOf(attributes);
-  }
-
   public long getCookie() {
     return mCookie;
-  }
-
-  public void setCookie(long cookie) {
-    this.mCookie = cookie;
   }
 
   public String getName() {
     return mName;
   }
 
+  @Override
+  public void read(RPCBuffer buffer) {
+    mCookie = buffer.readUint64();
+    mName = buffer.readString();
+    Pair<Bitmap, ImmutableList<Attribute>> pair = Attribute.readAttrs(buffer);
+    mAttrs = pair.getFirst();
+    mAttrValues = pair.getSecond();
+  }
+
+  public void setAttrs(Bitmap attrs) {
+    this.mAttrs = attrs;
+  }
+
+  public void setAttrValues(List<Attribute> attributes) {
+    this.mAttrValues = ImmutableList.copyOf(attributes);
+  }
+
+  public void setCookie(long cookie) {
+    this.mCookie = cookie;
+  }
+
   public void setName(String name) {
     this.mName = name;
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeUint64(mCookie);
+    buffer.writeString(mName);
+    Attribute.writeAttrs(buffer, mAttrs, mAttrValues);
   }
 }

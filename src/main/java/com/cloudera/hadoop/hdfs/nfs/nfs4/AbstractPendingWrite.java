@@ -21,41 +21,6 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
 abstract class AbstractPendingWrite implements PendingWrite {
 
-  private final String name;
-  private final int xid;
-  private final long offset;
-  private final boolean sync;
-
-  public AbstractPendingWrite(String name, int xid, long offset, boolean sync) {
-    this.name = name;
-    this.xid = xid;
-    this.offset = offset;
-    this.sync = sync;
-  }
-  @Override
-  public String getName() {
-    return name;
-  }
-  @Override
-  public String getXidAsHexString() {
-    return Integer.toHexString(xid);
-  }
-  @Override
-  public int getXid() {
-    return xid;
-  }
-  @Override
-  public long getOffset() {
-    return offset;
-  }
-  @Override
-  public boolean isSync() {
-    return sync;
-  }
-  @Override
-  public void close() {
-    
-  }
   protected static int getHashCode(long offset, byte[] data, int start, int length) {
     final int prime = 31;
     int result = 1;
@@ -69,6 +34,41 @@ abstract class AbstractPendingWrite implements PendingWrite {
       hash = (31 * hash) + bytes[i];
     }
     return hash;
+  }
+  private final String name;
+  private final int xid;
+
+  private final long offset;
+  private final boolean sync;
+  public AbstractPendingWrite(String name, int xid, long offset, boolean sync) {
+    this.name = name;
+    this.xid = xid;
+    this.offset = offset;
+    this.sync = sync;
+  }
+  @Override
+  public void close() {
+    
+  }
+  @Override
+  public String getName() {
+    return name;
+  }
+  @Override
+  public long getOffset() {
+    return offset;
+  }
+  @Override
+  public int getXid() {
+    return xid;
+  }
+  @Override
+  public String getXidAsHexString() {
+    return Integer.toHexString(xid);
+  }
+  @Override
+  public boolean isSync() {
+    return sync;
   }
 
 }

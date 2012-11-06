@@ -40,18 +40,6 @@ public class OpenResource<T extends Closeable> implements Closeable {
     mTimestamp = System.currentTimeMillis();
   }
 
-  public void setSequenceID(int seqID) {
-    mStateID.setSeqID(seqID);
-  }
-
-  public boolean isOwnedBy(StateID stateID) {
-    return mStateID.equals(stateID);
-  }
-
-  public T get() {
-    return mResource;
-  }
-
   @Override
   public void close() throws IOException {
     if (mResource != null) {
@@ -61,23 +49,35 @@ public class OpenResource<T extends Closeable> implements Closeable {
     }
   }
 
-  public boolean isConfirmed() {
-    return mConfirmed;
+  public T get() {
+    return mResource;
   }
 
-  public void setConfirmed(boolean confirmed) {
-    mConfirmed = confirmed;
+  public StateID getStateID() {
+    return mStateID;
   }
 
   public long getTimestamp() {
     return mTimestamp;
   }
 
-  public void setTimestamp(long timestamp) {
-    this.mTimestamp = timestamp;
+  public boolean isConfirmed() {
+    return mConfirmed;
   }
 
-  public StateID getStateID() {
-    return mStateID;
+  public boolean isOwnedBy(StateID stateID) {
+    return mStateID.equals(stateID);
+  }
+
+  public void setConfirmed(boolean confirmed) {
+    mConfirmed = confirmed;
+  }
+
+  public void setSequenceID(int seqID) {
+    mStateID.setSeqID(seqID);
+  }
+
+  public void setTimestamp(long timestamp) {
+    this.mTimestamp = timestamp;
   }
 }

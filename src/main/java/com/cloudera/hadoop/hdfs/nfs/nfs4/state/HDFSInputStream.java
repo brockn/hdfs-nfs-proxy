@@ -29,6 +29,18 @@ public class HDFSInputStream extends InputStream {
     this.in = in;
   }
   @Override
+  public void close() throws IOException {
+    in.close();
+  }
+  public FSDataInputStream getFSDataInputStream() {
+    return in;
+  }
+
+  public long getPos() throws IOException {
+    return in.getPos();
+  }
+
+  @Override
   public int read() throws IOException {
     return in.read();
   }
@@ -36,19 +48,7 @@ public class HDFSInputStream extends InputStream {
   public int read(byte[] buffer) throws IOException {
     return in.read(buffer);
   }
-
   public void seek(long desired) throws IOException {
     in.seek(desired);
-  }
-
-  public long getPos() throws IOException {
-    return in.getPos();
-  }
-  public FSDataInputStream getFSDataInputStream() {
-    return in;
-  }
-  @Override
-  public void close() throws IOException {
-    in.close();
   }
 }

@@ -23,18 +23,12 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class FHExpireType extends Attribute {
+  protected int mExpireType;
   public FHExpireType() {
     super();
   }
-  protected int mExpireType;
-  @Override
-  public void read(RPCBuffer buffer) {
-    mExpireType = buffer.readUint32();
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint32(mExpireType);
+  public int getExpireType() {
+    return mExpireType;
   }
 
   @Override
@@ -42,12 +36,18 @@ public class FHExpireType extends Attribute {
     return NFS4_FATTR4_FH_EXPIRE_TYPE;
   }
 
-  public int getExpireType() {
-    return mExpireType;
+  @Override
+  public void read(RPCBuffer buffer) {
+    mExpireType = buffer.readUint32();
   }
 
   public void setExpireType(int expireType) {
     this.mExpireType = expireType;
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeUint32(mExpireType);
   }
 
 }

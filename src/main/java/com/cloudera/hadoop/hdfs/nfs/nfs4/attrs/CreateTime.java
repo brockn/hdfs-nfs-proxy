@@ -27,18 +27,6 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class CreateTime extends Attribute {
   protected Time mTime;
   @Override
-  public void read(RPCBuffer buffer) {
-    mTime = new Time();
-    mTime.read(buffer);
-
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    mTime.write(buffer);
-  }
-
-  @Override
   public int getID() {
     return NFS4_FATTR4_TIME_CREATE;
   }
@@ -47,7 +35,19 @@ public class CreateTime extends Attribute {
     return mTime;
   }
 
+  @Override
+  public void read(RPCBuffer buffer) {
+    mTime = new Time();
+    mTime.read(buffer);
+
+  }
+
   public void setTime(Time time) {
     this.mTime = time;
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    mTime.write(buffer);
   }
 }

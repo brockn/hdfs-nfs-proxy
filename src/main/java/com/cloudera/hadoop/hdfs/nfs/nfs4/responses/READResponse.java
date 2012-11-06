@@ -33,6 +33,30 @@ public class READResponse extends OperationResponse implements Status {
   protected int mStart;
   protected int mLength;
 
+  public byte[] getData() {
+    return mData;
+  }
+
+  @Override
+  public int getID() {
+    return NFS4_OP_READ;
+  }
+  public int getLength() {
+    return mLength;
+  }
+
+  public int getStart() {
+    return mStart;
+  }
+
+  @Override
+  public int getStatus() {
+    return mStatus;
+  }
+
+  public boolean isEOF() {
+    return mEOF;
+  }
   @Override
   public void read(RPCBuffer buffer) {
     reset();
@@ -44,9 +68,22 @@ public class READResponse extends OperationResponse implements Status {
       mLength = mData.length;
     }
   }
-
   protected void reset() {
     mData = null;
+  }
+
+  public void setData(byte[] data, int start, int length) {
+    this.mData = data;
+    this.mStart = start;
+    this.mLength = length;
+  }
+
+  public void setEOF(boolean EOF) {
+    this.mEOF = EOF;
+  }
+  @Override
+  public void setStatus(int status) {
+    this.mStatus = status;
   }
   @Override
   public void write(RPCBuffer buffer) {
@@ -56,42 +93,5 @@ public class READResponse extends OperationResponse implements Status {
       buffer.writeUint32(mLength);
       buffer.writeBytes(mData, mStart, mLength);
     }
-  }
-
-  public boolean isEOF() {
-    return mEOF;
-  }
-
-  public void setEOF(boolean EOF) {
-    this.mEOF = EOF;
-  }
-
-  public int getStart() {
-    return mStart;
-  }
-  public int getLength() {
-    return mLength;
-  }
-  public byte[] getData() {
-    return mData;
-  }
-
-  public void setData(byte[] data, int start, int length) {
-    this.mData = data;
-    this.mStart = start;
-    this.mLength = length;
-  }
-
-  @Override
-  public int getStatus() {
-    return mStatus;
-  }
-  @Override
-  public void setStatus(int status) {
-    this.mStatus = status;
-  }
-  @Override
-  public int getID() {
-    return NFS4_OP_READ;
   }
 }

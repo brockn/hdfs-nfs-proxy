@@ -37,6 +37,11 @@ public class SETCLIENTIDCONFIRMHandler extends OperationRequestHandler<SETCLIENT
   protected static final Logger LOGGER = Logger.getLogger(SETCLIENTIDCONFIRMHandler.class);
 
   @Override
+  protected SETCLIENTIDCONFIRMResponse createResponse() {
+    return new SETCLIENTIDCONFIRMResponse();
+  }
+
+  @Override
   protected SETCLIENTIDCONFIRMResponse doHandle(HDFSState hdfsState, Session session,
       SETCLIENTIDCONFIRMRequest request) throws NFS4Exception {
     /*
@@ -54,10 +59,5 @@ public class SETCLIENTIDCONFIRMHandler extends OperationRequestHandler<SETCLIENT
     SETCLIENTIDCONFIRMResponse response = createResponse();
     response.setStatus(NFS4_OK);
     return response;
-  }
-
-  @Override
-  protected SETCLIENTIDCONFIRMResponse createResponse() {
-    return new SETCLIENTIDCONFIRMResponse();
   }
 }

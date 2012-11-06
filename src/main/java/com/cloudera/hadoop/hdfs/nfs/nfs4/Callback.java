@@ -26,6 +26,18 @@ public class Callback implements MessageBase {
   protected String mNetID;
   protected String mAddr;
 
+  public String getAddr() {
+    return mAddr;
+  }
+
+  public int getCallbackProgram() {
+    return mCallbackProgram;
+  }
+
+  public String getNetID() {
+    return mNetID;
+  }
+
   @Override
   public void read(RPCBuffer buffer) {
     mCallbackProgram = buffer.readUint32();
@@ -33,34 +45,22 @@ public class Callback implements MessageBase {
     mAddr = buffer.readString();
   }
 
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint32(mCallbackProgram);
-    buffer.writeString(mNetID);
-    buffer.writeString(mAddr);
-  }
-
-  public int getCallbackProgram() {
-    return mCallbackProgram;
+  public void setAddr(String addr) {
+    this.mAddr = addr;
   }
 
   public void setCallbackProgram(int program) {
     this.mCallbackProgram = program;
   }
 
-  public String getNetID() {
-    return mNetID;
-  }
-
   public void setNetID(String netID) {
     this.mNetID = netID;
   }
 
-  public String getAddr() {
-    return mAddr;
-  }
-
-  public void setAddr(String addr) {
-    this.mAddr = addr;
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeUint32(mCallbackProgram);
+    buffer.writeString(mNetID);
+    buffer.writeString(mAddr);
   }
 }

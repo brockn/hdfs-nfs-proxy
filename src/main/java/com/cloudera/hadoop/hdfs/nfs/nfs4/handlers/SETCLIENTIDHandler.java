@@ -43,6 +43,11 @@ public class SETCLIENTIDHandler extends OperationRequestHandler<SETCLIENTIDReque
   protected static final AtomicLong VERIFER = new AtomicLong(0);
 
   @Override
+  protected SETCLIENTIDResponse createResponse() {
+    return new SETCLIENTIDResponse();
+  }
+
+  @Override
   protected SETCLIENTIDResponse doHandle(HDFSState hdfsState, Session session,
       SETCLIENTIDRequest request) throws NFS4Exception {
     /*
@@ -73,10 +78,5 @@ public class SETCLIENTIDHandler extends OperationRequestHandler<SETCLIENTIDReque
     response.setVerifer(verifer);
     response.setStatus(NFS4_OK);
     return response;
-  }
-
-  @Override
-  protected SETCLIENTIDResponse createResponse() {
-    return new SETCLIENTIDResponse();
   }
 }

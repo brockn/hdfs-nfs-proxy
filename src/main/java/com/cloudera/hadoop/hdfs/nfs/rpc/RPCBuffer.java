@@ -148,6 +148,17 @@ public class RPCBuffer {
     mBuffer = ByteBuffer.allocate(Math.max(size, DEFAULT_BUFFER_SIZE));
   }
 
+  /**
+   * XDR RFC requires we write data aligned by a unit size. This method aligns
+   * the current buffer to that unit size.
+   */
+  void align() {
+    int remainder = mBuffer.position() % XDR_UNIT_SIZE;
+    if (remainder > 0) {
+      mBuffer.put(new byte[XDR_UNIT_SIZE - remainder]);
+    }
+  }
+
   protected void ensureCapacity(int length) {
     if (mBuffer.position() + length > mBuffer.capacity()) {
       length = Math.max(length * 2, DEFAULT_BUFFER_SIZE) + mBuffer.capacity();
@@ -158,12 +169,20 @@ public class RPCBuffer {
     }
   }
 
-  public void skip(int length) {
-    writeBytes(new byte[length]);
+  public void flip() {
+    mBuffer.flip();
   }
 
   public int length() {
     return mBuffer.limit();
+  }
+
+  public int limit() {
+    return mBuffer.limit();
+  }
+
+  public int position() {
+    return mBuffer.position();
   }
 
   public void putInt(int index, int value) {
@@ -225,7 +244,7 @@ public class RPCBuffer {
     }
     return s;
   }
-
+  
   public int readUint32() {
     int i = readInt();
     if (i < 0) {
@@ -242,23 +261,8 @@ public class RPCBuffer {
     return l;
   }
 
-  public int position() {
-    return mBuffer.position();
-  }
-  
-  public int limit() {
-    return mBuffer.limit();
-  }
-
-  /**
-   * XDR RFC requires we write data aligned by a unit size. This method aligns
-   * the current buffer to that unit size.
-   */
-  void align() {
-    int remainder = mBuffer.position() % XDR_UNIT_SIZE;
-    if (remainder > 0) {
-      mBuffer.put(new byte[XDR_UNIT_SIZE - remainder]);
-    }
+  public void skip(int length) {
+    writeBytes(new byte[length]);
   }
 
   /**
@@ -303,12 +307,17 @@ public class RPCBuffer {
     align();
   }
 
+  public void writeRPCBUffer(RPCBuffer buffer) {
+    int length = buffer.length();
+    byte[] bytes = buffer.readBytes(length);
+    writeBytes(bytes);
+  }
+
   public void writeString(String s) {
     byte[] bytes = s.getBytes(Charsets.UTF_8);
     writeInt(bytes.length);
     writeBytes(bytes);
   }
-
   public void writeUint32(int i) {
     if (i < 0) {
       throw new NumberFormatException("Unsigned rolled over " + Long.toBinaryString(i));
@@ -316,20 +325,11 @@ public class RPCBuffer {
     writeInt(i);
   }
 
+
   public void writeUint64(long l) {
     if (l < 0) {
       throw new NumberFormatException("Unsigned rolled over " + l + ", binary = " + Long.toBinaryString(l));
     }
     writeLong(l);
-  }
-  public void writeRPCBUffer(RPCBuffer buffer) {
-    int length = buffer.length();
-    byte[] bytes = buffer.readBytes(length);
-    writeBytes(bytes);
-  }
-
-
-  public void flip() {
-    mBuffer.flip();
   }
 }

@@ -67,6 +67,17 @@ public class TestHDFSFile {
     hdfsFile.toString();
   }
   @Test
+  public void testInputStream() throws Exception {
+    hdfsFile.putInputStream(stateID, in);
+    Assert.assertSame(in, hdfsFile.getInputStream(stateID).get());
+    Assert.assertTrue(hdfsFile.isOpen());
+    Assert.assertTrue(hdfsFile.isOpenForRead());
+    Assert.assertFalse(hdfsFile.isOpenForWrite());
+    hdfsFile.closeInputStream(stateID);
+    verify(in).close();
+  }
+  
+  @Test
   public void testIsOpen() throws Exception {
     Assert.assertFalse(hdfsFile.isOpen());
     Assert.assertFalse(hdfsFile.isOpenForRead());
@@ -83,17 +94,6 @@ public class TestHDFSFile {
     Assert.assertFalse(hdfsFile.isOpenForRead());
     hdfsFile.closeOutputStream(stateID);
     verify(out).close();
-  }
-  
-  @Test
-  public void testInputStream() throws Exception {
-    hdfsFile.putInputStream(stateID, in);
-    Assert.assertSame(in, hdfsFile.getInputStream(stateID).get());
-    Assert.assertTrue(hdfsFile.isOpen());
-    Assert.assertTrue(hdfsFile.isOpenForRead());
-    Assert.assertFalse(hdfsFile.isOpenForWrite());
-    hdfsFile.closeInputStream(stateID);
-    verify(in).close();
   }
   
   @Test

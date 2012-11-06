@@ -43,6 +43,11 @@ public class OPENHandler extends OperationRequestHandler<OPENRequest, OPENRespon
   protected static final Logger LOGGER = Logger.getLogger(OPENHandler.class);
 
   @Override
+  protected OPENResponse createResponse() {
+    return new OPENResponse();
+  }
+
+  @Override
   protected OPENResponse doHandle(HDFSState hdfsState, Session session,
       OPENRequest request) throws NFS4Exception, IOException, UnsupportedOperationException {
     if (session.getCurrentFileHandle() == null) {
@@ -122,10 +127,5 @@ public class OPENHandler extends OperationRequestHandler<OPENRequest, OPENRespon
     response.setDelgationType(NFS4_CLAIM_NULL);
     response.setStatus(NFS4_OK);
     return response;
-  }
-
-  @Override
-  protected OPENResponse createResponse() {
-    return new OPENResponse();
   }
 }

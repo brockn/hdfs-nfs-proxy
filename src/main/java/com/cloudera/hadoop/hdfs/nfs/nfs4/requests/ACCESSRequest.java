@@ -25,14 +25,8 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
 public class ACCESSRequest extends OperationRequest {
   protected int mAccess;
-  @Override
-  public void read(RPCBuffer buffer) {
-    mAccess = buffer.readUint32();
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint32(mAccess);
+  public int getAccess() {
+    return mAccess;
   }
 
   @Override
@@ -40,12 +34,18 @@ public class ACCESSRequest extends OperationRequest {
     return NFS4_OP_ACCESS;
   }
 
-  public int getAccess() {
-    return mAccess;
+  @Override
+  public void read(RPCBuffer buffer) {
+    mAccess = buffer.readUint32();
   }
 
   public void setAccess(int access) {
     this.mAccess = access;
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeUint32(mAccess);
   }
 
 

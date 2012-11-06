@@ -79,125 +79,48 @@ public class Bytes {
   // SizeOf which uses java.lang.instrument says 24 bytes. (3 longs?)
   public static final int ESTIMATED_HEAP_TAX = 16;
 
+  private static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
+
   /**
-   * Convert a long value to a byte array using big-endian.
-   *
-   * @param val value to convert
-   * @return the byte array
+   * @param a lower half
+   * @param b upper half
+   * @return New array that has a in lower half and b in upper half.
    */
-  public static byte[] toBytes(long val) {
-    byte [] b = new byte[8];
-    for (int i = 7; i > 0; i--) {
-      b[i] = (byte) val;
-      val >>>= 8;
-    }
-    b[0] = (byte) val;
-    return b;
+  public static byte [] add(final byte [] a, final byte [] b) {
+    return add(a, b, new byte[]{});
   }
 
   /**
-   * Converts a byte array to a long value. Reverses
-   * {@link #toBytes(long)}
-   * @param bytes array
-   * @return the long value
+   * @param a first third
+   * @param b second third
+   * @param c third third
+   * @return New array made from a, b and c
    */
-  public static long toLong(byte[] bytes) {
-    return toLong(bytes, 0, SIZEOF_LONG);
+  public static byte [] add(final byte [] a, final byte [] b, final byte [] c) {
+    byte [] result = new byte[a.length + b.length + c.length];
+    System.arraycopy(a, 0, result, 0, a.length);
+    System.arraycopy(b, 0, result, a.length, b.length);
+    System.arraycopy(c, 0, result, a.length + b.length, c.length);
+    return result;
   }
 
-  /**
-   * Converts a byte array to a long value.
-   *
-   * @param bytes array of bytes
-   * @param offset offset into array
-   * @param length length of data (must be {@link #SIZEOF_LONG})
-   * @return the long value
-   * @throws IllegalArgumentException if length is not {@link #SIZEOF_LONG} or
-   * if there's not enough room in the array at the offset indicated.
-   */
-  public static long toLong(byte[] bytes, int offset, final int length) {
-    if (length != SIZEOF_LONG || offset + length > bytes.length) {
-      throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_LONG);
-    }
-    long l = 0;
-    for(int i = offset; i < offset + length; i++) {
-      l <<= 8;
-      l ^= bytes[i] & 0xFF;
-    }
-    return l;
+  public static String asHex(byte[] buf) {
+    return asHex(buf, 0, buf.length);
+
   }
 
-  private static IllegalArgumentException
-  explainWrongLengthOrOffset(final byte[] bytes,
-      final int offset,
-      final int length,
-      final int expectedLength) {
-    String reason;
-    if (length != expectedLength) {
-      reason = "Wrong length: " + length + ", expected " + expectedLength;
-    } else {
-      reason = "offset (" + offset + ") + length (" + length + ") exceed the"
-          + " capacity of the array: " + bytes.length;
-    }
-    return new IllegalArgumentException(reason);
-  }
+  public static String asHex(byte[] buf, int start, int length) {
 
-  /**
-   * Convert an int value to a byte array
-   * @param val value
-   * @return the byte array
-   */
-  public static byte[] toBytes(int val) {
-    byte [] b = new byte[4];
-    for(int i = 3; i > 0; i--) {
-      b[i] = (byte) val;
-      val >>>= 8;
+    StringBuilder sb = new StringBuilder();
+    for (int i = start; i < start + length; i++) {
+      int v = buf[i] & 0xFF;
+      sb.append(HEX_CHARS[v >>> 4]);
+      sb.append(HEX_CHARS[v & 0xF]);
+      sb.append(" ");
     }
-    b[0] = (byte) val;
-    return b;
+    return sb.toString().trim();
   }
   
-  /**
-   * Converts a byte array to an int value
-   * @param bytes byte array
-   * @return the int value
-   */
-  public static int toInt(byte[] bytes) {
-    return toInt(bytes, 0, SIZEOF_INT);
-  }
-
-  /**
-   * Converts a byte array to an int value
-   * @param bytes byte array
-   * @param offset offset into array
-   * @return the int value
-   */
-  public static int toInt(byte[] bytes, int offset) {
-    return toInt(bytes, offset, SIZEOF_INT);
-  }
-
-  /**
-   * Converts a byte array to an int value
-   * @param bytes byte array
-   * @param offset offset into array
-   * @param length length of int (has to be {@link #SIZEOF_INT})
-   * @return the int value
-   * @throws IllegalArgumentException if length is not {@link #SIZEOF_INT} or
-   * if there's not enough room in the array at the offset indicated.
-   */
-  public static int toInt(byte[] bytes, int offset, final int length) {
-    if (length != SIZEOF_INT || offset + length > bytes.length) {
-      throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_INT);
-    }
-    int n = 0;
-    for(int i = offset; i < (offset + length); i++) {
-      n <<= 8;
-      n ^= bytes[i] & 0xFF;
-    }
-    return n;
-  }
-
-
   /**
    * @param left left operand
    * @param right right operand
@@ -233,31 +156,21 @@ public class Bytes {
     return length1 - length2;
   }
 
-  /**
-   * @param a lower half
-   * @param b upper half
-   * @return New array that has a in lower half and b in upper half.
-   */
-  public static byte [] add(final byte [] a, final byte [] b) {
-    return add(a, b, new byte[]{});
+  private static IllegalArgumentException
+  explainWrongLengthOrOffset(final byte[] bytes,
+      final int offset,
+      final int length,
+      final int expectedLength) {
+    String reason;
+    if (length != expectedLength) {
+      reason = "Wrong length: " + length + ", expected " + expectedLength;
+    } else {
+      reason = "offset (" + offset + ") + length (" + length + ") exceed the"
+          + " capacity of the array: " + bytes.length;
+    }
+    return new IllegalArgumentException(reason);
   }
 
-  /**
-   * @param a first third
-   * @param b second third
-   * @param c third third
-   * @return New array made from a, b and c
-   */
-  public static byte [] add(final byte [] a, final byte [] b, final byte [] c) {
-    byte [] result = new byte[a.length + b.length + c.length];
-    System.arraycopy(a, 0, result, 0, a.length);
-    System.arraycopy(b, 0, result, a.length, b.length);
-    System.arraycopy(c, 0, result, a.length + b.length, c.length);
-    return result;
-  }
-
-
-  // above is copied from HBase Bytes
 
   public static byte[] merge(List<byte[]> buffers) {
     if(buffers.size() == 1) {
@@ -275,6 +188,38 @@ public class Bytes {
     }
     return buffer;
   }
+
+  /**
+   * Convert an int value to a byte array
+   * @param val value
+   * @return the byte array
+   */
+  public static byte[] toBytes(int val) {
+    byte [] b = new byte[4];
+    for(int i = 3; i > 0; i--) {
+      b[i] = (byte) val;
+      val >>>= 8;
+    }
+    b[0] = (byte) val;
+    return b;
+  }
+
+  /**
+   * Convert a long value to a byte array using big-endian.
+   *
+   * @param val value to convert
+   * @return the byte array
+   */
+  public static byte[] toBytes(long val) {
+    byte [] b = new byte[8];
+    for (int i = 7; i > 0; i--) {
+      b[i] = (byte) val;
+      val >>>= 8;
+    }
+    b[0] = (byte) val;
+    return b;
+  }
+
   public static String toHuman(long count) {
     if(count < 1024L) {
       return count + " bytes";
@@ -287,22 +232,77 @@ public class Bytes {
     }
   }
 
-  private static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
 
-  public static String asHex(byte[] buf) {
-    return asHex(buf, 0, buf.length);
+  // above is copied from HBase Bytes
 
+  /**
+   * Converts a byte array to an int value
+   * @param bytes byte array
+   * @return the int value
+   */
+  public static int toInt(byte[] bytes) {
+    return toInt(bytes, 0, SIZEOF_INT);
+  }
+  /**
+   * Converts a byte array to an int value
+   * @param bytes byte array
+   * @param offset offset into array
+   * @return the int value
+   */
+  public static int toInt(byte[] bytes, int offset) {
+    return toInt(bytes, offset, SIZEOF_INT);
   }
 
-  public static String asHex(byte[] buf, int start, int length) {
-
-    StringBuilder sb = new StringBuilder();
-    for (int i = start; i < start + length; i++) {
-      int v = buf[i] & 0xFF;
-      sb.append(HEX_CHARS[v >>> 4]);
-      sb.append(HEX_CHARS[v & 0xF]);
-      sb.append(" ");
+  /**
+   * Converts a byte array to an int value
+   * @param bytes byte array
+   * @param offset offset into array
+   * @param length length of int (has to be {@link #SIZEOF_INT})
+   * @return the int value
+   * @throws IllegalArgumentException if length is not {@link #SIZEOF_INT} or
+   * if there's not enough room in the array at the offset indicated.
+   */
+  public static int toInt(byte[] bytes, int offset, final int length) {
+    if (length != SIZEOF_INT || offset + length > bytes.length) {
+      throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_INT);
     }
-    return sb.toString().trim();
+    int n = 0;
+    for(int i = offset; i < (offset + length); i++) {
+      n <<= 8;
+      n ^= bytes[i] & 0xFF;
+    }
+    return n;
+  }
+
+  /**
+   * Converts a byte array to a long value. Reverses
+   * {@link #toBytes(long)}
+   * @param bytes array
+   * @return the long value
+   */
+  public static long toLong(byte[] bytes) {
+    return toLong(bytes, 0, SIZEOF_LONG);
+  }
+
+  /**
+   * Converts a byte array to a long value.
+   *
+   * @param bytes array of bytes
+   * @param offset offset into array
+   * @param length length of data (must be {@link #SIZEOF_LONG})
+   * @return the long value
+   * @throws IllegalArgumentException if length is not {@link #SIZEOF_LONG} or
+   * if there's not enough room in the array at the offset indicated.
+   */
+  public static long toLong(byte[] bytes, int offset, final int length) {
+    if (length != SIZEOF_LONG || offset + length > bytes.length) {
+      throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_LONG);
+    }
+    long l = 0;
+    for(int i = offset; i < offset + length; i++) {
+      l <<= 8;
+      l ^= bytes[i] & 0xFF;
+    }
+    return l;
   }
 }

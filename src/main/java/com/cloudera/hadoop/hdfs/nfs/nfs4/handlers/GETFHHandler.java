@@ -33,6 +33,11 @@ public class GETFHHandler extends OperationRequestHandler<GETFHRequest, GETFHRes
   protected static final Logger LOGGER = Logger.getLogger(GETFHHandler.class);
 
   @Override
+  protected GETFHResponse createResponse() {
+    return new GETFHResponse();
+  }
+
+  @Override
   protected GETFHResponse doHandle(HDFSState hdfsState, Session session,
       GETFHRequest request) throws NFS4Exception {
     if (session.getCurrentFileHandle() == null) {
@@ -42,10 +47,5 @@ public class GETFHHandler extends OperationRequestHandler<GETFHRequest, GETFHRes
     response.setFileHandle(session.getCurrentFileHandle());
     response.setStatus(NFS4_OK);
     return response;
-  }
-
-  @Override
-  protected GETFHResponse createResponse() {
-    return new GETFHResponse();
   }
 }

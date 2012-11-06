@@ -13,4 +13,8 @@
     <name>hdfs.nfs.security.flavor</name>
     <value>krb5p</value>
   </property>
+  <property>
+    <name>hdfs.nfs.security.allowed.hosts</name>
+    <value>localhost.localdomain</value>
+  </property>
 </configuration>

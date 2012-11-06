@@ -44,15 +44,6 @@ public class TestNFS4Server {
   NFS4Server mNFS4Server;
   int mPort;
 
-  @Before
-  public void setup() throws Exception {
-    Configuration conf = TestUtils.setupConf();
-    mNFS4Server = new NFS4Server();
-    mNFS4Server.setConf(conf);
-    mNFS4Server.start(LOCALHOST, 0);
-    mPort = mNFS4Server.getPort();
-  }
-
   @After
   public void cleanup() {
     if(mNFS4Server != null) {
@@ -60,6 +51,15 @@ public class TestNFS4Server {
         mNFS4Server.shutdown();
       } catch(Exception ex) {}
     }
+  }
+
+  @Before
+  public void setup() throws Exception {
+    Configuration conf = TestUtils.setupConf();
+    mNFS4Server = new NFS4Server();
+    mNFS4Server.setConf(conf);
+    mNFS4Server.start(LOCALHOST, 0);
+    mPort = mNFS4Server.getPort();
   }
   @Test
   public void testNull() throws UnknownHostException, IOException {

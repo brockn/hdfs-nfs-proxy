@@ -34,10 +34,6 @@ public class PathUtils {
     return path;
   }
 
-  public static String realPath(Path path) {
-    return path.toUri().getPath();
-  }
-  
   public static void ensureDirectoryIsWriteable(File tempDir) 
       throws IOException {
     if(tempDir.isFile()) {
@@ -63,6 +59,7 @@ public class PathUtils {
       }
     } 
   }
+  
   /**
    * Delete a directory and all its contents.  If
    * we return false, the directory may be partially-deleted.
@@ -73,7 +70,6 @@ public class PathUtils {
     }
     return dir.delete();
   }
-
   /**
    * Delete the contents of a directory, not the directory itself.  If
    * we return false, the directory may be partially-deleted.
@@ -107,6 +103,10 @@ public class PathUtils {
       }
     }
     return deletionSucceeded;
+  }
+
+  public static String realPath(Path path) {
+    return path.toUri().getPath();
   }
 
 }

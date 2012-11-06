@@ -31,6 +31,16 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class TestAttrs {
 
 
+  protected static void testAttribute(Attribute base, Attribute copy) {
+    copy(base, copy);
+    deepEquals(base, copy);
+    RPCBuffer buffer = new RPCBuffer();
+    copy.write(buffer);
+    buffer.flip();
+    Attribute parsed = Attribute.parse(buffer, copy.getID());
+    assertEquals(base.getClass(), parsed.getClass());
+  }
+
   @Test
   public void testChangeID() throws Exception {
     ChangeID base = new ChangeID();
@@ -88,23 +98,7 @@ public class TestAttrs {
     testAttribute(base, copy);
   }
 
-  @Test
-  public void testSize() throws Exception {
-    Size base = new Size();
-    base.setSize(15);
-    Size copy = new Size();
-    testAttribute(base, copy);
-  }
 
-
-  @Test
-  public void testType() throws Exception {
-    Type base = new Type();
-    base.setType(15);
-    Type copy = new Type();
-    testAttribute(base, copy);
-  }
-  
   @Test
   public void testSetAccessTimeClient() throws Exception {
     SetAccessTime base = new SetAccessTime();
@@ -121,14 +115,20 @@ public class TestAttrs {
     SetAccessTime copy = new SetAccessTime();
     testAttribute(base, copy);
   }
+  
+  @Test
+  public void testSize() throws Exception {
+    Size base = new Size();
+    base.setSize(15);
+    Size copy = new Size();
+    testAttribute(base, copy);
+  }
 
-  protected static void testAttribute(Attribute base, Attribute copy) {
-    copy(base, copy);
-    deepEquals(base, copy);
-    RPCBuffer buffer = new RPCBuffer();
-    copy.write(buffer);
-    buffer.flip();
-    Attribute parsed = Attribute.parse(buffer, copy.getID());
-    assertEquals(base.getClass(), parsed.getClass());
+  @Test
+  public void testType() throws Exception {
+    Type base = new Type();
+    base.setType(15);
+    Type copy = new Type();
+    testAttribute(base, copy);
   }
 }

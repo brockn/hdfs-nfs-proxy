@@ -33,6 +33,22 @@ public class READDIRResponse extends OperationResponse implements Status {
   protected OpaqueData8 mCookieVerifer;
   protected DirectoryList mDirectoryList;
 
+  public OpaqueData8 getCookieVerifer() {
+    return mCookieVerifer;
+  }
+
+  public DirectoryList getDirectoryList() {
+    return mDirectoryList;
+  }
+  @Override
+  public int getID() {
+    return NFS4_OP_READDIR;
+  }
+
+  @Override
+  public int getStatus() {
+    return mStatus;
+  }
   @Override
   public void read(RPCBuffer buffer) {
     reset();
@@ -49,6 +65,20 @@ public class READDIRResponse extends OperationResponse implements Status {
     mCookieVerifer = null;
     mDirectoryList = null;
   }
+
+  public void setCookieVerifer(OpaqueData8 cookieVerifer) {
+    this.mCookieVerifer = cookieVerifer;
+  }
+
+  public void setDirectoryList(DirectoryList directoryList) {
+    this.mDirectoryList = directoryList;
+  }
+
+  @Override
+  public void setStatus(int status) {
+    this.mStatus = status;
+  }
+
   @Override
   public void write(RPCBuffer buffer) {
     buffer.writeUint32(mStatus);
@@ -56,36 +86,6 @@ public class READDIRResponse extends OperationResponse implements Status {
       mCookieVerifer.write(buffer);
       mDirectoryList.write(buffer);
     }
-  }
-
-  @Override
-  public int getStatus() {
-    return mStatus;
-  }
-  @Override
-  public void setStatus(int status) {
-    this.mStatus = status;
-  }
-
-  @Override
-  public int getID() {
-    return NFS4_OP_READDIR;
-  }
-
-  public OpaqueData8 getCookieVerifer() {
-    return mCookieVerifer;
-  }
-
-  public void setCookieVerifer(OpaqueData8 cookieVerifer) {
-    this.mCookieVerifer = cookieVerifer;
-  }
-
-  public DirectoryList getDirectoryList() {
-    return mDirectoryList;
-  }
-
-  public void setDirectoryList(DirectoryList directoryList) {
-    this.mDirectoryList = directoryList;
   }
 
 }

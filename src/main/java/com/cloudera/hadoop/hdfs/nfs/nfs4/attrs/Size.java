@@ -28,16 +28,6 @@ public class Size extends Attribute {
     super();
   }
   @Override
-  public void read(RPCBuffer buffer) {
-    mSize = buffer.readUint64();
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint64(mSize);
-  }
-
-  @Override
   public int getID() {
     return NFS4_FATTR4_SIZE;
   }
@@ -46,7 +36,17 @@ public class Size extends Attribute {
     return mSize;
   }
 
+  @Override
+  public void read(RPCBuffer buffer) {
+    mSize = buffer.readUint64();
+  }
+
   public void setSize(long size) {
     this.mSize = size;
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeUint64(mSize);
   }
 }

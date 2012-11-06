@@ -50,15 +50,10 @@ public class TestNetUtils {
     when(address.getHostAddress()).thenReturn(ip);  
   }
   @Test
-  public void testGetDomainOverride() {
-    conf.set(NFS_OWNER_DOMAIN, domain);
-    Assert.assertEquals(domain, NetUtils.getDomain(conf, address));
-  }
-  
-  @Test
   public void testGetDomain() {
     Assert.assertEquals(domain, NetUtils.getDomain(conf, address));
   }
+  
   @Test
   public void testGetDomainLocalhost() {
     when(address.isLoopbackAddress()).thenReturn(true);
@@ -79,5 +74,10 @@ public class TestNetUtils {
   public void testGetDomainOnlyDomain() {
     when(address.getCanonicalHostName()).thenReturn("." + hostname); 
     Assert.assertEquals("unknown", NetUtils.getDomain(conf, address));
+  }
+  @Test
+  public void testGetDomainOverride() {
+    conf.set(NFS_OWNER_DOMAIN, domain);
+    Assert.assertEquals(domain, NetUtils.getDomain(conf, address));
   }
 }

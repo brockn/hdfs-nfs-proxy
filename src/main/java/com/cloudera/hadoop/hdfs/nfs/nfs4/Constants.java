@@ -34,8 +34,6 @@ public class Constants {
 
   public static final int RPC_ACCEPT_STATE_ACCEPT = 0;
 
-
-
   public static final int RPC_AUTH_NULL = 0;
   public static final int RPC_AUTH_UNIX = 1;
   public static final int RPC_AUTH_GSS = 6;
@@ -78,12 +76,13 @@ public class Constants {
   public static final int RPC_AUTH_STATUS_REJECTEDVERF = 4;  /* verifier expired or replayed  */
   public static final int RPC_AUTH_STATUS_TOOWEAK      = 5;   /* rejected for security reasons */
 
+  
+  public static final int RPC_AUTH_STATUS_GSS_CREDPROBLEM = 13;
+  public static final int RPC_AUTH_STATUS_GSS_CTXPROBLEM = 14;
 
   public static final int RPC_OPAQUE_AUTH_MAX = 400;
 
   public static final int RPC_VERSION = 2;
-
-
 
   public final static int FHSIZE = 32;
 
@@ -102,8 +101,39 @@ public class Constants {
   public final static int RPCSEC_GSS_SERVICE_PRIVACY = 3;
 
 
+  public final static int RPCSEC_GSS_MAX_SEQUENCE_NUMBER = Integer.MAX_VALUE - 1; // maximum legal sequence number, from rfc 2203 is 0x80000000
 
+  public static final int RPCSEC_GSS_SEQUENCE_WINDOW = 1024;
 
+  
+  public static final int RPCSEC_GSS_COMPLETE                 = 0x00000000;
+  public static final int RPCSEC_GSS_CONTINUE_NEEDED          = 0x00000001;
+  public static final int RPCSEC_GSS_DUPLICATE_TOKEN          = 0x00000002;
+  public static final int RPCSEC_GSS_OLD_TOKEN                = 0x00000004;
+  public static final int RPCSEC_GSS_UNSEQ_TOKEN              = 0x00000008;
+  public static final int RPCSEC_GSS_GAP_TOKEN                = 0x00000010;
+  public static final int RPCSEC_GSS_BAD_MECH                 = 0x00010000;
+  public static final int RPCSEC_GSS_BAD_NAME                 = 0x00020000;
+  public static final int RPCSEC_GSS_BAD_NAMETYPE             = 0x00030000;
+  public static final int RPCSEC_GSS_BAD_BINDINGS             = 0x00040000;
+  public static final int RPCSEC_GSS_BAD_STATUS               = 0x00050000;
+  public static final int RPCSEC_GSS_BAD_MIC                  = 0x00060000;
+  public static final int RPCSEC_GSS_BAD_SIG                  = 0x00060000;
+  public static final int RPCSEC_GSS_NO_CRED                  = 0x00070000;
+  public static final int RPCSEC_GSS_NO_CONTEXT               = 0x00080000;
+  public static final int RPCSEC_GSS_DEFECTIVE_TOKEN          = 0x00090000;
+  public static final int RPCSEC_GSS_DEFECTIVE_CREDENTIAL     = 0x000a0000;
+  public static final int RPCSEC_GSS_CREDENTIALS_EXPIRED      = 0x000b0000;
+  public static final int RPCSEC_GSS_CONTEXT_EXPIRED          = 0x000c0000;
+  public static final int RPCSEC_GSS_FAILURE                  = 0x000d0000;
+  public static final int RPCSEC_GSS_BAD_QOP                  = 0x000e0000;
+  public static final int RPCSEC_GSS_UNAUTHORIZED             = 0x000f0000;
+  public static final int RPCSEC_GSS_UNAVAILABLE              = 0x00100000;
+  public static final int RPCSEC_GSS_DUPLICATE_ELEMENT        = 0x00110000;
+  public static final int RPCSEC_GSS_NAME_NOT_MN              = 0x00120000;
+  public static final int RPCSEC_GSS_CALL_INACCESSIBLE_READ   = 0x01000000;
+  public static final int RPCSEC_GSS_CALL_INACCESSIBLE_WRITE  = 0x02000000;
+  public static final int RPCSEC_GSS_CALL_BAD_STRUCTURE       = 0x03000000;
 
 
   public static final int NFS_PROG = 100003;
@@ -356,6 +386,7 @@ public class Constants {
 
   public static final int NFS4_SET_TO_SERVER_TIME4 = 0;
   public static final int NFS4_SET_TO_CLIENT_TIME4 = 1;
+  
 
 
   public static final String USER_ID_MAPPER_CACHE = "hdfs.nfs.useridmapper.cache";
@@ -368,10 +399,16 @@ public class Constants {
   
   public static final String SECURITY_FLAVOR = "hdfs.nfs.security.flavor";
   public static final String SECURITY_FLAVOR_DEFAULT= "unix";
-  public static final String SECURITY_FLAVOR_KERBEROS = "krb5";
+  public static final String SECURITY_FLAVOR_KERBEROS = "krb5p";
   
-  public static final String MAX_OPEN_FILE_INACTIVITY_PERIOD = "hdfs.nfs.max.open.file.inactivity.ms";
+  public static final String ALLOWED_HOSTS = "hdfs.nfs.security.allowed.hosts";
   
+  
+  
+  public static final String MAX_OPEN_FILE_INACTIVITY_PERIOD = "hdfs.nfs.max.open.file.inactivity.ms";  
   public static final int DEFAULT_MAX_OPEN_FILE_INACTIVITY_PERIOD = 30;
+  
+  public static final String SUPER_USER = "hdfs.nfs.super.user";
+  public static final String DEFAULT_SUPER_USER = UserIDMapper.getCurrentUser();
 
 }

@@ -37,6 +37,36 @@ public class OPENResponse extends OperationResponse implements Status {
   protected Bitmap mAttrs;
   protected int mDelgationType;
 
+  public Bitmap getAttrs() {
+    return mAttrs;
+  }
+
+  public ChangeInfo getChangeInfo() {
+    return mChangeInfo;
+  }
+
+  public int getDelgationType() {
+    return mDelgationType;
+  }
+
+  @Override
+  public int getID() {
+    return NFS4_OP_OPEN;
+  }
+
+  public int getResultFlags() {
+    return mResultFlags;
+  }
+
+  public StateID getStateID() {
+    return mStateID;
+  }
+
+  @Override
+  public int getStatus() {
+    return mStatus;
+  }
+
   @Override
   public void read(RPCBuffer buffer) {
     mStatus = buffer.readUint32();
@@ -51,6 +81,29 @@ public class OPENResponse extends OperationResponse implements Status {
     }
   }
 
+  public void setAttrs(Bitmap attrs) {
+    this.mAttrs = attrs;
+  }
+
+  public void setChangeID(ChangeInfo changeInfo) {
+    this.mChangeInfo = changeInfo;
+  }
+
+  public void setDelgationType(int delgationType) {
+    this.mDelgationType = delgationType;
+  }
+
+  public void setResultFlags(int resultFlags) {
+    this.mResultFlags = resultFlags;
+  }
+
+  public void setStateID(StateID stateID) {
+    this.mStateID = stateID;
+  }
+  @Override
+  public void setStatus(int status) {
+    this.mStatus = status;
+  }
   @Override
   public void write(RPCBuffer buffer) {
     buffer.writeUint32(mStatus);
@@ -64,58 +117,5 @@ public class OPENResponse extends OperationResponse implements Status {
       Attribute.writeAttrsSet(buffer, mAttrs);
       buffer.writeUint32(mDelgationType);
     }
-  }
-
-  public StateID getStateID() {
-    return mStateID;
-  }
-
-  public void setStateID(StateID stateID) {
-    this.mStateID = stateID;
-  }
-
-  public ChangeInfo getChangeInfo() {
-    return mChangeInfo;
-  }
-
-  public void setChangeID(ChangeInfo changeInfo) {
-    this.mChangeInfo = changeInfo;
-  }
-
-  public int getResultFlags() {
-    return mResultFlags;
-  }
-
-  public void setResultFlags(int resultFlags) {
-    this.mResultFlags = resultFlags;
-  }
-
-  public Bitmap getAttrs() {
-    return mAttrs;
-  }
-
-  public void setAttrs(Bitmap attrs) {
-    this.mAttrs = attrs;
-  }
-
-  public int getDelgationType() {
-    return mDelgationType;
-  }
-
-  public void setDelgationType(int delgationType) {
-    this.mDelgationType = delgationType;
-  }
-
-  @Override
-  public int getStatus() {
-    return mStatus;
-  }
-  @Override
-  public void setStatus(int status) {
-    this.mStatus = status;
-  }
-  @Override
-  public int getID() {
-    return NFS4_OP_OPEN;
   }
 }

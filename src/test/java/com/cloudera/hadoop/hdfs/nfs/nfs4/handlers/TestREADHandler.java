@@ -61,17 +61,18 @@ public class TestREADHandler extends TestBaseHandler {
       thenReturn(inputStream);
   }
   @Test
+  public void testEOF() throws Exception {
+    when(inputStream.read(any(byte[].class))).thenReturn(-1);
+    READResponse response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4_OK, response.getStatus());
+    assertTrue(response.isEOF());
+    verify(inputStream).read(any(byte[].class));
+  }
+  @Test
   public void testInvalidOffset() throws Exception {
     request.setCount(-1);
     READResponse response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_INVAL, response.getStatus());
-  }
-  @Test
-  public void testSeekIOException() throws Exception {
-    request.setOffset(0);
-    doThrow(new IOException("Injected")).when(inputStream).seek(any(Long.class));
-    READResponse response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_IO, response.getStatus());
   }
   @Test
   public void testSeek() throws Exception {
@@ -81,12 +82,11 @@ public class TestREADHandler extends TestBaseHandler {
     verify(inputStream).seek(1);
   }
   @Test
-  public void testEOF() throws Exception {
-    when(inputStream.read(any(byte[].class))).thenReturn(-1);
+  public void testSeekIOException() throws Exception {
+    request.setOffset(0);
+    doThrow(new IOException("Injected")).when(inputStream).seek(any(Long.class));
     READResponse response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4_OK, response.getStatus());
-    assertTrue(response.isEOF());
-    verify(inputStream).read(any(byte[].class));
+    assertEquals(NFS4ERR_IO, response.getStatus());
   }
   @Test
   public void testShortRead() throws Exception {

@@ -45,16 +45,16 @@ public class TestSETCLIENTIDCONFIRMHandler extends TestBaseHandler {
     request.setVerifer(clientVerifier);
   }
   @Test
-  public void testOldClient() throws Exception {
-    when(clientFactory.getByShortHand(any(Long.class))).thenReturn(null);
-    Status response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_STALE_CLIENTID, response.getStatus());
-  }
-  @Test
   public void testBadVerifer() throws Exception {
     request.setVerifer(new OpaqueData8(1L));
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_CLID_INUSE, response.getStatus());
+  }
+  @Test
+  public void testOldClient() throws Exception {
+    when(clientFactory.getByShortHand(any(Long.class))).thenReturn(null);
+    Status response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_STALE_CLIENTID, response.getStatus());
   }
   @Test
   public void testSuccess() throws Exception {

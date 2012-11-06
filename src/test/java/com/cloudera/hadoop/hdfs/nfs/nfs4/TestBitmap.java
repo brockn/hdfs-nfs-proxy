@@ -30,6 +30,22 @@ import org.junit.Test;
 
 public class TestBitmap {
 
+  private void equals(BitSet bs1, BitSet bs2) {
+    Assert.assertEquals(bs1.size(), bs2.size());
+    Assert.assertEquals(bs1.cardinality(), bs2.cardinality());
+    for (int bitIndex = 0; bitIndex < bs1.size(); bitIndex++) {
+      Assert.assertEquals(bs1.get(bitIndex), bs2.get(bitIndex));
+    }
+  }
+
+  @Test
+  public void testEmpty() {
+    Bitmap base = new Bitmap();
+    Bitmap copy = new Bitmap();
+    copy(base, copy);
+    equals(base.getMask(), copy.getMask());
+  }
+  
   @Test
   public void testLarge() {
     // both first int and second int in bitmap
@@ -54,20 +70,6 @@ public class TestBitmap {
     copy(base, copy);
     equals(base.getMask(), copy.getMask());
   }
-
-  @Test
-  public void testSmall() {
-    // first int only
-    Bitmap base = new Bitmap();
-    base.set(NFS4_FATTR4_LEASE_TIME);
-    base.set(NFS4_FATTR4_MAXFILESIZE);
-    base.set(NFS4_FATTR4_MAXREAD);
-    base.set(NFS4_FATTR4_MAXWRITE); // 31 (had bug where 31 was not handled)
-    base.set(64);
-    Bitmap copy = new Bitmap();
-    copy(base, copy);
-    equals(base.getMask(), copy.getMask());
-  }
   
   @Test
   public void testNotDivisableBy32() {
@@ -81,17 +83,15 @@ public class TestBitmap {
     copy(base, copy);
     equals(base.getMask(), copy.getMask());
   }
-  
-  private void equals(BitSet bs1, BitSet bs2) {
-    Assert.assertEquals(bs1.size(), bs2.size());
-    Assert.assertEquals(bs1.cardinality(), bs2.cardinality());
-    for (int bitIndex = 0; bitIndex < bs1.size(); bitIndex++) {
-      Assert.assertEquals(bs1.get(bitIndex), bs2.get(bitIndex));
-    }
-  }
   @Test
-  public void testEmpty() {
+  public void testSmall() {
+    // first int only
     Bitmap base = new Bitmap();
+    base.set(NFS4_FATTR4_LEASE_TIME);
+    base.set(NFS4_FATTR4_MAXFILESIZE);
+    base.set(NFS4_FATTR4_MAXREAD);
+    base.set(NFS4_FATTR4_MAXWRITE); // 31 (had bug where 31 was not handled)
+    base.set(64);
     Bitmap copy = new Bitmap();
     copy(base, copy);
     equals(base.getMask(), copy.getMask());

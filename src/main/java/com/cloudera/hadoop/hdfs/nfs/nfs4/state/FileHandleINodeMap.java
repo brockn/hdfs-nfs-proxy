@@ -77,6 +77,9 @@ public class FileHandleINodeMap {
       }
     });
   }
+  public void close() throws IOException {
+    mRecordManager.close();
+  }
   public FileHandle getFileHandleByPath(String path) {
     mReadLock.lock();
     try {
@@ -88,6 +91,23 @@ public class FileHandleINodeMap {
       FileHandle fh = iterator.next();
       Preconditions.checkState(!iterator.hasNext());
       return fh;
+    } finally {
+      mReadLock.unlock();
+    }
+  }
+  public Map<FileHandle, String> getFileHandlesNotValidatedSince(Long upperBound) {
+    Map<FileHandle, String> result = Maps.newHashMap();
+    mReadLock.lock();
+    try {
+      SortedMap<Long, Iterable<FileHandle>> map = mValidationTimeMap.headMap(upperBound);
+      if(map != null) {
+        for(Iterable<FileHandle> fileHandles : map.values()) {
+          for(FileHandle fileHandle : fileHandles) {
+            result.put(fileHandle, mFileHandleINodeMap.get(fileHandle).getPath());
+          }
+        }
+      }
+      return result;
     } finally {
       mReadLock.unlock();
     }
@@ -129,25 +149,5 @@ public class FileHandleINodeMap {
     } finally {
       mWriteLock.unlock();
     }
-  }
-  public Map<FileHandle, String> getFileHandlesNotValidatedSince(Long upperBound) {
-    Map<FileHandle, String> result = Maps.newHashMap();
-    mReadLock.lock();
-    try {
-      SortedMap<Long, Iterable<FileHandle>> map = mValidationTimeMap.headMap(upperBound);
-      if(map != null) {
-        for(Iterable<FileHandle> fileHandles : map.values()) {
-          for(FileHandle fileHandle : fileHandles) {
-            result.put(fileHandle, mFileHandleINodeMap.get(fileHandle).getPath());
-          }
-        }
-      }
-      return result;
-    } finally {
-      mReadLock.unlock();
-    }
-  }
-  public void close() throws IOException {
-    mRecordManager.close();
   }
 }

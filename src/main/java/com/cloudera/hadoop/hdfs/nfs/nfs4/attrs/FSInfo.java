@@ -59,6 +59,45 @@ public class FSInfo {
   }
   
    
+  private static DFSClient getDFSClient(Configuration conf) 
+      throws IOException {
+    BlockingQueue<DFSClient> clientQueue;
+    synchronized(clients) {
+      clientQueue = clients.get(conf);
+      if(clientQueue == null) {
+        clientQueue = new ArrayBlockingQueue<DFSClient>(1);
+        clients.put(conf, clientQueue);
+      }      
+    }
+    DFSClient client = clientQueue.poll();
+    if(client == null) {
+      client = new DFSClient(conf);
+    }
+    return client;
+  }
+  protected static Object getObject(Object obj, String name) {
+    try {
+      Method method = obj.getClass().getMethod(name, (Class[])null);
+      return method.invoke(obj, (Object[])null);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+  private static void putDFSClient(Configuration conf, DFSClient client) 
+      throws IOException {
+    BlockingQueue<DFSClient> clientQueue;
+    synchronized(clients) {
+      clientQueue = clients.get(conf);
+      if(clientQueue == null) {
+        clientQueue = new ArrayBlockingQueue<DFSClient>(1);
+        clients.put(conf, clientQueue);
+      }      
+    }
+    if(!clientQueue.offer(client)) {
+      client.close();
+    }
+  }
+
   public long getCapacity(Session session) throws IOException {
     if(session.getFileSystem() instanceof LocalFileSystem) {
       File partition = new File("/");
@@ -78,6 +117,7 @@ public class FSInfo {
   public long getRemaining(Session session)  throws IOException{
     return getCapacity(session) - getUsed(session);
   }
+
   public long getUsed(Session session)  throws IOException {
     if(session.getFileSystem() instanceof LocalFileSystem) {
       File partition = new File("/");
@@ -93,45 +133,5 @@ public class FSInfo {
     }
     FileSystem fs = session.getFileSystem();
     return (Long)getObject(getObject(fs, "getStatus"), "getUsed");
-  }
-
-  private static void putDFSClient(Configuration conf, DFSClient client) 
-      throws IOException {
-    BlockingQueue<DFSClient> clientQueue;
-    synchronized(clients) {
-      clientQueue = clients.get(conf);
-      if(clientQueue == null) {
-        clientQueue = new ArrayBlockingQueue<DFSClient>(1);
-        clients.put(conf, clientQueue);
-      }      
-    }
-    if(!clientQueue.offer(client)) {
-      client.close();
-    }
-  }
-  private static DFSClient getDFSClient(Configuration conf) 
-      throws IOException {
-    BlockingQueue<DFSClient> clientQueue;
-    synchronized(clients) {
-      clientQueue = clients.get(conf);
-      if(clientQueue == null) {
-        clientQueue = new ArrayBlockingQueue<DFSClient>(1);
-        clients.put(conf, clientQueue);
-      }      
-    }
-    DFSClient client = clientQueue.poll();
-    if(client == null) {
-      client = new DFSClient(conf);
-    }
-    return client;
-  }
-
-  protected static Object getObject(Object obj, String name) {
-    try {
-      Method method = obj.getClass().getMethod(name, (Class[])null);
-      return method.invoke(obj, (Object[])null);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
   }
 }

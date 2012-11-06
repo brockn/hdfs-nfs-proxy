@@ -33,6 +33,11 @@ public class RESTOREFHHandler extends OperationRequestHandler<RESTOREFHRequest, 
   protected static final Logger LOGGER = Logger.getLogger(RESTOREFHHandler.class);
 
   @Override
+  protected RESTOREFHResponse createResponse() {
+    return new RESTOREFHResponse();
+  }
+
+  @Override
   protected RESTOREFHResponse doHandle(HDFSState hdfsState, Session session,
       RESTOREFHRequest request) throws NFS4Exception {
     if (session.getSavedFileHandle() == null) {
@@ -42,10 +47,5 @@ public class RESTOREFHHandler extends OperationRequestHandler<RESTOREFHRequest, 
     RESTOREFHResponse response = createResponse();
     response.setStatus(NFS4_OK);
     return response;
-  }
-
-  @Override
-  protected RESTOREFHResponse createResponse() {
-    return new RESTOREFHResponse();
   }
 }

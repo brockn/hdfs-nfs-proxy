@@ -39,6 +39,36 @@ public class GETATTRResponse extends OperationResponse implements Status {
   protected Bitmap mAttrs;
   protected ImmutableList<Attribute> mAttrValues;
 
+  public Bitmap getAttrs() {
+    return mAttrs;
+  }
+
+  public ImmutableMap<Integer, Attribute> getAttrValues() {
+    Map<Integer, Attribute> rtn = Maps.newHashMap();
+    for(Attribute attr : mAttrValues) {
+      rtn.put(attr.getID(), attr);
+    }
+    return ImmutableMap.copyOf(rtn);
+  }
+
+  // TODO GETATTRResponse to a GETATTRRequest with an empty bitmap
+  // results in a packet Linux appears to have no issue with
+  // but the packet shows up as malformed in Wireshark. Initial
+  // thoughts is the issue was that GETATTRResponse should have
+  // the number of bytes transmitted as attr values even if
+  // there are zero bytes. However, I remember I had an issue
+  // where writing out 0 for attrvalues length caused problems
+  // which was solved by a if(!isEmpty()) check in writeAttrs.
+
+  @Override
+  public int getID() {
+    return NFS4_OP_GETATTR;
+  }
+  @Override
+  public int getStatus() {
+    return mStatus;
+  }
+
   @Override
   public void read(RPCBuffer buffer) {
     reset();
@@ -55,45 +85,12 @@ public class GETATTRResponse extends OperationResponse implements Status {
     mAttrValues = null;
   }
 
-  // TODO GETATTRResponse to a GETATTRRequest with an empty bitmap
-  // results in a packet Linux appears to have no issue with
-  // but the packet shows up as malformed in Wireshark. Initial
-  // thoughts is the issue was that GETATTRResponse should have
-  // the number of bytes transmitted as attr values even if
-  // there are zero bytes. However, I remember I had an issue
-  // where writing out 0 for attrvalues length caused problems
-  // which was solved by a if(!isEmpty()) check in writeAttrs.
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint32(mStatus);
-    if(mStatus == NFS4_OK) {
-      Attribute.writeAttrs(buffer, mAttrs, mAttrValues);
-    }
-  }
-  public Bitmap getAttrs() {
-    return mAttrs;
-  }
-
   public void setAttrs(Bitmap attrs) {
     this.mAttrs = attrs;
   }
 
-  public ImmutableMap<Integer, Attribute> getAttrValues() {
-    Map<Integer, Attribute> rtn = Maps.newHashMap();
-    for(Attribute attr : mAttrValues) {
-      rtn.put(attr.getID(), attr);
-    }
-    return ImmutableMap.copyOf(rtn);
-  }
-
   public void setAttrValues(List<Attribute> attributes) {
     this.mAttrValues = ImmutableList.copyOf(attributes);
-  }
-
-  @Override
-  public int getStatus() {
-    return mStatus;
   }
   @Override
   public void setStatus(int status) {
@@ -101,7 +98,10 @@ public class GETATTRResponse extends OperationResponse implements Status {
   }
 
   @Override
-  public int getID() {
-    return NFS4_OP_GETATTR;
+  public void write(RPCBuffer buffer) {
+    buffer.writeUint32(mStatus);
+    if(mStatus == NFS4_OK) {
+      Attribute.writeAttrs(buffer, mAttrs, mAttrValues);
+    }
   }
 }

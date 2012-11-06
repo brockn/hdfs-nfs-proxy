@@ -36,13 +36,33 @@ public class SETATTRResponse extends OperationResponse implements Status {
    */
   protected Bitmap mAttrs;
 
+  public Bitmap getAttrs() {
+    return mAttrs;
+  }
+
+
+  @Override
+  public int getID() {
+    return NFS4_OP_SETATTR;
+  }
+  @Override
+  public int getStatus() {
+    return mStatus;
+  }
+
   @Override
   public void read(RPCBuffer buffer) {
     mStatus = buffer.readUint32();
     mAttrs = new Bitmap();
     mAttrs.read(buffer);
   }
-
+  public void setAttrs(Bitmap attrs) {
+    this.mAttrs = attrs;
+  }
+  @Override
+  public void setStatus(int status) {
+    this.mStatus = status;
+  }
 
   @Override
   public void write(RPCBuffer buffer) {
@@ -51,25 +71,5 @@ public class SETATTRResponse extends OperationResponse implements Status {
       mAttrs = new Bitmap();
     }
     mAttrs.write(buffer);
-  }
-  public Bitmap getAttrs() {
-    return mAttrs;
-  }
-
-  public void setAttrs(Bitmap attrs) {
-    this.mAttrs = attrs;
-  }
-  @Override
-  public int getStatus() {
-    return mStatus;
-  }
-  @Override
-  public void setStatus(int status) {
-    this.mStatus = status;
-  }
-
-  @Override
-  public int getID() {
-    return NFS4_OP_SETATTR;
   }
 }

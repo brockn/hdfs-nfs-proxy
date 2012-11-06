@@ -32,6 +32,14 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 
 public class OwnerHandler extends AttributeHandler<Owner> {
 
+  public static String removeDomain(String user) {
+    int pos;
+    if((pos = user.indexOf('@')) > 0 && pos < user.length()) {
+      return user.substring(pos + 1);
+    }
+    return user;
+  }
+
   @Override
   public Owner get(HDFSState hdfsState, Session session, FileSystem fs,
       FileStatus fileStatus) {
@@ -50,13 +58,5 @@ public class OwnerHandler extends AttributeHandler<Owner> {
       return true;
     }
     return false;
-  }
-
-  public static String removeDomain(String user) {
-    int pos;
-    if((pos = user.indexOf('@')) > 0 && pos < user.length()) {
-      return user.substring(pos + 1);
-    }
-    return user;
   }
 }

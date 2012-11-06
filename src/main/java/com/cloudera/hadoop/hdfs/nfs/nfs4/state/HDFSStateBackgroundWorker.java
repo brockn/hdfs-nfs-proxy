@@ -59,9 +59,6 @@ public class HDFSStateBackgroundWorker extends Thread {
     run = true;
     setName("HDFSStateBackgroundWorker-" + getId());
   }
-  public void shutdown() {
-    run = false;
-  }
   @Override
   public void run() {
     while(run) {
@@ -155,5 +152,8 @@ public class HDFSStateBackgroundWorker extends Thread {
         LOGGER.warn("Error updated creation time for file handles", e);
       }
     }
+  }
+  public void shutdown() {
+    run = false;
   }
 }

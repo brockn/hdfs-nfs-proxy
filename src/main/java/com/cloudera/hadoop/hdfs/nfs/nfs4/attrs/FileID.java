@@ -23,18 +23,12 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class FileID extends Attribute {
+  protected long mID;
   public FileID() {
     super();
   }
-  protected long mID;
-  @Override
-  public void read(RPCBuffer buffer) {
-    mID = buffer.readUint64();
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint64(mID);
+  public long getFileID() {
+    return mID;
   }
 
   @Override
@@ -42,12 +36,18 @@ public class FileID extends Attribute {
     return NFS4_FATTR4_FILEID;
   }
 
-  public long getFileID() {
-    return mID;
+  @Override
+  public void read(RPCBuffer buffer) {
+    mID = buffer.readUint64();
   }
 
   public void setFileID(long id) {
     this.mID = id;
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeUint64(mID);
   }
 
 }

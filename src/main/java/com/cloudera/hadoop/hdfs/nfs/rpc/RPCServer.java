@@ -24,9 +24,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IOUtils;
@@ -49,20 +47,39 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
   protected ConcurrentMap<Integer, Long> mRequestsInProgress = Maps.newConcurrentMap();
   private final SecurityHandlerFactory mSecurityHandlerFactory;
 
-  public RPCServer(RPCHandler<REQUEST, RESPONSE> rpcHandler, Configuration conf, InetAddress address) throws Exception {
-    this(rpcHandler, conf, address, 0);
+  public RPCServer(RPCHandler<REQUEST, RESPONSE> rpcHandler, Configuration conf, 
+      SecurityHandlerFactory securityHandlerFactory, InetAddress address) throws Exception {
+    this(rpcHandler, conf, securityHandlerFactory, address, 0);
   }
 
-  public RPCServer(RPCHandler<REQUEST, RESPONSE> rpcHandler, Configuration conf, InetAddress address, int port) throws IOException {
+  public RPCServer(RPCHandler<REQUEST, RESPONSE> rpcHandler, Configuration conf, 
+      SecurityHandlerFactory securityHandlerFactory, InetAddress address, int port) 
+          throws IOException {
     mHandler = rpcHandler;
     mConfiguration = conf;
+    mSecurityHandlerFactory = securityHandlerFactory;
     mPort = port;
-    mSecurityHandlerFactory = new SecurityHandlerFactory(mConfiguration);
     mServer = new ServerSocket(mPort, -1, address);
     // if port is 0, we are supposed to find a port
     // mPort should then be set to the port we found
     mPort = mServer.getLocalPort();
     setName("RPCServer-" + mHandler.getClass().getSimpleName() + "-" + mPort);
+  }
+
+  public ConcurrentMap<Socket, ClientInputHandler<REQUEST, RESPONSE>> getClients() {
+    return mClients;
+  }
+
+  public int getPort() {
+    return mPort;
+  }
+
+  public ConcurrentMap<Integer, Long> getRequestsInProgress() {
+    return mRequestsInProgress;
+  }
+
+  protected Map<Integer, MessageBase> getResponseCache() {
+    return mResponseCache;
   }
 
   @Override
@@ -105,21 +122,5 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
       } catch (Exception e) {
       }
     }
-  }
-
-  public int getPort() {
-    return mPort;
-  }
-
-  protected Map<Integer, MessageBase> getResponseCache() {
-    return mResponseCache;
-  }
-
-  public ConcurrentMap<Integer, Long> getRequestsInProgress() {
-    return mRequestsInProgress;
-  }
-
-  public ConcurrentMap<Socket, ClientInputHandler<REQUEST, RESPONSE>> getClients() {
-    return mClients;
   }
 }

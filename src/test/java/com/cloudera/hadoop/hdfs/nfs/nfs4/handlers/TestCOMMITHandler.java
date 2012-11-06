@@ -48,13 +48,6 @@ public class TestCOMMITHandler extends TestBaseHandler {
     when(hdfsState.getWriteOrderHandler(currentFileHandle)).thenReturn(writeOrderHandler);
   }
   @Test
-  public void testZeroOffset() throws Exception {
-    request.setOffset(52L);
-    Status response = handler.handle(hdfsState, session, request);
-    Assert.assertEquals(NFS4_OK, response.getStatus());
-    verify(writeOrderHandler, times(1)).sync(52L);
-  }
-  @Test
   public void testNonZeroOffset() throws Exception {
     when(writeOrderHandler.getCurrentPos()).thenReturn(52L);
     Status response = handler.handle(hdfsState, session, request);
@@ -62,19 +55,15 @@ public class TestCOMMITHandler extends TestBaseHandler {
     verify(writeOrderHandler, times(1)).sync(52L);
   }
   @Test
+  public void testStaleFileHandle() throws Exception {
+    when(hdfsState.getWriteOrderHandler(currentFileHandle)).thenReturn(null);
+    Status response = handler.handle(hdfsState, session, request);
+    Assert.assertEquals(NFS4ERR_STALE, response.getStatus());
+  }
+  @Test
   public void testWouldBlock() throws Exception {
     when(writeOrderHandler.syncWouldBlock(any(Long.class))).thenReturn(true);
     Assert.assertTrue(handler.wouldBlock(hdfsState, session, request));
-  }
-  @Test
-  public void testWouldNotBlock() throws Exception {
-    when(writeOrderHandler.syncWouldBlock(any(Long.class))).thenReturn(false);
-    Assert.assertFalse(handler.wouldBlock(hdfsState, session, request));
-  }
-  @Test
-  public void testWouldBlockStaleFileHandle() throws Exception {
-    when(hdfsState.getWriteOrderHandler(currentFileHandle)).thenReturn(null);
-    Assert.assertFalse(handler.wouldBlock(hdfsState, session, request));
   }
   @Test
   public void testWouldBlockNullFileHandle() throws Exception {
@@ -87,9 +76,20 @@ public class TestCOMMITHandler extends TestBaseHandler {
     Assert.assertFalse(handler.wouldBlock(hdfsState, session, request));
   }
   @Test
-  public void testStaleFileHandle() throws Exception {
+  public void testWouldBlockStaleFileHandle() throws Exception {
     when(hdfsState.getWriteOrderHandler(currentFileHandle)).thenReturn(null);
+    Assert.assertFalse(handler.wouldBlock(hdfsState, session, request));
+  }
+  @Test
+  public void testWouldNotBlock() throws Exception {
+    when(writeOrderHandler.syncWouldBlock(any(Long.class))).thenReturn(false);
+    Assert.assertFalse(handler.wouldBlock(hdfsState, session, request));
+  }
+  @Test
+  public void testZeroOffset() throws Exception {
+    request.setOffset(52L);
     Status response = handler.handle(hdfsState, session, request);
-    Assert.assertEquals(NFS4ERR_STALE, response.getStatus());
+    Assert.assertEquals(NFS4_OK, response.getStatus());
+    verify(writeOrderHandler, times(1)).sync(52L);
   }
 }

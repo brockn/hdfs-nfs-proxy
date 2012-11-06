@@ -30,6 +30,8 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
  */
 public class OpaqueData implements MessageBase {
 
+  protected byte[] mData;
+  protected int mSize;
   public OpaqueData(byte[] data) {
     this(data.length);
     setData(data);
@@ -40,38 +42,6 @@ public class OpaqueData implements MessageBase {
       throw new RuntimeException("Size too large " + mSize);
     }
   }
-  protected byte[] mData;
-  protected int mSize;
-  @Override
-  public void read(RPCBuffer buffer) {
-    mData = buffer.readBytes(mSize);
-  }
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeBytes(mData, 0, mSize);
-  }
-  public void setSize(int size) {
-    mSize = size;
-  }
-  public void setData(byte[] data) {
-    mData = Arrays.copyOf(data, mSize);
-  }
-
-  public int getSize() {
-    return mSize;
-  }
-  public byte[] getData() {
-    return mData;
-  }
-  @Override
-  public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + Arrays.hashCode(mData);
-    result = prime * result + mSize;
-    return result;
-  }
-
   @Override
   public boolean equals(Object obj) {
     if (this == obj)
@@ -86,5 +56,35 @@ public class OpaqueData implements MessageBase {
     if (mSize != other.mSize)
       return false;
     return true;
+  }
+  public byte[] getData() {
+    return mData;
+  }
+  public int getSize() {
+    return mSize;
+  }
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + Arrays.hashCode(mData);
+    result = prime * result + mSize;
+    return result;
+  }
+
+  @Override
+  public void read(RPCBuffer buffer) {
+    mData = buffer.readBytes(mSize);
+  }
+  public void setData(byte[] data) {
+    mData = Arrays.copyOf(data, mSize);
+  }
+  public void setSize(int size) {
+    mSize = size;
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeBytes(mData, 0, mSize);
   }
 }

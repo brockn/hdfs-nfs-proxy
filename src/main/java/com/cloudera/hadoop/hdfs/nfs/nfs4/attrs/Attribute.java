@@ -43,8 +43,6 @@ import com.google.common.collect.Lists;
 
 public abstract class Attribute implements MessageBase, Identifiable {
 
-  protected static final Logger LOGGER = Logger.getLogger(Attribute.class);
-
   static class AttributeHolder {
 
     Class<? extends Attribute> clazz;
@@ -57,6 +55,8 @@ public abstract class Attribute implements MessageBase, Identifiable {
       this.handler = handler;
     }
   }
+
+  protected static final Logger LOGGER = Logger.getLogger(Attribute.class);
 
   static ImmutableMap<Integer, AttributeHolder> attributes =
       ImmutableMap.<Integer, AttributeHolder>builder()
@@ -103,68 +103,10 @@ public abstract class Attribute implements MessageBase, Identifiable {
       .put(NFS4_FATTR4_TIME_MODIFY_SET, new AttributeHolder(SetModifyTime.class, new SetModifyTimeHandler()))
       .put(NFS4_FATTR4_TYPE, new AttributeHolder(Type.class, new TypeHandler())).build();
 
-  public static Bitmap getSupported() {
-    Bitmap attrs = new Bitmap();
-    for (Integer id : attributes.keySet()) {
-      attrs.set(id);
-    }
-    return attrs;
-  }
-
-  protected static boolean isSupported(int id) {
-    return attributes.containsKey(id);
-  }
-
   protected static void checkSupported(int id) {
     if (!isSupported(id)) {
       throw new UnsupportedOperationException("NFS Attribute " + id);
     }
-  }
-
-  static Attribute parse(RPCBuffer buffer, int id) {
-    checkSupported(id);
-    try {
-      Attribute attribute = attributes.get(id).clazz.newInstance();
-      attribute.read(buffer);
-      return attribute;
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-  public static Bitmap readAttrsSet(RPCBuffer buffer) {
-    Bitmap attrs = new Bitmap();
-    attrs.read(buffer);
-    return attrs;
-  }
-  public static void writeAttrsSet(RPCBuffer buffer, Bitmap attrs) {
-    attrs.write(buffer);
-  }
-  public static void writeAttrs(RPCBuffer buffer, Bitmap attrs, ImmutableList<Attribute> attrValues) {
-    attrs.write(buffer);
-    int offset = buffer.position();
-    buffer.writeUint32(Integer.MAX_VALUE); // save space
-    if (!attrs.isEmpty()) {
-      for (Attribute attr : attrValues) {
-        attr.write(buffer);
-      }
-    }
-    buffer.putInt(offset, buffer.position() - offset - 4); // current - start offset - 4 for length
-  }
-
-  public static Pair<Bitmap, ImmutableList<Attribute>> readAttrs(RPCBuffer buffer) {
-    Bitmap attrs = new Bitmap();
-    attrs.read(buffer);
-    List<Attribute> attrValues = Lists.newArrayList();
-    buffer.skip(4); // XXX length of what we are about to read. We don't currently use this
-    if (!attrs.isEmpty()) {
-      int size = attrs.size();
-      for (int bitIndex = 0; bitIndex < size; bitIndex++) {
-        if (attrs.isSet(bitIndex)) {
-          attrValues.add(parse(buffer, bitIndex));
-        }
-      }
-    }
-    return new Pair<Bitmap, ImmutableList<Attribute>>(attrs, ImmutableList.copyOf(attrValues));
   }
 
   public static Pair<Bitmap, ImmutableList<Attribute>> getAttrs(HDFSState hdfsState, Session session,
@@ -187,6 +129,54 @@ public abstract class Attribute implements MessageBase, Identifiable {
     return new Pair<Bitmap, ImmutableList<Attribute>>(responseAttrs, ImmutableList.copyOf(attrValues));
   }
 
+  @SuppressWarnings("unchecked")
+  public static <T extends Attribute> AttributeHandler<T> getHandler(int id) {
+    checkSupported(id);
+    return (AttributeHandler<T>) attributes.get(id).handler;
+  }
+
+  public static Bitmap getSupported() {
+    Bitmap attrs = new Bitmap();
+    for (Integer id : attributes.keySet()) {
+      attrs.set(id);
+    }
+    return attrs;
+  }
+  protected static boolean isSupported(int id) {
+    return attributes.containsKey(id);
+  }
+  static Attribute parse(RPCBuffer buffer, int id) {
+    checkSupported(id);
+    try {
+      Attribute attribute = attributes.get(id).clazz.newInstance();
+      attribute.read(buffer);
+      return attribute;
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+  public static Pair<Bitmap, ImmutableList<Attribute>> readAttrs(RPCBuffer buffer) {
+    Bitmap attrs = new Bitmap();
+    attrs.read(buffer);
+    List<Attribute> attrValues = Lists.newArrayList();
+    buffer.skip(4); // XXX length of what we are about to read. We don't currently use this
+    if (!attrs.isEmpty()) {
+      int size = attrs.size();
+      for (int bitIndex = 0; bitIndex < size; bitIndex++) {
+        if (attrs.isSet(bitIndex)) {
+          attrValues.add(parse(buffer, bitIndex));
+        }
+      }
+    }
+    return new Pair<Bitmap, ImmutableList<Attribute>>(attrs, ImmutableList.copyOf(attrValues));
+  }
+
+  public static Bitmap readAttrsSet(RPCBuffer buffer) {
+    Bitmap attrs = new Bitmap();
+    attrs.read(buffer);
+    return attrs;
+  }
+
   public static Bitmap setAttrs(HDFSState hdfsState, Session session,
       Bitmap requestedAttrs, ImmutableMap<Integer, Attribute> attrValues, FileSystem fs, FileStatus fileStatus, StateID stateID)
           throws NFS4Exception, IOException {
@@ -203,9 +193,19 @@ public abstract class Attribute implements MessageBase, Identifiable {
     return requestedAttrs;
   }
 
-  @SuppressWarnings("unchecked")
-  public static <T extends Attribute> AttributeHandler<T> getHandler(int id) {
-    checkSupported(id);
-    return (AttributeHandler<T>) attributes.get(id).handler;
+  public static void writeAttrs(RPCBuffer buffer, Bitmap attrs, ImmutableList<Attribute> attrValues) {
+    attrs.write(buffer);
+    int offset = buffer.position();
+    buffer.writeUint32(Integer.MAX_VALUE); // save space
+    if (!attrs.isEmpty()) {
+      for (Attribute attr : attrValues) {
+        attr.write(buffer);
+      }
+    }
+    buffer.putInt(offset, buffer.position() - offset - 4); // current - start offset - 4 for length
+  }
+
+  public static void writeAttrsSet(RPCBuffer buffer, Bitmap attrs) {
+    attrs.write(buffer);
   }
 }

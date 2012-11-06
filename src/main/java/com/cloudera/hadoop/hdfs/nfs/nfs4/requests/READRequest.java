@@ -30,6 +30,23 @@ public class READRequest extends OperationRequest {
   protected long mOffset;
   protected int mCount;
 
+  public int getCount() {
+    return mCount;
+  }
+
+  @Override
+  public int getID() {
+    return NFS4_OP_READ;
+  }
+
+  public long getOffset() {
+    return mOffset;
+  }
+
+  public StateID getStateID() {
+    return mStateID;
+  }
+
   @Override
   public void read(RPCBuffer buffer) {
     mStateID = new StateID();
@@ -38,40 +55,23 @@ public class READRequest extends OperationRequest {
     mCount = buffer.readUint32();
   }
 
-  @Override
-  public void write(RPCBuffer buffer) {
-    mStateID.write(buffer);
-    buffer.writeUint64(mOffset);
-    buffer.writeUint32(mCount);
-  }
-
-  @Override
-  public int getID() {
-    return NFS4_OP_READ;
-  }
-
-  public StateID getStateID() {
-    return mStateID;
-  }
-
-  public void setStateID(StateID stateID) {
-    this.mStateID = stateID;
-  }
-
-  public long getOffset() {
-    return mOffset;
+  public void setCount(int count) {
+    this.mCount = count;
   }
 
   public void setOffset(long offset) {
     this.mOffset = offset;
   }
 
-  public int getCount() {
-    return mCount;
+  public void setStateID(StateID stateID) {
+    this.mStateID = stateID;
   }
 
-  public void setCount(int count) {
-    this.mCount = count;
+  @Override
+  public void write(RPCBuffer buffer) {
+    mStateID.write(buffer);
+    buffer.writeUint64(mOffset);
+    buffer.writeUint32(mCount);
   }
 
 }

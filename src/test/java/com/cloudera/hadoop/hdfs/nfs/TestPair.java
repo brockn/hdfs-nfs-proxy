@@ -33,12 +33,6 @@ public class TestPair {
   }
 
   @Test
-  public void testNull() {
-    Pair<Object, Object> pair = Pair.of(null, null);
-    Assert.assertEquals("(null, null)", pair.toString());
-  }
-
-  @Test
   public void testNonNull() {
     Object left = new Object() {
       @Override
@@ -56,5 +50,11 @@ public class TestPair {
     Assert.assertEquals(left, pair.getFirst());
     Assert.assertEquals(right, pair.getSecond());
     Assert.assertEquals("(left, right)", pair.toString());
+  }
+
+  @Test
+  public void testNull() {
+    Pair<Object, Object> pair = Pair.of(null, null);
+    Assert.assertEquals("(null, null)", pair.toString());
   }
 }

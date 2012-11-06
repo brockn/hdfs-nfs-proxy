@@ -43,6 +43,11 @@ public class GETATTRHandler extends OperationRequestHandler<GETATTRRequest, GETA
   protected static final Logger LOGGER = Logger.getLogger(GETATTRHandler.class);
 
   @Override
+  protected GETATTRResponse createResponse() {
+    return new GETATTRResponse();
+  }
+
+  @Override
   protected GETATTRResponse doHandle(HDFSState hdfsState, Session session,
       GETATTRRequest request) throws NFS4Exception, IOException {
     if (session.getCurrentFileHandle() == null) {
@@ -62,10 +67,5 @@ public class GETATTRHandler extends OperationRequestHandler<GETATTRRequest, GETA
     } catch (FileNotFoundException e) {
       throw new NFS4Exception(NFS4ERR_NOENT);
     }
-  }
-
-  @Override
-  protected GETATTRResponse createResponse() {
-    return new GETATTRResponse();
   }
 }

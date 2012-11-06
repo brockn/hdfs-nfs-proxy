@@ -25,52 +25,6 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
 public class ChangeInfo implements MessageBase {
 
-  protected boolean mAtomic; // XXX boolean?
-  protected ChangeID mChangeIDBefore;
-  protected ChangeID mChangeIDAfter;
-
-
-  @Override
-  public void read(RPCBuffer buffer) {
-    mAtomic = buffer.readBoolean();
-    mChangeIDBefore = new ChangeID();
-    mChangeIDBefore.read(buffer);
-    mChangeIDAfter = new ChangeID();
-    mChangeIDAfter.read(buffer);
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeBoolean(mAtomic);
-    mChangeIDBefore.write(buffer);
-    mChangeIDAfter.write(buffer);
-  }
-
-
-  public boolean getAtomic() {
-    return mAtomic;
-  }
-
-  public void setAtomic(boolean atomic) {
-    this.mAtomic = atomic;
-  }
-
-  public ChangeID getChangeIDBefore() {
-    return mChangeIDBefore;
-  }
-
-  public void setChangeIDBefore(ChangeID changeIDBefore) {
-    this.mChangeIDBefore = changeIDBefore;
-  }
-
-  public ChangeID getChangeIDAfter() {
-    return mChangeIDAfter;
-  }
-
-  public void setChangeIDAfter(ChangeID changeIDAfter) {
-    this.mChangeIDAfter = changeIDAfter;
-  }
-
   public static ChangeInfo newChangeInfo(boolean atomic, long before, long after) {
     ChangeInfo changeInfo = new ChangeInfo();
 
@@ -83,5 +37,51 @@ public class ChangeInfo implements MessageBase {
     changeIDAfter.setChangeID(after);
     changeInfo.setChangeIDAfter(changeIDAfter);
     return changeInfo;
+  }
+  protected boolean mAtomic; // XXX boolean?
+  protected ChangeID mChangeIDBefore;
+
+
+  protected ChangeID mChangeIDAfter;
+
+  public boolean getAtomic() {
+    return mAtomic;
+  }
+
+
+  public ChangeID getChangeIDAfter() {
+    return mChangeIDAfter;
+  }
+
+  public ChangeID getChangeIDBefore() {
+    return mChangeIDBefore;
+  }
+
+  @Override
+  public void read(RPCBuffer buffer) {
+    mAtomic = buffer.readBoolean();
+    mChangeIDBefore = new ChangeID();
+    mChangeIDBefore.read(buffer);
+    mChangeIDAfter = new ChangeID();
+    mChangeIDAfter.read(buffer);
+  }
+
+  public void setAtomic(boolean atomic) {
+    this.mAtomic = atomic;
+  }
+
+  public void setChangeIDAfter(ChangeID changeIDAfter) {
+    this.mChangeIDAfter = changeIDAfter;
+  }
+
+  public void setChangeIDBefore(ChangeID changeIDBefore) {
+    this.mChangeIDBefore = changeIDBefore;
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeBoolean(mAtomic);
+    mChangeIDBefore.write(buffer);
+    mChangeIDAfter.write(buffer);
   }
 }

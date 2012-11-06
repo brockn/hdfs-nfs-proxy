@@ -16,41 +16,36 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.cloudera.hadoop.hdfs.nfs.security;
+package com.cloudera.hadoop.hdfs.nfs.rpc;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
-
-import com.cloudera.hadoop.hdfs.nfs.nfs4.OpaqueData;
-import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
-public class VeriferGSS extends Verifier {
-  protected OpaqueData mOpaqueData;
-
+public class RPCException extends Exception {
+  private static final long serialVersionUID = 20969169211308879L;
+  private final int replyState;
+  private final int acceptState;
+  
+  public RPCException(int replyState, int acceptState) {
+    super();
+    this.replyState = replyState;
+    this.acceptState = acceptState;
+  }
+  public RPCException(int replyState, int acceptState, Throwable t) {
+    super(t);
+    this.replyState = replyState;
+    this.acceptState = acceptState;
+  }
+  public int getReplyState() {
+    return replyState;
+  }
+  public int getAcceptState() {
+    return acceptState;
+  }
   @Override
-  public void read(RPCBuffer buffer) {
-    int length = buffer.readUint32();
-    mOpaqueData = new OpaqueData(length);
-    mOpaqueData.read(buffer);
-
+  public String getMessage() {
+    String msg = "replyState=" + replyState + 
+        ", acceptState=" + acceptState;
+    if(super.getMessage() != null) {
+      msg += ", getMessage()=" + super.getMessage();
+    }
+    return msg;
   }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint32(mOpaqueData.getSize());
-    mOpaqueData.write(buffer);
-  }
-
-  public void set(byte[] data) {
-    mOpaqueData = new OpaqueData(data.length);
-    mOpaqueData.setData(data);
-  }
-
-  public byte[] get() {
-    return mOpaqueData.getData();
-  }
-
-  @Override
-  public int getFlavor() {
-    return RPC_VERIFIER_GSS;
-  }
-
 }

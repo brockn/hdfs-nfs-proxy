@@ -28,19 +28,30 @@ import org.junit.Test;
 public class TestRPCBuffer {
 
   @Test
-  public void testSmallString() throws Exception {
-    RPCBuffer buffer = new RPCBuffer();
-    buffer.writeString("/");
-    buffer.writeBoolean(true);
-    int pos = buffer.position();
-    buffer.flip();
-    assertTrue(buffer.length() == pos);
-    assertTrue(buffer.position() == 0);
-    String s;
+  public void testBasic() throws Exception {
+    String sampleString = "brock";
+    byte[] sampleBytes = sampleString.getBytes();
+    int sampleInt = Integer.MAX_VALUE;
+    boolean sampleBool = true;
+    RPCBuffer write = new RPCBuffer();
+    write.writeString(sampleString);
+    write.writeInt(sampleInt);
+    write.writeInt(sampleBytes.length);
+    write.writeBytes(sampleBytes, 0, sampleBytes.length);
+    write.writeBoolean(sampleBool);
 
-    s = buffer.readString();
-    assertTrue("s is '" + s + "'", s.equals("/"));
-    assertTrue(buffer.readBoolean());
+    write.flip();
+
+    String s = write.readString();
+    assertEquals(sampleString, s);
+    int i = write.readInt();
+    assertTrue("Int " + i + " is unxpected",
+        sampleInt == i);
+    byte[] bytes = write.readBytes();
+    assertTrue("Unxpected bytes array", Arrays.equals(sampleBytes, bytes));
+    boolean bool = write.readBoolean();
+    assertTrue("Expected " + sampleBool,
+        bool == sampleBool);
 
   }
 
@@ -88,6 +99,22 @@ public class TestRPCBuffer {
   }
 
   @Test
+  public void testSmallString() throws Exception {
+    RPCBuffer buffer = new RPCBuffer();
+    buffer.writeString("/");
+    buffer.writeBoolean(true);
+    int pos = buffer.position();
+    buffer.flip();
+    assertTrue(buffer.length() == pos);
+    assertTrue(buffer.position() == 0);
+    String s;
+
+    s = buffer.readString();
+    assertTrue("s is '" + s + "'", s.equals("/"));
+    assertTrue(buffer.readBoolean());
+
+  }
+  @Test
   public void testUnsigned() throws Exception {
     int sampleUnsigned32 = Integer.MAX_VALUE;
     long sampleUnsigned64 = Long.MAX_VALUE;
@@ -119,32 +146,5 @@ public class TestRPCBuffer {
     assertTrue("Unexpected value " + unsignedInt, unsignedInt == sampleUnsigned32);
     long unsignedLong = write.readUint64();
     assertTrue("Unexpected value " + unsignedLong, unsignedLong == sampleUnsigned64);
-  }
-  @Test
-  public void testBasic() throws Exception {
-    String sampleString = "brock";
-    byte[] sampleBytes = sampleString.getBytes();
-    int sampleInt = Integer.MAX_VALUE;
-    boolean sampleBool = true;
-    RPCBuffer write = new RPCBuffer();
-    write.writeString(sampleString);
-    write.writeInt(sampleInt);
-    write.writeInt(sampleBytes.length);
-    write.writeBytes(sampleBytes, 0, sampleBytes.length);
-    write.writeBoolean(sampleBool);
-
-    write.flip();
-
-    String s = write.readString();
-    assertEquals(sampleString, s);
-    int i = write.readInt();
-    assertTrue("Int " + i + " is unxpected",
-        sampleInt == i);
-    byte[] bytes = write.readBytes();
-    assertTrue("Unxpected bytes array", Arrays.equals(sampleBytes, bytes));
-    boolean bool = write.readBoolean();
-    assertTrue("Expected " + sampleBool,
-        bool == sampleBool);
-
   }
 }

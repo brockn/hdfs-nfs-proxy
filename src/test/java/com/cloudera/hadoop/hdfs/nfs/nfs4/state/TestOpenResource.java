@@ -47,6 +47,11 @@ public class TestOpenResource {
 
   }
   @Test
+  public void testClose() throws Exception {
+    res.close();
+    verify(closeable).close();
+  }
+  @Test
   public void testGet() throws Exception {
     Assert.assertSame(closeable, res.get());
   }
@@ -54,11 +59,6 @@ public class TestOpenResource {
   public void testIsOwnedBy() throws Exception {
     Assert.assertTrue(res.isOwnedBy(stateID));
     Assert.assertFalse(res.isOwnedBy(new StateID()));
-  }
-  @Test
-  public void testClose() throws Exception {
-    res.close();
-    verify(closeable).close();
   }
   @Test
   public void testSettersGettters() throws Exception {

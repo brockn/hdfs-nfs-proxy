@@ -34,6 +34,11 @@ public class OPENCONFIRMHandler extends OperationRequestHandler<OPENCONFIRMReque
   protected static final Logger LOGGER = Logger.getLogger(OPENCONFIRMHandler.class);
 
   @Override
+  protected OPENCONFIRMResponse createResponse() {
+    return new OPENCONFIRMResponse();
+  }
+
+  @Override
   protected OPENCONFIRMResponse doHandle(HDFSState hdfsState, Session session,
       OPENCONFIRMRequest request) throws NFS4Exception {
     if (session.getCurrentFileHandle() == null) {
@@ -44,10 +49,5 @@ public class OPENCONFIRMHandler extends OperationRequestHandler<OPENCONFIRMReque
     response.setStateID(stateID);
     response.setStatus(NFS4_OK);
     return response;
-  }
-
-  @Override
-  protected OPENCONFIRMResponse createResponse() {
-    return new OPENCONFIRMResponse();
   }
 }

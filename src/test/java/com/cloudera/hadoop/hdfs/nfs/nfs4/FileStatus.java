@@ -41,17 +41,16 @@ public class FileStatus {
     mAttrs = attrs;
     assertNotNull(mAttrs);
   }
-  public boolean isDir() {
-    return ((Type)getAttr(NFS4_FATTR4_TYPE)).getType() == NFS4_DIR;
-  }
-  public long getSize() {
-    return ((Size)getAttr(NFS4_FATTR4_SIZE)).getSize();
-  }
-  public long getMTime() {
-    return toLong(((ModifyTime)getAttr(NFS4_FATTR4_TIME_MODIFY)).getTime());
+  protected Attribute getAttr(int id) {
+    Attribute attr = mAttrs.get(id);
+    assertNotNull(attr);
+    return attr;
   }
   public int getMode() {
     return ((Mode)getAttr(NFS4_FATTR4_MODE)).getMode();
+  }
+  public long getMTime() {
+    return toLong(((ModifyTime)getAttr(NFS4_FATTR4_TIME_MODIFY)).getTime());
   }
   public String getOwner() {
     return ((Owner)getAttr(NFS4_FATTR4_OWNER)).getOwner();
@@ -59,14 +58,15 @@ public class FileStatus {
   public String getOwnerGroup() {
     return ((OwnerGroup)getAttr(NFS4_FATTR4_OWNER_GROUP)).getOwnerGroup();
   }
+  public long getSize() {
+    return ((Size)getAttr(NFS4_FATTR4_SIZE)).getSize();
+  }
+  public boolean isDir() {
+    return ((Type)getAttr(NFS4_FATTR4_TYPE)).getType() == NFS4_DIR;
+  }
   protected long toLong(Time time) {
     long seconds = time.getSeconds() * 1000L;
     long nanos = time.getNanoSeconds() / 1000000L;
     return seconds + nanos;
-  }
-  protected Attribute getAttr(int id) {
-    Attribute attr = mAttrs.get(id);
-    assertNotNull(attr);
-    return attr;
   }
 }

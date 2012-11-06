@@ -36,64 +36,64 @@ public class Client {
   private String mClientHost;
   private boolean mConfirmed;
 
-  public boolean isConfirmed() {
-    return mConfirmed;
-  }
-
-  public void setConfirmed(boolean confirmed) {
-    this.mConfirmed = confirmed;
-  }
-
   protected Client(ClientID clientID) {
     this.mClientID = clientID;
     mShorthandID = CLIENTID.addAndGet(10L);
-  }
-
-  public ClientID getClientID() {
-    return mClientID;
-  }
-
-  public void setClientID(ClientID clientID) {
-    this.mClientID = clientID;
   }
 
   public Callback getCallback() {
     return mCallback;
   }
 
-  public void setCallback(Callback callback) {
-    this.mCallback = callback;
-  }
-
   public int getCallbackIdent() {
     return mCallbackIdent;
   }
 
-  public void setCallbackIdent(int callbackIdent) {
-    this.mCallbackIdent = callbackIdent;
+  public String getClientHost() {
+    return mClientHost;
+  }
+
+  public ClientID getClientID() {
+    return mClientID;
   }
 
   public long getShorthandID() {
     return mShorthandID;
   }
 
-  public void setShorthandID(long shorthandID) {
-    this.mShorthandID = shorthandID;
-  }
-  public void setClientHost(String host) {
-    this.mClientHost = host;
-  }
-  public String getClientHost() {
-    return mClientHost;
-  }
   public OpaqueData8 getVerifer() {
     return mVerifer;
   }
 
-  public void setVerifer(OpaqueData8 verifer) {
-    this.mVerifer = verifer;
+  public boolean isConfirmed() {
+    return mConfirmed;
+  }
+
+  public void setCallback(Callback callback) {
+    this.mCallback = callback;
+  }
+
+  public void setCallbackIdent(int callbackIdent) {
+    this.mCallbackIdent = callbackIdent;
+  }
+
+  public void setClientHost(String host) {
+    this.mClientHost = host;
+  }
+  public void setClientID(ClientID clientID) {
+    this.mClientID = clientID;
+  }
+  public void setConfirmed(boolean confirmed) {
+    this.mConfirmed = confirmed;
   }
   public void setRenew(long ts) {
     // not used for now
+  }
+
+  public void setShorthandID(long shorthandID) {
+    this.mShorthandID = shorthandID;
+  }
+  public void setVerifer(OpaqueData8 verifer) {
+    this.mVerifer = verifer;
   }
 }

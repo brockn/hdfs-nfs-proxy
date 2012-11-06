@@ -38,40 +38,8 @@ public class SETATTRRequest extends OperationRequest {
   protected StateID mStateID;
   protected Bitmap mAttrs;
   protected ImmutableList<Attribute> mAttrValues;
-  @Override
-  public void read(RPCBuffer buffer) {
-    mStateID = new StateID();
-    mStateID.read(buffer);
-    Pair<Bitmap, ImmutableList<Attribute>> pair = Attribute.readAttrs(buffer);
-    mAttrs = pair.getFirst();
-    mAttrValues = pair.getSecond();
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    mStateID.write(buffer);
-    Attribute.writeAttrs(buffer, mAttrs, mAttrValues);
-  }
-
-  public StateID getStateID() {
-    return mStateID;
-  }
-
-  public void setmStateID(StateID stateID) {
-    this.mStateID = stateID;
-  }
-
-  @Override
-  public int getID() {
-    return NFS4_OP_SETATTR;
-  }
-
   public Bitmap getAttrs() {
     return mAttrs;
-  }
-
-  public void setAttrs(Bitmap attrs) {
-    this.mAttrs = attrs;
   }
 
   public ImmutableMap<Integer, Attribute> getAttrValues() {
@@ -82,14 +50,46 @@ public class SETATTRRequest extends OperationRequest {
     return ImmutableMap.copyOf(rtn);
   }
 
+  @Override
+  public int getID() {
+    return NFS4_OP_SETATTR;
+  }
+
+  public StateID getStateID() {
+    return mStateID;
+  }
+
+  @Override
+  public void read(RPCBuffer buffer) {
+    mStateID = new StateID();
+    mStateID.read(buffer);
+    Pair<Bitmap, ImmutableList<Attribute>> pair = Attribute.readAttrs(buffer);
+    mAttrs = pair.getFirst();
+    mAttrValues = pair.getSecond();
+  }
+
+  public void setAttrs(Bitmap attrs) {
+    this.mAttrs = attrs;
+  }
+
   public void setAttrValues(List<Attribute> attributes) {
     this.mAttrValues = ImmutableList.copyOf(attributes);
+  }
+
+  public void setmStateID(StateID stateID) {
+    this.mStateID = stateID;
   }
 
   @Override
   public String toString() {
     return "SETATTRRequest [mStateID=" + mStateID + ", mAttrs=" + mAttrs
         + ", mAttrValues=" + mAttrValues + "]";
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    mStateID.write(buffer);
+    Attribute.writeAttrs(buffer, mAttrs, mAttrValues);
   }
 
 }

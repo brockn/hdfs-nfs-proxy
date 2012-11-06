@@ -97,13 +97,6 @@ public class TestHDFSStateBackgroundWorker {
   }
 
   @Test
-  public void testShutdown() throws Exception {
-    worker.shutdown();
-    while(worker.isAlive()) {
-      Thread.sleep(1L);
-    }
-  }
-  @Test
   public void testDoesNotRemoveActiveWriters() throws Exception {
     when(out.getLastOperation()).thenAnswer(new Answer<Long>() {
       @Override
@@ -132,25 +125,6 @@ public class TestHDFSStateBackgroundWorker {
     }
     verify(writeOrderHandler).close(true);
   }
-  @Test
-  public void testFileNotOpen() throws Exception {
-    when(hdfsFile.isOpen()).thenReturn(false);
-    synchronized (openFileMap) {
-      openFileMap.put(fileHandle, hdfsFile);
-    }
-    Thread.sleep(interval * 2);
-    verify(hdfsFile, never()).closeResourcesInactiveSince(any(Long.class));
-  }
-  @Test
-  public void testFileOpen() throws Exception {
-    when(hdfsFile.isOpen()).thenReturn(true);
-    synchronized (openFileMap) {
-      openFileMap.put(fileHandle, hdfsFile);
-    }
-    Thread.sleep(interval * 2);
-    verify(hdfsFile, atLeastOnce()).closeResourcesInactiveSince(any(Long.class));
-  }
-
   @Test
   public void testFileHandleReap() throws Exception {
     FileHandle fh1 = new FileHandle("fh1".getBytes(Charsets.UTF_8));
@@ -181,5 +155,31 @@ public class TestHDFSStateBackgroundWorker {
     INode inode3Updated = fileHandleINodeMap.getINodeByFileHandle(fh3);
     Assert.assertEquals(inode3, inode3Updated);
     Assert.assertEquals(inode3.getCreationTime(), inode3Updated.getCreationTime());
+  }
+  @Test
+  public void testFileNotOpen() throws Exception {
+    when(hdfsFile.isOpen()).thenReturn(false);
+    synchronized (openFileMap) {
+      openFileMap.put(fileHandle, hdfsFile);
+    }
+    Thread.sleep(interval * 2);
+    verify(hdfsFile, never()).closeResourcesInactiveSince(any(Long.class));
+  }
+  @Test
+  public void testFileOpen() throws Exception {
+    when(hdfsFile.isOpen()).thenReturn(true);
+    synchronized (openFileMap) {
+      openFileMap.put(fileHandle, hdfsFile);
+    }
+    Thread.sleep(interval * 2);
+    verify(hdfsFile, atLeastOnce()).closeResourcesInactiveSince(any(Long.class));
+  }
+
+  @Test
+  public void testShutdown() throws Exception {
+    worker.shutdown();
+    while(worker.isAlive()) {
+      Thread.sleep(1L);
+    }
   }
 }

@@ -27,15 +27,8 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
 public class PUTFHRequest extends OperationRequest {
   protected FileHandle mFileHandle;
-  @Override
-  public void read(RPCBuffer buffer) {
-    mFileHandle = new FileHandle();
-    mFileHandle.read(buffer);
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    mFileHandle.write(buffer);
+  public FileHandle getFileHandle() {
+    return mFileHandle;
   }
 
   @Override
@@ -43,12 +36,19 @@ public class PUTFHRequest extends OperationRequest {
     return NFS4_OP_PUTFH;
   }
 
-  public FileHandle getFileHandle() {
-    return mFileHandle;
+  @Override
+  public void read(RPCBuffer buffer) {
+    mFileHandle = new FileHandle();
+    mFileHandle.read(buffer);
   }
 
   public void setFileHandle(FileHandle fileHandle) {
     this.mFileHandle = fileHandle;
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    mFileHandle.write(buffer);
   }
 
 

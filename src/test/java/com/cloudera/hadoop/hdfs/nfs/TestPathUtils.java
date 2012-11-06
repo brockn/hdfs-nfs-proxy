@@ -36,10 +36,6 @@ public class TestPathUtils {
   }
 
   @Test
-  public void testRealPath() {
-    assertEquals(PathUtils.realPath(new Path("file:///")), "/");
-  }
-  @Test
   public void testFullyDelete() throws Exception {
     File baseDir = Files.createTempDir();
     File a = new File(baseDir, "a");
@@ -59,6 +55,10 @@ public class TestPathUtils {
     PathUtils.fullyDeleteContents(baseDir);
     Assert.assertTrue(baseDir.exists());
     Assert.assertFalse(a.exists());
+  }
+  @Test
+  public void testRealPath() {
+    assertEquals(PathUtils.realPath(new Path("file:///")), "/");
   }
 
 }

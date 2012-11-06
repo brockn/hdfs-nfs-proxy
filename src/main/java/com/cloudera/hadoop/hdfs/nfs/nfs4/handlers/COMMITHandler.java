@@ -37,19 +37,8 @@ public class COMMITHandler extends OperationRequestHandler<COMMITRequest, COMMIT
 
   protected static final Logger LOGGER = Logger.getLogger(COMMITHandler.class);
   @Override
-  public boolean wouldBlock(HDFSState hdfsState, Session session, COMMITRequest request) {
-    if (session.getCurrentFileHandle() == null) {
-      return false;
-    }
-    WriteOrderHandler writeOrderHandler = hdfsState.getWriteOrderHandler(session.getCurrentFileHandle());
-    if(writeOrderHandler == null) {
-      return false;
-    }
-    long offset = request.getOffset() + request.getCount();
-    if (offset == 0) {
-      offset = writeOrderHandler.getCurrentPos();
-    }
-    return writeOrderHandler.syncWouldBlock(offset);
+  protected COMMITResponse createResponse() {
+    return new COMMITResponse();
   }
   @Override
   protected COMMITResponse doHandle(HDFSState hdfsState, Session session,
@@ -75,7 +64,18 @@ public class COMMITHandler extends OperationRequestHandler<COMMITRequest, COMMIT
   }
 
   @Override
-  protected COMMITResponse createResponse() {
-    return new COMMITResponse();
+  public boolean wouldBlock(HDFSState hdfsState, Session session, COMMITRequest request) {
+    if (session.getCurrentFileHandle() == null) {
+      return false;
+    }
+    WriteOrderHandler writeOrderHandler = hdfsState.getWriteOrderHandler(session.getCurrentFileHandle());
+    if(writeOrderHandler == null) {
+      return false;
+    }
+    long offset = request.getOffset() + request.getCount();
+    if (offset == 0) {
+      offset = writeOrderHandler.getCurrentPos();
+    }
+    return writeOrderHandler.syncWouldBlock(offset);
   }
 }

@@ -72,48 +72,23 @@ public class WriteOrderHandler extends Thread {
     mbClosed = false;
   }
 
-  @Override
-  public void run() {
-    try {
-      while (mbRun) {
-        try {
-          PendingWrite write = mWriteQueue.poll(10, TimeUnit.SECONDS);
-          if (write == null) {
-            synchronized (mPendingWrites) {
-              SortedSet<Long> offsets = new TreeSet<Long>(mPendingWrites.keySet());
-              if(!offsets.isEmpty()) {
-                LOGGER.info("Pending Write Offsets " + offsets.size() + ": first = " + 
-                    offsets.first() +  ", last = " + offsets.last());
-              }
-            }
-          } else {
-            checkWriteState(write);
-            mPendingWrites.put(write.getOffset(), write);
-            mPendingWritesSize.addAndGet(write.getSize());
-          }
-          if(mPendingWritesSize.get() > 0L) {
-            LOGGER.info("Pending writes " + (mPendingWritesSize.get() / 1024L / 1024L) + "MB, " +
-            		"current offset = " + getCurrentPos());          
-          }
-          synchronized (mOutputStream) {
-            checkPendingWrites();
-          }
-        } catch (InterruptedException e) {
-          // this thread is not interruptible
-        }
-      }
-    } catch (IOException e) {
-      LOGGER.error("WriteOrderHandler quitting due to IO Error", e);
-      mIOException = e;
-    } catch (NFS4Exception e) {
-      LOGGER.error("WriteOrderHandler quitting due NFS Exception", e);
-      mNFSException = e;
-    } finally {
-      mbRun = false;
+  protected void checkException() throws IOException, NFS4Exception {
+    if (mNFSException != null) {
+      throw new NFS4Exception(mNFSException.getError(), "Error occured in WriteOrderHandler", mNFSException);
+    }
+    if (mIOException != null) {
+      throw new IOException("IO Error occured in WriteOrderHandler", mIOException);
+    }
+    if (!isRunningAndOpen()) {
+      throw new NFS4Exception(NFS4ERR_PERM, "WriteOrderHandler is dead");
     }
   }
-  private boolean isRunningAndOpen() {
-    return mbRun && !mbClosed;
+  protected void checkPendingWrites() throws IOException {
+    PendingWrite write = null;
+    while ((write = mPendingWrites.remove(mOutputStream.getPos())) != null) {
+      mPendingWritesSize.addAndGet(-write.getSize());
+      doWrite(write);
+    }
   }
   // turns out NFS clients will send the same write twice if the write rate is slow
   protected void checkWriteState(PendingWrite write) throws NFS4Exception {
@@ -126,129 +101,10 @@ public class WriteOrderHandler extends Thread {
     }
   }
 
-  protected void checkPendingWrites() throws IOException {
-    PendingWrite write = null;
-    while ((write = mPendingWrites.remove(mOutputStream.getPos())) != null) {
-      mPendingWritesSize.addAndGet(-write.getSize());
-      doWrite(write);
-    }
-  }
-
-  protected void doWrite(PendingWrite write) throws IOException {
-    long preWritePos = mOutputStream.getPos();
-    checkState(preWritePos == write.getOffset(), " Offset = " + write.getOffset() + ", pos = " + preWritePos);
-    mOutputStream.write(write.getData(), write.getStart(), write.getLength());
-    if(LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Writing to " + write.getName() + " " + write.getOffset() + ", "
-            + write.getLength() + ", new offset = " + mOutputStream.getPos() + ", hash = " + write.hashCode());
-    }
-    if (write.isSync()) {
-      mOutputStream.sync();
-    }
-  }
-
-  protected void checkException() throws IOException, NFS4Exception {
-    if (mNFSException != null) {
-      throw new NFS4Exception(mNFSException.getError(), "Error occured in WriteOrderHandler", mNFSException);
-    }
-    if (mIOException != null) {
-      throw new IOException("IO Error occured in WriteOrderHandler", mIOException);
-    }
-    if (!isRunningAndOpen()) {
-      throw new NFS4Exception(NFS4ERR_PERM, "WriteOrderHandler is dead");
-    }
-  }
-  /**
-   * @return unique identifer for this write order handler
-   */
-  public String getIdentifer() {
-    return identifer;
-  }
-  /**
-   * @return current offset of the file
-   */
-  public long getCurrentPos() {
-    return mOutputStream.getPos();
-  }
-  /**
-   * Block until the outputstream reaches the specified offset.
-   *
-   * @param offset
-   * @throws IOException thrown if the underlying stream throws an IOException
-   * @throws NFS4Exception thrown if the thread processing writes dies
-   */
-  public void sync(long offset) throws IOException, NFS4Exception {
-    checkException();
-    String pendingWrites;
-    synchronized (mPendingWrites) {
-      pendingWrites = mPendingWrites.keySet().toString();
-    }
-    if(LOGGER.isDebugEnabled()) {
-      LOGGER.debug("Sync for " + mOutputStream + " and " + offset + 
-          ", pending writes = " + pendingWrites + ", write queue = " + mWriteQueue.size());      
-    }
-    while (mOutputStream.getPos() < offset) {
-      checkException();
-      pause(10L);
-    }
-    synchronized (mOutputStream) {
-      mOutputStream.sync();
-    }
-  }
-  /**
-   * Check to see if a sync at offset would block
-   * @param offset the sync is waiting for
-   * @return true if the sync call would block
-   * @throws IOException
-   */
-  public boolean syncWouldBlock(long offset) {
-    return writeWouldBlock(offset);
-  }
-  /**
-   * Check to see if a write to offset with sync flag would block
-   * @param offset the write occurs at
-   * @return true if the write would block
-   * @throws IOException
-   */
-  public boolean writeWouldBlock(long offset) {
-    if(!isRunningAndOpen()) {
-      return false;
-    }
-    if(getCurrentPos() < offset) {
-      return true;
-    }
-    return false;
-  }
-  /**
-   * Check to see if a close() call would block
-   * @return true if a call to close would block
-   * @throws IOException
-   */
-  public boolean closeWouldBlock() throws IOException {
-    if(!isRunningAndOpen()) {
-      return false;
-    }
-    if(mOutputStream.getPos() < mExpectedLength.get()
-        || !(mPendingWrites.isEmpty() && mWriteQueue.isEmpty())) {
-      if(LOGGER.isDebugEnabled()) {
-        String pendingWrites;
-        synchronized (mPendingWrites) {
-          pendingWrites = mPendingWrites.keySet().toString();
-        }
-        LOGGER.debug("Close would block for " + mOutputStream + ", expectedLength = " + mExpectedLength.get() + 
-            ", mOutputStream.getPos = " + mOutputStream.getPos() + ", pending writes = " + pendingWrites + 
-            ", write queue = " + mWriteQueue.size());
-      }
-      return true;
-    }
-    return false;
-  }
-  public boolean isOpen() {
-    return !mbClosed;
-  }
   public void close() throws IOException, NFS4Exception {
     close(false);
   }
+
   /**
    * Close the underlying stream blocking until all writes have been
    * processed.
@@ -291,6 +147,54 @@ public class WriteOrderHandler extends Thread {
     }
   }
 
+  /**
+   * Check to see if a close() call would block
+   * @return true if a call to close would block
+   * @throws IOException
+   */
+  public boolean closeWouldBlock() throws IOException {
+    if(!isRunningAndOpen()) {
+      return false;
+    }
+    if(mOutputStream.getPos() < mExpectedLength.get()
+        || !(mPendingWrites.isEmpty() && mWriteQueue.isEmpty())) {
+      if(LOGGER.isDebugEnabled()) {
+        String pendingWrites;
+        synchronized (mPendingWrites) {
+          pendingWrites = mPendingWrites.keySet().toString();
+        }
+        LOGGER.debug("Close would block for " + mOutputStream + ", expectedLength = " + mExpectedLength.get() + 
+            ", mOutputStream.getPos = " + mOutputStream.getPos() + ", pending writes = " + pendingWrites + 
+            ", write queue = " + mWriteQueue.size());
+      }
+      return true;
+    }
+    return false;
+  }
+  protected void doWrite(PendingWrite write) throws IOException {
+    long preWritePos = mOutputStream.getPos();
+    checkState(preWritePos == write.getOffset(), " Offset = " + write.getOffset() + ", pos = " + preWritePos);
+    mOutputStream.write(write.getData(), write.getStart(), write.getLength());
+    if(LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Writing to " + write.getName() + " " + write.getOffset() + ", "
+            + write.getLength() + ", new offset = " + mOutputStream.getPos() + ", hash = " + write.hashCode());
+    }
+    if (write.isSync()) {
+      mOutputStream.sync();
+    }
+  }
+  /**
+   * @return current offset of the file
+   */
+  public long getCurrentPos() {
+    return mOutputStream.getPos();
+  }
+  /**
+   * @return unique identifer for this write order handler
+   */
+  public String getIdentifer() {
+    return identifer;
+  }
   public File getTemporaryFile(String name) throws IOException {
     int hashCode = name.hashCode() & Integer.MAX_VALUE;
     int fileIndex = hashCode % mTempDirs.length;
@@ -304,13 +208,93 @@ public class WriteOrderHandler extends Thread {
     }
     return new File(dir, name);
   }
-
+  public boolean isOpen() {
+    return !mbClosed;
+  }
+  private boolean isRunningAndOpen() {
+    return mbRun && !mbClosed;
+  }
   protected void pause(long ms) throws IOException {
     try {
       Thread.sleep(ms);
     } catch (InterruptedException e) {
       throw new IOException("Interrupted while paused", e);
     }
+  }
+  @Override
+  public void run() {
+    try {
+      while (mbRun) {
+        try {
+          PendingWrite write = mWriteQueue.poll(10, TimeUnit.SECONDS);
+          if (write == null) {
+            synchronized (mPendingWrites) {
+              SortedSet<Long> offsets = new TreeSet<Long>(mPendingWrites.keySet());
+              if(!offsets.isEmpty()) {
+                LOGGER.info("Pending Write Offsets " + offsets.size() + ": first = " + 
+                    offsets.first() +  ", last = " + offsets.last());
+              }
+            }
+          } else {
+            checkWriteState(write);
+            mPendingWrites.put(write.getOffset(), write);
+            mPendingWritesSize.addAndGet(write.getSize());
+          }
+          if(mPendingWritesSize.get() > 0L) {
+            LOGGER.info("Pending writes " + (mPendingWritesSize.get() / 1024L / 1024L) + "MB, " +
+            		"current offset = " + getCurrentPos());          
+          }
+          synchronized (mOutputStream) {
+            checkPendingWrites();
+          }
+        } catch (InterruptedException e) {
+          // this thread is not interruptible
+        }
+      }
+    } catch (IOException e) {
+      LOGGER.error("WriteOrderHandler quitting due to IO Error", e);
+      mIOException = e;
+    } catch (NFS4Exception e) {
+      LOGGER.error("WriteOrderHandler quitting due NFS Exception", e);
+      mNFSException = e;
+    } finally {
+      mbRun = false;
+    }
+  }
+  /**
+   * Block until the outputstream reaches the specified offset.
+   *
+   * @param offset
+   * @throws IOException thrown if the underlying stream throws an IOException
+   * @throws NFS4Exception thrown if the thread processing writes dies
+   */
+  public void sync(long offset) throws IOException, NFS4Exception {
+    checkException();
+    String pendingWrites;
+    synchronized (mPendingWrites) {
+      pendingWrites = mPendingWrites.keySet().toString();
+    }
+    if(LOGGER.isDebugEnabled()) {
+      LOGGER.debug("Sync for " + mOutputStream + " and " + offset + 
+          ", pending writes = " + pendingWrites + ", write queue = " + mWriteQueue.size());      
+    }
+    while (mOutputStream.getPos() < offset) {
+      checkException();
+      pause(10L);
+    }
+    synchronized (mOutputStream) {
+      mOutputStream.sync();
+    }
+  }
+
+  /**
+   * Check to see if a sync at offset would block
+   * @param offset the sync is waiting for
+   * @return true if the sync call would block
+   * @throws IOException
+   */
+  public boolean syncWouldBlock(long offset) {
+    return writeWouldBlock(offset);
   }
 
   /**
@@ -356,5 +340,21 @@ public class WriteOrderHandler extends Thread {
       Thread.currentThread().interrupt();
       throw new IOException("Interrupted while putting write", e);
     }
+  }
+
+  /**
+   * Check to see if a write to offset with sync flag would block
+   * @param offset the write occurs at
+   * @return true if the write would block
+   * @throws IOException
+   */
+  public boolean writeWouldBlock(long offset) {
+    if(!isRunningAndOpen()) {
+      return false;
+    }
+    if(getCurrentPos() < offset) {
+      return true;
+    }
+    return false;
   }
 }

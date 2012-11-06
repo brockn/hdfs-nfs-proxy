@@ -29,6 +29,10 @@ public class NFS4Exception extends Exception {
   public NFS4Exception(int error) {
     this(error, (String)null);
   }
+  public NFS4Exception(int error, Exception e) {
+    super(e);
+    this.error = error;
+  }
   public NFS4Exception(int error, String msg) {
     this(error, msg, false);
   }
@@ -37,19 +41,12 @@ public class NFS4Exception extends Exception {
     this.error = error;
     this.log = log;
   }
-  public NFS4Exception(int error, Exception e) {
-    super(e);
-    this.error = error;
-  }
   public NFS4Exception(int error, String msg, Exception e) {
     super(msg, e);
     this.error = error;
   }
   public int getError() {
     return error;
-  }
-  public boolean shouldLog() {
-    return log;
   }
   @Override
   public String getMessage() {
@@ -58,5 +55,8 @@ public class NFS4Exception extends Exception {
       msg += ": " + super.getMessage();
     }
     return msg;
+  }
+  public boolean shouldLog() {
+    return log;
   }
 }

@@ -32,24 +32,6 @@ import com.google.common.util.concurrent.AbstractFuture;
 public class TestAsyncTaskExecutor {
 
   
-  @Test
-  public void testRetry() throws InterruptedException {
-    AsyncTaskExecutor<Void> executor = new AsyncTaskExecutor<Void>();
-    AsyncFutureImpl task1 = new AsyncFutureImpl();
-    executor.schedule(task1);
-    @SuppressWarnings("rawtypes")
-    BlockingQueue queue = field("queue")
-        .ofType(BlockingQueue.class)
-        .in(executor)
-        .get();    
-    Thread.sleep(2000L);
-    Assert.assertEquals(2, task1.calls.get());
-    Assert.assertTrue(queue.isEmpty());
-  }
-  private static abstract class BaseAsyncFuture extends AbstractFuture<Void> 
-  implements AsyncFuture<Void> {
-  }
-  
   private static class AsyncFutureImpl extends BaseAsyncFuture {
     AtomicInteger calls = new AtomicInteger(0);
     @Override
@@ -60,25 +42,29 @@ public class TestAsyncTaskExecutor {
       return AsyncFuture.Complete.RETRY;
     }    
   }
+  private static abstract class BaseAsyncFuture extends AbstractFuture<Void> 
+  implements AsyncFuture<Void> {
+  }
   
   @Test
-  public void testException() throws InterruptedException {
-    AsyncTaskExecutor<Void> executor = new AsyncTaskExecutor<Void>();
-    BaseAsyncFuture task1 = new BaseAsyncFuture() {
+  public void testEqualsHashCode() throws InterruptedException {
+    DelayedRunnable delayRunnable1 = new DelayedRunnable(new Runnable() {      
       @Override
-      public AsyncFuture.Complete makeProgress() {
-        throw new RuntimeException();
+      public void run() {
       }
-    };
-    executor.schedule(task1);
-    @SuppressWarnings("rawtypes")
-    BlockingQueue queue = field("queue")
-        .ofType(BlockingQueue.class)
-        .in(executor)
-        .get();    
-    Thread.sleep(2000L);
-    Assert.assertTrue(queue.isEmpty());
+    }, 2000L);
+    Thread.sleep(5L);
+    DelayedRunnable delayRunnable2 = new DelayedRunnable(new Runnable() {      
+      @Override
+      public void run() {
+      }
+    }, 2000L);
+    Assert.assertFalse(delayRunnable1.equals(null));
+    Assert.assertFalse(delayRunnable1.equals(delayRunnable2));
+    Assert.assertTrue(delayRunnable1.equals(delayRunnable1));
+    Assert.assertFalse(delayRunnable1.hashCode() == delayRunnable2.hashCode());
   }
+  
   @Test
   public void testError() throws InterruptedException {
     AsyncTaskExecutor<Void> executor = new AsyncTaskExecutor<Void>();
@@ -98,13 +84,22 @@ public class TestAsyncTaskExecutor {
     Assert.assertTrue(queue.isEmpty());
   }
   @Test
-  public void testGetDelayNoDelay() throws InterruptedException {
-    DelayedRunnable delayRunnable = new DelayedRunnable(new Runnable() {      
+  public void testException() throws InterruptedException {
+    AsyncTaskExecutor<Void> executor = new AsyncTaskExecutor<Void>();
+    BaseAsyncFuture task1 = new BaseAsyncFuture() {
       @Override
-      public void run() {
+      public AsyncFuture.Complete makeProgress() {
+        throw new RuntimeException();
       }
-    });
-    Assert.assertEquals(0, delayRunnable.getDelay(TimeUnit.MILLISECONDS));
+    };
+    executor.schedule(task1);
+    @SuppressWarnings("rawtypes")
+    BlockingQueue queue = field("queue")
+        .ofType(BlockingQueue.class)
+        .in(executor)
+        .get();    
+    Thread.sleep(2000L);
+    Assert.assertTrue(queue.isEmpty());
   }
   @Test
   public void testGetDelayDelay() throws InterruptedException {
@@ -118,22 +113,27 @@ public class TestAsyncTaskExecutor {
     Assert.assertEquals(0, delayRunnable.getDelay(TimeUnit.MILLISECONDS));
   }
   @Test
-  public void testEqualsHashCode() throws InterruptedException {
-    DelayedRunnable delayRunnable1 = new DelayedRunnable(new Runnable() {      
+  public void testGetDelayNoDelay() throws InterruptedException {
+    DelayedRunnable delayRunnable = new DelayedRunnable(new Runnable() {      
       @Override
       public void run() {
       }
-    }, 2000L);
-    Thread.sleep(5L);
-    DelayedRunnable delayRunnable2 = new DelayedRunnable(new Runnable() {      
-      @Override
-      public void run() {
-      }
-    }, 2000L);
-    Assert.assertFalse(delayRunnable1.equals(null));
-    Assert.assertFalse(delayRunnable1.equals(delayRunnable2));
-    Assert.assertTrue(delayRunnable1.equals(delayRunnable1));
-    Assert.assertFalse(delayRunnable1.hashCode() == delayRunnable2.hashCode());
+    });
+    Assert.assertEquals(0, delayRunnable.getDelay(TimeUnit.MILLISECONDS));
+  }
+  @Test
+  public void testRetry() throws InterruptedException {
+    AsyncTaskExecutor<Void> executor = new AsyncTaskExecutor<Void>();
+    AsyncFutureImpl task1 = new AsyncFutureImpl();
+    executor.schedule(task1);
+    @SuppressWarnings("rawtypes")
+    BlockingQueue queue = field("queue")
+        .ofType(BlockingQueue.class)
+        .in(executor)
+        .get();    
+    Thread.sleep(2000L);
+    Assert.assertEquals(2, task1.calls.get());
+    Assert.assertTrue(queue.isEmpty());
   }
   @Test
   public void testSortOrder() throws InterruptedException {

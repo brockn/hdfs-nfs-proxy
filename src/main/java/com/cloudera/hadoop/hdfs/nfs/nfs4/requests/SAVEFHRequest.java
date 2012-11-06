@@ -26,6 +26,11 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class SAVEFHRequest extends OperationRequest {
 
   @Override
+  public int getID() {
+    return NFS4_OP_SAVEFH;
+  }
+
+  @Override
   public void read(RPCBuffer buffer) {
 
   }
@@ -33,10 +38,5 @@ public class SAVEFHRequest extends OperationRequest {
   @Override
   public void write(RPCBuffer buffer) {
 
-  }
-
-  @Override
-  public int getID() {
-    return NFS4_OP_SAVEFH;
   }
 }

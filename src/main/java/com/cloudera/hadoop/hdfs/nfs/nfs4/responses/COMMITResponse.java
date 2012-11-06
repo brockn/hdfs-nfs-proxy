@@ -32,6 +32,18 @@ public class COMMITResponse extends OperationResponse implements Status {
   protected OpaqueData8 mVerifer;
 
   @Override
+  public int getID() {
+    return NFS4_OP_COMMIT;
+  }
+
+  @Override
+  public int getStatus() {
+    return mStatus;
+  }
+  public OpaqueData8 getVerfier() {
+    return mVerifer;
+  }
+  @Override
   public void read(RPCBuffer buffer) {
     mStatus = buffer.readUint32();
     if(mStatus == NFS4_OK) {
@@ -39,30 +51,18 @@ public class COMMITResponse extends OperationResponse implements Status {
       mVerifer.read(buffer);
     }
   }
-
+  @Override
+  public void setStatus(int status) {
+    this.mStatus = status;
+  }
+  public void setVerifer(OpaqueData8 verifer) {
+    mVerifer = verifer;
+  }
   @Override
   public void write(RPCBuffer buffer) {
     buffer.writeUint32(mStatus);
     if(mStatus == NFS4_OK) {
       mVerifer.write(buffer);
     }
-  }
-  @Override
-  public int getStatus() {
-    return mStatus;
-  }
-  @Override
-  public void setStatus(int status) {
-    this.mStatus = status;
-  }
-  @Override
-  public int getID() {
-    return NFS4_OP_COMMIT;
-  }
-  public OpaqueData8 getVerfier() {
-    return mVerifer;
-  }
-  public void setVerifer(OpaqueData8 verifer) {
-    mVerifer = verifer;
   }
 }

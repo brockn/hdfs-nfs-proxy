@@ -37,6 +37,11 @@ public class RENEWHandler extends OperationRequestHandler<RENEWRequest, RENEWRes
   protected static final Logger LOGGER = Logger.getLogger(RENEWHandler.class);
 
   @Override
+  protected RENEWResponse createResponse() {
+    return new RENEWResponse();
+  }
+
+  @Override
   protected RENEWResponse doHandle(HDFSState hdfsState, Session session,
       RENEWRequest request) throws NFS4Exception {
     ClientFactory clientFactory = hdfsState.getClientFactory();
@@ -51,10 +56,5 @@ public class RENEWHandler extends OperationRequestHandler<RENEWRequest, RENEWRes
     verifer.setData(Bytes.toBytes(hdfsState.getStartTime()));
     response.setStatus(NFS4_OK);
     return response;
-  }
-
-  @Override
-  protected RENEWResponse createResponse() {
-    return new RENEWResponse();
   }
 }

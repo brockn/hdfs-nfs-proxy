@@ -38,6 +38,11 @@ public class LOOKUPHandler extends OperationRequestHandler<LOOKUPRequest, LOOKUP
   protected static final Logger LOGGER = Logger.getLogger(LOOKUPHandler.class);
 
   @Override
+  protected LOOKUPResponse createResponse() {
+    return new LOOKUPResponse();
+  }
+
+  @Override
   protected LOOKUPResponse doHandle(HDFSState hdfsState, Session session,
       LOOKUPRequest request) throws NFS4Exception, IOException {
     if (session.getCurrentFileHandle() == null) {
@@ -56,10 +61,5 @@ public class LOOKUPHandler extends OperationRequestHandler<LOOKUPRequest, LOOKUP
     session.setCurrentFileHandle(fileHandle);
     response.setStatus(NFS4_OK);
     return response;
-  }
-
-  @Override
-  protected LOOKUPResponse createResponse() {
-    return new LOOKUPResponse();
   }
 }

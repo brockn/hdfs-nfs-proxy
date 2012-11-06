@@ -27,7 +27,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
+import org.ietf.jgss.GSSManager;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
@@ -56,6 +60,9 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.state.Client;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.ClientFactory;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
+import com.cloudera.hadoop.hdfs.nfs.security.SecurityHandlerFactory;
+import com.cloudera.hadoop.hdfs.nfs.security.SessionSecurityHandlerGSSFactory;
+import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -64,6 +71,97 @@ public class TestManual {
 
   protected static final Logger LOGGER = Logger.getLogger(TestManual.class);
 
+  private Configuration conf;
+  private SecurityHandlerFactory securityHandlerFactory;
+  
+  private NFS4Handler server;
+
+  /**
+   * Copies the message to byes and reads it back in again. Should execute
+   * both serialization and deserialization code.
+   *
+   * @param message
+   * @return message
+   */
+  protected <T extends MessageBase> T serde(T message) {
+    RPCBuffer buffer = new RPCBuffer();
+    message.write(buffer);
+    buffer.flip();
+    try {
+      message.read(buffer);
+    } catch (RuntimeException x) {
+      LOGGER.warn("Error reading buffer: " + LogUtils.dump(message), x);
+      throw x;
+    }
+    return message;
+  }
+  
+  @Before
+  public void setup() throws IOException {
+    conf = TestUtils.setupConf();
+    securityHandlerFactory = new SecurityHandlerFactory(conf,
+    new Supplier<GSSManager>() {
+      @Override
+      public GSSManager get() {
+        return GSSManager.getInstance();
+      }
+    }, new SessionSecurityHandlerGSSFactory());
+    server = new NFS4Handler(conf, securityHandlerFactory);
+  }
+  
+  @After
+  public void teardown() throws IOException {
+    server.shutdown();
+  }
+
+  @Test
+  public void testACCESS() throws IOException, InterruptedException, ExecutionException {
+    CompoundRequest request = new CompoundRequest();
+    request.setCredentials(TestUtils.newCredentials());
+    List<OperationRequest> operations = Lists.newArrayList();
+    operations.add(new PUTROOTFHRequest());
+    operations.add(new GETFHRequest());
+    ACCESSRequest accesssRequest = new ACCESSRequest();
+    accesssRequest.setAccess(NFS_ACCESS_READ);
+    operations.add(accesssRequest);
+    request.setOperations(operations);
+    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test").get();
+    assertEquals(NFS4_OK, response.getStatus());
+    assertTrue(response.getOperations().size() == 3);
+    ImmutableList<OperationResponse> operationResponses = response.getOperations();
+    OperationResponse operationResponse;
+
+    operationResponse = operationResponses.get(0);
+    assertTrue(operationResponse instanceof PUTROOTFHResponse);
+    assertEquals(NFS4_OK, operationResponse.getStatus());
+
+    operationResponse = operationResponses.get(1);
+    assertTrue(operationResponse instanceof GETFHResponse);
+    assertEquals(NFS4_OK, operationResponse.getStatus());
+    GETFHResponse getFHResponse = (GETFHResponse) operationResponse;
+    assertNotNull(getFHResponse.getFileHandle());
+
+    operationResponse = operationResponses.get(2);
+    assertTrue(operationResponse instanceof ACCESSResponse);
+    assertEquals(NFS4_OK, operationResponse.getStatus());
+    ACCESSResponse accessResponse = (ACCESSResponse) operationResponse;
+    assertEquals(NFS_ACCESS_READ, accessResponse.getAccess());
+  }
+
+  @Test
+  public void testBasicPUTROOTFH() throws IOException, InterruptedException, ExecutionException {
+    CompoundRequest request = new CompoundRequest();
+    request.setCredentials(TestUtils.newCredentials());
+    List<OperationRequest> operations = Lists.newArrayList();
+    operations.add(new PUTROOTFHRequest());
+    request.setOperations(operations);
+    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test").get();
+    assertTrue(response.getOperations().size() == 1);
+    OperationResponse operationResponse = response.getOperations().get(0);
+    assertTrue(operationResponse instanceof PUTROOTFHResponse);
+    assertEquals(NFS4_OK, operationResponse.getStatus());
+  }
+
   @Test
   public void testCallback() {
     Callback base = new Callback();
@@ -71,20 +169,6 @@ public class TestManual {
     base.setNetID("netid");
     base.setCallbackProgram(15);
     Callback copy = new Callback();
-    copy(base, copy);
-    deepEquals(base, copy);
-  }
-
-  @Test
-  public void testClientID() {
-    ClientID base = new ClientID();
-    OpaqueData data = new OpaqueData(4);
-    data.setData("blah".getBytes());
-    base.setOpaqueID(data);
-    OpaqueData8 verifer = new OpaqueData8();
-    verifer.setData("aaaabbbb".getBytes());
-    base.setVerifer(verifer);
-    ClientID copy = new ClientID();
     copy(base, copy);
     deepEquals(base, copy);
   }
@@ -132,87 +216,21 @@ public class TestManual {
   }
 
   @Test
-  public void testSETCLIENTID() throws IOException, InterruptedException, ExecutionException {
-    NFS4Handler server = new NFS4Handler(TestUtils.setupConf());
-    CompoundRequest request = new CompoundRequest();
-    request.setCredentials(TestUtils.newCredentials());
-    SETCLIENTIDRequest setClientIDRequest = new SETCLIENTIDRequest();
-    Callback callback = new Callback();
-    callback.setAddr("addr");
-    callback.setNetID("netid");
-    setClientIDRequest.setCallback(callback);
-    ClientID clientID = new ClientID();
-    OpaqueData opaqueID = new OpaqueData(3);
-    opaqueID.setData("abc".getBytes());
-    clientID.setOpaqueID(opaqueID);
+  public void testClientID() {
+    ClientID base = new ClientID();
+    OpaqueData data = new OpaqueData(4);
+    data.setData("blah".getBytes());
+    base.setOpaqueID(data);
     OpaqueData8 verifer = new OpaqueData8();
-    verifer.setData(Bytes.toBytes(5));
-    clientID.setVerifer(verifer);
-    setClientIDRequest.setClientID(clientID);
-    List<OperationRequest> operations = Lists.newArrayList();
-    operations.add(setClientIDRequest);
-    request.setOperations(operations);
-    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test").get();
-    assertEquals(NFS4_OK, response.getStatus());
-    SETCLIENTIDResponse setClientIDResponse = (SETCLIENTIDResponse) response.getOperations().get(0);
-    assertEquals(NFS4_OK, setClientIDResponse.getStatus());
-    assertTrue(setClientIDResponse.getClientID() >= 0);
-    assertNotNull(setClientIDResponse.getVerifer());
-  }
-
-  @Test
-  public void testBasicPUTROOTFH() throws IOException, InterruptedException, ExecutionException {
-    NFS4Handler server = new NFS4Handler(TestUtils.setupConf());
-    CompoundRequest request = new CompoundRequest();
-    request.setCredentials(TestUtils.newCredentials());
-    List<OperationRequest> operations = Lists.newArrayList();
-    operations.add(new PUTROOTFHRequest());
-    request.setOperations(operations);
-    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test").get();
-    assertTrue(response.getOperations().size() == 1);
-    OperationResponse operationResponse = response.getOperations().get(0);
-    assertTrue(operationResponse instanceof PUTROOTFHResponse);
-    assertEquals(NFS4_OK, operationResponse.getStatus());
-  }
-
-  @Test
-  public void testACCESS() throws IOException, InterruptedException, ExecutionException {
-    NFS4Handler server = new NFS4Handler(TestUtils.setupConf());
-    CompoundRequest request = new CompoundRequest();
-    request.setCredentials(TestUtils.newCredentials());
-    List<OperationRequest> operations = Lists.newArrayList();
-    operations.add(new PUTROOTFHRequest());
-    operations.add(new GETFHRequest());
-    ACCESSRequest accesssRequest = new ACCESSRequest();
-    accesssRequest.setAccess(NFS_ACCESS_READ);
-    operations.add(accesssRequest);
-    request.setOperations(operations);
-    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test").get();
-    assertEquals(NFS4_OK, response.getStatus());
-    assertTrue(response.getOperations().size() == 3);
-    ImmutableList<OperationResponse> operationResponses = response.getOperations();
-    OperationResponse operationResponse;
-
-    operationResponse = operationResponses.get(0);
-    assertTrue(operationResponse instanceof PUTROOTFHResponse);
-    assertEquals(NFS4_OK, operationResponse.getStatus());
-
-    operationResponse = operationResponses.get(1);
-    assertTrue(operationResponse instanceof GETFHResponse);
-    assertEquals(NFS4_OK, operationResponse.getStatus());
-    GETFHResponse getFHResponse = (GETFHResponse) operationResponse;
-    assertNotNull(getFHResponse.getFileHandle());
-
-    operationResponse = operationResponses.get(2);
-    assertTrue(operationResponse instanceof ACCESSResponse);
-    assertEquals(NFS4_OK, operationResponse.getStatus());
-    ACCESSResponse accessResponse = (ACCESSResponse) operationResponse;
-    assertEquals(NFS_ACCESS_READ, accessResponse.getAccess());
+    verifer.setData("aaaabbbb".getBytes());
+    base.setVerifer(verifer);
+    ClientID copy = new ClientID();
+    copy(base, copy);
+    deepEquals(base, copy);
   }
 
   @Test
   public void testEndToEnd() throws IOException, InterruptedException, ExecutionException {
-    NFS4Handler server = new NFS4Handler(TestUtils.setupConf());
     CompoundRequest compoundRequest = new CompoundRequest();
     compoundRequest.setCredentials(TestUtils.newCredentials());
     List<OperationRequest> operations = Lists.newArrayList();
@@ -310,23 +328,31 @@ public class TestManual {
     assertNotNull(attrMap.get(NFS4_FATTR4_TIME_MODIFY));
   }
 
-  /**
-   * Copies the message to byes and reads it back in again. Should execute
-   * both serialization and deserialization code.
-   *
-   * @param message
-   * @return message
-   */
-  protected <T extends MessageBase> T serde(T message) {
-    RPCBuffer buffer = new RPCBuffer();
-    message.write(buffer);
-    buffer.flip();
-    try {
-      message.read(buffer);
-    } catch (RuntimeException x) {
-      LOGGER.warn("Error reading buffer: " + LogUtils.dump(message), x);
-      throw x;
-    }
-    return message;
+  @Test
+  public void testSETCLIENTID() throws IOException, InterruptedException, ExecutionException {
+    CompoundRequest request = new CompoundRequest();
+    request.setCredentials(TestUtils.newCredentials());
+    SETCLIENTIDRequest setClientIDRequest = new SETCLIENTIDRequest();
+    Callback callback = new Callback();
+    callback.setAddr("addr");
+    callback.setNetID("netid");
+    setClientIDRequest.setCallback(callback);
+    ClientID clientID = new ClientID();
+    OpaqueData opaqueID = new OpaqueData(3);
+    opaqueID.setData("abc".getBytes());
+    clientID.setOpaqueID(opaqueID);
+    OpaqueData8 verifer = new OpaqueData8();
+    verifer.setData(Bytes.toBytes(5));
+    clientID.setVerifer(verifer);
+    setClientIDRequest.setClientID(clientID);
+    List<OperationRequest> operations = Lists.newArrayList();
+    operations.add(setClientIDRequest);
+    request.setOperations(operations);
+    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test").get();
+    assertEquals(NFS4_OK, response.getStatus());
+    SETCLIENTIDResponse setClientIDResponse = (SETCLIENTIDResponse) response.getOperations().get(0);
+    assertEquals(NFS4_OK, setClientIDResponse.getStatus());
+    assertTrue(setClientIDResponse.getClientID() >= 0);
+    assertNotNull(setClientIDResponse.getVerifer());
   }
 }

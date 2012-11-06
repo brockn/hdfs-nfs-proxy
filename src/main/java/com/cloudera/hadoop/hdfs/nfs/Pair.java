@@ -22,17 +22,21 @@ package com.cloudera.hadoop.hdfs.nfs;
 
 public class Pair<S, T> {
 
+  public static <S, T> Pair<S, T> of(S first , T second) {
+    return new Pair<S, T>(first, second);
+  }
   private final S first;
+
   private final T second;
 
   public Pair(final S car, final T cdr) {
     first = car;
     second = cdr;
   }
-
   public S getFirst() { return first; }
-  public T getSecond() { return second; }
 
+
+  public T getSecond() { return second; }
 
   @Override
   public String toString() {
@@ -48,9 +52,5 @@ public class Pair<S, T> {
     }
 
     return "(" + firstString + ", " + secondString + ")";
-  }
-
-  public static <S, T> Pair<S, T> of(S first , T second) {
-    return new Pair<S, T>(first, second);
   }
 }

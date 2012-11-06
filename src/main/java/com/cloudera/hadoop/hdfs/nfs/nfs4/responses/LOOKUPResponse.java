@@ -30,24 +30,24 @@ public class LOOKUPResponse extends OperationResponse implements Status {
   protected int mStatus;
 
   @Override
-  public void read(RPCBuffer buffer) {
-    mStatus = buffer.readUint32();
+  public int getID() {
+    return NFS4_OP_LOOKUP;
   }
 
   @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint32(mStatus);
-  }
-  @Override
   public int getStatus() {
     return mStatus;
+  }
+  @Override
+  public void read(RPCBuffer buffer) {
+    mStatus = buffer.readUint32();
   }
   @Override
   public void setStatus(int status) {
     this.mStatus = status;
   }
   @Override
-  public int getID() {
-    return NFS4_OP_LOOKUP;
+  public void write(RPCBuffer buffer) {
+    buffer.writeUint32(mStatus);
   }
 }

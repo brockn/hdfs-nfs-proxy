@@ -24,6 +24,14 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class ClientID implements MessageBase {
   protected OpaqueData8 mVerifer;
   protected OpaqueData mID;
+  public OpaqueData getOpaqueID() {
+    return mID;
+  }
+
+  public OpaqueData8 getVerifer() {
+    return mVerifer;
+  }
+
   @Override
   public void read(RPCBuffer buffer) {
     mVerifer = new OpaqueData8();
@@ -32,26 +40,18 @@ public class ClientID implements MessageBase {
     mID.read(buffer);
   }
 
-  @Override
-  public void write(RPCBuffer buffer) {
-    mVerifer.write(buffer);
-    buffer.writeUint32(mID.getSize());
-    mID.write(buffer);
-  }
-
-  public OpaqueData8 getVerifer() {
-    return mVerifer;
+  public void setOpaqueID(OpaqueData id) {
+    this.mID = id;
   }
 
   public void setVerifer(OpaqueData8 verifer) {
     this.mVerifer = verifer;
   }
 
-  public OpaqueData getOpaqueID() {
-    return mID;
-  }
-
-  public void setOpaqueID(OpaqueData id) {
-    this.mID = id;
+  @Override
+  public void write(RPCBuffer buffer) {
+    mVerifer.write(buffer);
+    buffer.writeUint32(mID.getSize());
+    mID.write(buffer);
   }
 }

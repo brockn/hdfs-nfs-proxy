@@ -45,15 +45,6 @@ public class TestRPC {
     deepEquals(base, copy);
   }
 
-  @Test(expected = UnsupportedOperationException.class)
-  public void testUnknownCreds() throws Exception {
-    RPCRequest request = RPCTestUtil.createRequest();
-    Credentials creds = mock(Credentials.class);
-    when(creds.getFlavor()).thenReturn(Integer.MAX_VALUE);
-    request.setCredentials(creds);
-    copy(request, new RPCRequest());
-  }
-
   @Test
   public void testResponseWire() throws Exception {
     RPCResponse base = RPCTestUtil.createResponse();
@@ -78,6 +69,15 @@ public class TestRPC {
     assertEquals(base.getReplyState(), copy.getReplyState());
     assertEquals(base.getAcceptState(), copy.getAcceptState());
     deepEquals(base, copy);
+  }
+
+  @Test(expected = UnsupportedOperationException.class)
+  public void testUnknownCreds() throws Exception {
+    RPCRequest request = RPCTestUtil.createRequest();
+    Credentials creds = mock(Credentials.class);
+    when(creds.getFlavor()).thenReturn(Integer.MAX_VALUE);
+    request.setCredentials(creds);
+    copy(request, new RPCRequest());
   }
 
 }

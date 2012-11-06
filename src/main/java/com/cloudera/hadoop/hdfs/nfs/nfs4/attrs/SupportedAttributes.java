@@ -25,19 +25,12 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.Bitmap;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 
 public class SupportedAttributes extends Attribute {
+  protected Bitmap mAttrs;
   public SupportedAttributes() {
     super();
   }
-  protected Bitmap mAttrs;
-  @Override
-  public void read(RPCBuffer buffer) {
-    mAttrs = new Bitmap();
-    mAttrs.read(buffer);
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    mAttrs.write(buffer);
+  public Bitmap getAttrs() {
+    return mAttrs;
   }
 
   @Override
@@ -45,12 +38,19 @@ public class SupportedAttributes extends Attribute {
     return NFS4_FATTR4_SUPPORTED_ATTRS;
   }
 
-  public Bitmap getAttrs() {
-    return mAttrs;
+  @Override
+  public void read(RPCBuffer buffer) {
+    mAttrs = new Bitmap();
+    mAttrs.read(buffer);
   }
 
   public void setAttrs(Bitmap attrs) {
     this.mAttrs = attrs;
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    mAttrs.write(buffer);
   }
 
 

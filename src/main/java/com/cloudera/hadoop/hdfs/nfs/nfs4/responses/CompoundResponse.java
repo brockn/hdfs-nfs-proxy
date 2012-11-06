@@ -35,6 +35,15 @@ public class CompoundResponse implements MessageBase, Status {
   protected byte[] mTags = new byte[0];
   protected int mStatus;
 
+  public ImmutableList<OperationResponse> getOperations() {
+    return mOperations;
+  }
+
+  @Override
+  public int getStatus() {
+    return mStatus;
+  }
+
   @Override
   public void read(RPCBuffer buffer) {
     mStatus = buffer.readUint32();
@@ -49,6 +58,17 @@ public class CompoundResponse implements MessageBase, Status {
     }
     mOperations = ImmutableList.<OperationResponse>builder().addAll(ops).build();
   }
+  public void setOperations(List<OperationResponse> operations) {
+    mOperations = ImmutableList.copyOf(operations);
+  }
+  @Override
+  public void setStatus(int status) {
+    mStatus = status;
+  }
+  @Override
+  public String toString() {
+    return this.getClass().getName() + " = " + mOperations.toString();
+  }
 
   @Override
   public void write(RPCBuffer buffer) {
@@ -60,25 +80,5 @@ public class CompoundResponse implements MessageBase, Status {
       buffer.writeUint32(operation.getID());
       operation.write(buffer);
     }
-  }
-
-  public void setOperations(List<OperationResponse> operations) {
-    mOperations = ImmutableList.copyOf(operations);
-  }
-  public ImmutableList<OperationResponse> getOperations() {
-    return mOperations;
-  }
-  @Override
-  public int getStatus() {
-    return mStatus;
-  }
-  @Override
-  public void setStatus(int status) {
-    mStatus = status;
-  }
-
-  @Override
-  public String toString() {
-    return this.getClass().getName() + " = " + mOperations.toString();
   }
 }

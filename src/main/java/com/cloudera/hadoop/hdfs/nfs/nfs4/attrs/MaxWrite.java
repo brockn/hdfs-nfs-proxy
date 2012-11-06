@@ -23,20 +23,10 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 public class MaxWrite extends Attribute {
+  protected long mSize;
   public MaxWrite() {
     super();
   }
-  protected long mSize;
-  @Override
-  public void read(RPCBuffer buffer) {
-    mSize = buffer.readUint64();
-  }
-
-  @Override
-  public void write(RPCBuffer buffer) {
-    buffer.writeUint64(mSize);
-  }
-
   @Override
   public int getID() {
     return NFS4_FATTR4_MAXWRITE;
@@ -46,8 +36,18 @@ public class MaxWrite extends Attribute {
     return mSize;
   }
 
+  @Override
+  public void read(RPCBuffer buffer) {
+    mSize = buffer.readUint64();
+  }
+
   public void setSize(long size) {
     this.mSize = size;
+  }
+
+  @Override
+  public void write(RPCBuffer buffer) {
+    buffer.writeUint64(mSize);
   }
 
 }

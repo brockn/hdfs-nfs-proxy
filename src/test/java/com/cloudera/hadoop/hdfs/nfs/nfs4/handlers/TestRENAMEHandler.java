@@ -63,14 +63,17 @@ public class TestRENAMEHandler extends TestBaseHandler {
     when(fs.rename(oldPath, newPath)).thenReturn(true);
   }
   @Test
-  public void testInvalidOldName() throws Exception {
-    request.setOldName("");
+  public void testFileNotFound() throws Exception {
+    when(fs.getFileStatus(any(Path.class))).thenThrow(new FileNotFoundException());
     Status response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_INVAL, response.getStatus());
-    
-    request.setOldName(null);
-    response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_INVAL, response.getStatus());
+    assertEquals(NFS4ERR_NOENT, response.getStatus());
+  }
+  @Test
+  public void testInterruptWithOpenFile() throws Exception {
+    when(hdfsState.isFileOpen(oldPath)).thenReturn(true);
+    Thread.currentThread().interrupt();
+    Status response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_IO, response.getStatus());
   }
   @Test
   public void testInvalidNewName() throws Exception {
@@ -81,6 +84,28 @@ public class TestRENAMEHandler extends TestBaseHandler {
     request.setNewName(null);
     response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_INVAL, response.getStatus());
+  }
+  @Test
+  public void testInvalidOldName() throws Exception {
+    request.setOldName("");
+    Status response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_INVAL, response.getStatus());
+    
+    request.setOldName(null);
+    response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_INVAL, response.getStatus());
+  }
+  @Test
+  public void testNewDirIsNotDir() throws Exception {
+    when(fs.getFileStatus(newPath.getParent())).thenReturn(notdir);
+    Status response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_NOTDIR, response.getStatus());
+  }
+  @Test
+  public void testNewPathExists() throws Exception {
+    when(hdfsState.fileExists(newPath)).thenReturn(true);
+    Status response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_EXIST, response.getStatus());
   }
   @Test
   public void testNoCurrentFileHandle() throws Exception {
@@ -97,20 +122,8 @@ public class TestRENAMEHandler extends TestBaseHandler {
     assertEquals(NFS4ERR_NOFILEHANDLE, response.getStatus());
   }
   @Test
-  public void testFileNotFound() throws Exception {
-    when(fs.getFileStatus(any(Path.class))).thenThrow(new FileNotFoundException());
-    Status response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_NOENT, response.getStatus());
-  }
-  @Test
   public void testOldDirIsNotDir() throws Exception {
     when(fs.getFileStatus(oldPath.getParent())).thenReturn(notdir);
-    Status response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_NOTDIR, response.getStatus());
-  }
-  @Test
-  public void testNewDirIsNotDir() throws Exception {
-    when(fs.getFileStatus(newPath.getParent())).thenReturn(notdir);
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_NOTDIR, response.getStatus());
   }
@@ -121,12 +134,6 @@ public class TestRENAMEHandler extends TestBaseHandler {
     assertEquals(NFS4ERR_NOENT, response.getStatus());
   }
   @Test
-  public void testNewPathExists() throws Exception {
-    when(hdfsState.fileExists(newPath)).thenReturn(true);
-    Status response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_EXIST, response.getStatus());
-  }
-  @Test
   public void testOldPathIsOpen() throws Exception {
     when(hdfsState.isFileOpen(oldPath)).thenReturn(true);
     Status response = handler.handle(hdfsState, session, request);
@@ -135,13 +142,6 @@ public class TestRENAMEHandler extends TestBaseHandler {
   @Test
   public void testRenameReturnsFalse() throws Exception {
     when(fs.rename(oldPath, newPath)).thenReturn(false);
-    Status response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_IO, response.getStatus());
-  }
-  @Test
-  public void testInterruptWithOpenFile() throws Exception {
-    when(hdfsState.isFileOpen(oldPath)).thenReturn(true);
-    Thread.currentThread().interrupt();
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_IO, response.getStatus());
   }

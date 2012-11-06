@@ -58,6 +58,12 @@ public class TestOPENHandler extends TestBaseHandler {
     when(hdfsState.getOrCreateFileHandle(file)).thenReturn(new FileHandle("file".getBytes(Charsets.UTF_8)));
   }
   @Test
+  public void testBothReadWrite() throws Exception {
+    request.setAccess(NFS4_OPEN4_SHARE_ACCESS_BOTH);
+    OPENResponse response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_NOTSUPP, response.getStatus());
+  }
+  @Test
   public void testInvalidNameEmpty() throws Exception {
     request.setName("");
     OPENResponse response = handler.handle(hdfsState, session, request);
@@ -70,10 +76,10 @@ public class TestOPENHandler extends TestBaseHandler {
     assertEquals(NFS4ERR_INVAL, response.getStatus());
   }
   @Test
-  public void testBothReadWrite() throws Exception {
-    request.setAccess(NFS4_OPEN4_SHARE_ACCESS_BOTH);
+  public void testRead() throws Exception {
+    request.setAccess(NFS4_OPEN4_SHARE_ACCESS_READ);
     OPENResponse response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_NOTSUPP, response.getStatus());
+    assertEquals(NFS4_OK, response.getStatus());
   }
   @Test
   public void testReadWithDeny() throws Exception {
@@ -81,12 +87,6 @@ public class TestOPENHandler extends TestBaseHandler {
     request.setDeny(1);
     OPENResponse response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_NOTSUPP, response.getStatus());
-  }
-  @Test
-  public void testRead() throws Exception {
-    request.setAccess(NFS4_OPEN4_SHARE_ACCESS_READ);
-    OPENResponse response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4_OK, response.getStatus());
   }
   @Test
   public void testWrite() throws Exception {

@@ -49,18 +49,6 @@ public class TestLOOKUPHandler extends TestBaseHandler {
     when(hdfsState.getPath(currentFileHandle)).thenReturn(dir);
   }
   @Test
-  public void testInvalidNameEmptyString() throws Exception {
-    request.setName("");
-    Status response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_INVAL, response.getStatus());
-  }
-  @Test
-  public void testInvalidNameNull() throws Exception {
-    request.setName(null);
-    Status response = handler.handle(hdfsState, session, request);
-    assertEquals(NFS4ERR_INVAL, response.getStatus());
-  }
-  @Test
   public void testDoesNotExist() throws Exception {
     when(hdfsState.fileExists(file)).thenReturn(false);
     Status response = handler.handle(hdfsState, session, request);
@@ -71,6 +59,18 @@ public class TestLOOKUPHandler extends TestBaseHandler {
     when(hdfsState.fileExists(file)).thenReturn(true);
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4_OK, response.getStatus());
+  }
+  @Test
+  public void testInvalidNameEmptyString() throws Exception {
+    request.setName("");
+    Status response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_INVAL, response.getStatus());
+  }
+  @Test
+  public void testInvalidNameNull() throws Exception {
+    request.setName(null);
+    Status response = handler.handle(hdfsState, session, request);
+    assertEquals(NFS4ERR_INVAL, response.getStatus());
   }
 
 }

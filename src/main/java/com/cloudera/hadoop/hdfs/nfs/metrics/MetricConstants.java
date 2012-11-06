@@ -19,7 +19,6 @@
 package com.cloudera.hadoop.hdfs.nfs.metrics;
 
 public class MetricConstants {
-  private MetricConstants() {}
   public static enum Metric {
     GETATTR_DROPPED_ATTRS,
     HDFS_BYTES_WRITE,
@@ -47,11 +46,12 @@ public class MetricConstants {
     private Metric(String div) {
       this.divisor = div;
     }
-    public boolean hasDivisor() {
-      return getDivisor() != null;
-    }
     public String getDivisor() {
       return divisor;
     }
+    public boolean hasDivisor() {
+      return getDivisor() != null;
+    }
   }
+  private MetricConstants() {}
 }

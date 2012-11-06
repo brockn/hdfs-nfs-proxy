@@ -34,6 +34,27 @@ public class WRITEResponse extends OperationResponse implements Status {
   protected OpaqueData8 mVerifer;
 
 
+  public int getCommitted() {
+    return mCommitted;
+  }
+
+  public int getCount() {
+    return mCount;
+  }
+
+
+  @Override
+  public int getID() {
+    return NFS4_OP_WRITE;
+  }
+  @Override
+  public int getStatus() {
+    return mStatus;
+  }
+  public OpaqueData8 getVerifer() {
+    return mVerifer;
+  }
+
   @Override
   public void read(RPCBuffer buffer) {
     mStatus = buffer.readUint32();
@@ -45,6 +66,23 @@ public class WRITEResponse extends OperationResponse implements Status {
     }
   }
 
+  public void setCommitted(int committed) {
+    this.mCommitted = committed;
+  }
+
+  public void setCount(int count) {
+    this.mCount = count;
+  }
+
+  @Override
+  public void setStatus(int status) {
+    this.mStatus = status;
+  }
+
+  public void setVerifer(OpaqueData8 verifer) {
+    this.mVerifer = verifer;
+  }
+
   @Override
   public void write(RPCBuffer buffer) {
     buffer.writeUint32(mStatus);
@@ -53,44 +91,6 @@ public class WRITEResponse extends OperationResponse implements Status {
       buffer.writeUint32(mCommitted);
       mVerifer.write(buffer);
     }
-  }
-
-
-  @Override
-  public int getStatus() {
-    return mStatus;
-  }
-  @Override
-  public void setStatus(int status) {
-    this.mStatus = status;
-  }
-  @Override
-  public int getID() {
-    return NFS4_OP_WRITE;
-  }
-
-  public int getCount() {
-    return mCount;
-  }
-
-  public void setCount(int count) {
-    this.mCount = count;
-  }
-
-  public int getCommitted() {
-    return mCommitted;
-  }
-
-  public void setCommitted(int committed) {
-    this.mCommitted = committed;
-  }
-
-  public OpaqueData8 getVerifer() {
-    return mVerifer;
-  }
-
-  public void setVerifer(OpaqueData8 verifer) {
-    this.mVerifer = verifer;
   }
 
 
