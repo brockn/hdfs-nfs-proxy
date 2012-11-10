@@ -1,5 +1,12 @@
 Questions? email brock at cloudera dot com
 
+# Features
+
+* NFS4 RW access to HDFS
+* Kerberos Support (from NFS4 client all the way to HDFS)
+* Completely in userspace (simple Java process)
+* Client mounts continue working after restart of proxy
+
 # How to use
 
 1. Requirements:
