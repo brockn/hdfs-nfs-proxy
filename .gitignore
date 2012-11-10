@@ -13,4 +13,5 @@ bin/
 *~
 conf/hdfs-site.xml
 conf/core-site.xml
-
+conf/hdfs-nfs-site.xml
+conf/log4j.properties
