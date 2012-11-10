@@ -4,9 +4,9 @@ Questions? email brock at cloudera dot com
 
 1. Requirements:
 
-        - HDFS Instance of CDH3 or CDH4
-        - NFS Packages (nfs-utils on RHEL, CentOS and nfs-common on Ubuntu)
-          must be installed on any clients wishing to mount HDFS
+    # HDFS Instance of CDH3 or CDH4
+    # NFS Packages (nfs-utils on RHEL, CentOS and nfs-common on Ubuntu)
+    must be installed on any clients wishing to mount HDFS
         
 1. Download
 
@@ -18,21 +18,21 @@ Questions? email brock at cloudera dot com
 
 1. Add this entry to /etc/fstab
 
-        <hostname of server running the proxy>:/   /mnt/hdfs   nfs4       rw,intr,timeo=600,port=2501      0 0
+        <proxy hostname>:/   /mnt/hdfs   nfs4       rw,intr,timeo=600,port=2501      0 0
 
 1. Build binary:
 
    Install JDBM in your local repo:
-      $ mvn install:install-file -Dfile=lib/jdbm-2.4.jar -DgroupId=thirdparty \
-          -DartifactId=jdbm -Dversion=2.4 -Dpackaging=jar
+         $ mvn install:install-file -Dfile=lib/jdbm-2.4.jar -DgroupId=thirdparty \
+           -DartifactId=jdbm -Dversion=2.4 -Dpackaging=jar
 
     Choose the appropiate hadoop version when building the package. Examples below:
 
-        Hadoop 1:
+    Hadoop 1:
           $ mvn package -Pcdh3
           $ mvn package -Phadoop1
 
-        Hadoop 2:
+    Hadoop 2:
           $ mvn package -Pcdh4
           $ mvn package -Phadoop2
 
@@ -40,9 +40,9 @@ Questions? email brock at cloudera dot com
 
 1. Start the server:
 
-        Below my conf/ directory has an hdfs-nfs-site.xml, hdfs-site.xml, core-site.xml,
-        and a log4j.properties file. Note the daemon would typically be started as the 
-        same user who is running the NameNode typically either hdfs or hadoop.
+    Below my conf/ directory has an hdfs-nfs-site.xml, hdfs-site.xml, core-site.xml,
+    and a log4j.properties file. Note the daemon would typically be started as the 
+    same user who is running the NameNode typically either hdfs or hadoop.
 
         To run the server on port 2051:
 
@@ -60,15 +60,15 @@ Questions? email brock at cloudera dot com
 
 Note this support is experimental and requires all users must have kerberos principals.
 
-         1) Have a working Keberos enabled Hadoop cluster
-         2) Generated a keytab for the nfs/_HOST@DOMAIN user
-         3) Enable security via the options described in hdfs-nfs-site.secure-sample.xml
-         4) Enable sec=krb5p on the client mount
+    # Have a working Keberos enabled Hadoop cluster
+    # Generated a keytab for the nfs/_HOST@DOMAIN user
+    # Enable security via the options described in hdfs-nfs-site.secure-sample.xml
+    # Enable sec=krb5p on the client mount
 
 * How can I configure this to use another port, say 2051?
 
-         1) Change your start command to: ./start-nfs-server.sh conf/ 2055
-         2) Add port=2055 to the mount options
+    # Change your start command to: ./start-nfs-server.sh conf/ 2055
+    # Add port=2055 to the mount options
 
 * What is this good for? or Can I replace my expensive NAS?
 
@@ -85,15 +85,15 @@ for a uid. As such, it's likely you have not configured idmap.
 
 Say the domain is acme.com, you would change: /etc/idmapd.conf from:
 
-    Domain = localdomain
+        Domain = localdomain
 
 to:
 
-    Domain = bashkew.com
+        Domain = bashkew.com
 
 and then restart idmapd:
  
-    /etc/init.d/rpcidmapd restart
+       /etc/init.d/rpcidmapd restart
 
 * All user/groups still show up as nobody or some long number?
 
