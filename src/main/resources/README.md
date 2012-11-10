@@ -23,16 +23,19 @@ Questions? email brock at cloudera dot com
 1. Build binary:
 
    Install JDBM in your local repo:
+
         $ mvn install:install-file -Dfile=lib/jdbm-2.4.jar -DgroupId=thirdparty \
         -DartifactId=jdbm -Dversion=2.4 -Dpackaging=jar
 
     Choose the appropiate hadoop version when building the package. Examples below:
 
     Hadoop 1:
+
         $ mvn package -Pcdh3
         $ mvn package -Phadoop1
 
     Hadoop 2:
+
         $ mvn package -Pcdh4
         $ mvn package -Phadoop2
 
@@ -44,7 +47,7 @@ Questions? email brock at cloudera dot com
     and a log4j.properties file. Note the daemon would typically be started as the 
     same user who is running the NameNode typically either hdfs or hadoop.
 
-        To run the server on port 2051:
+    To run the server on port 2051:
 
         $ ./start-nfs-server.sh confi/ 2051
 
@@ -60,15 +63,15 @@ Questions? email brock at cloudera dot com
 
 Note this support is experimental and requires all users must have kerberos principals.
 
-    # Have a working Keberos enabled Hadoop cluster
-    # Generated a keytab for the nfs/_HOST@DOMAIN user
-    # Enable security via the options described in hdfs-nfs-site.secure-sample.xml
-    # Enable sec=krb5p on the client mount
+# Have a working Keberos enabled Hadoop cluster
+# Generated a keytab for the nfs/_HOST@DOMAIN user
+# Enable security via the options described in hdfs-nfs-site.secure-sample.xml
+# Enable sec=krb5p on the client mount
 
 * How can I configure this to use another port, say 2051?
 
-    # Change your start command to: ./start-nfs-server.sh conf/ 2055
-    # Add port=2055 to the mount options
+# Change your start command to: ./start-nfs-server.sh conf/ 2055
+# Add port=2055 to the mount options
 
 * What is this good for? or Can I replace my expensive NAS?
 
