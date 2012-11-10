@@ -4,9 +4,7 @@ Questions? email brock at cloudera dot com
 
 1. Requirements:
 
-    > 1. HDFS Instance of CDH3 or CDH4
-    > 1. NFS Packages (nfs-utils on RHEL, CentOS and nfs-common on Ubuntu)
-    >   must be installed on any clients wishing to mount HDFS
+HDFS (CDH 3 or 4), Java 1.6, Maven, and NFS Packages (nfs-utils on RHEL, CentOS and nfs-common on Ubuntu)
         
 1. Download
 
