@@ -41,7 +41,6 @@ public class Session {
   private final InetAddress mClientAddress;
   private final String mSessionID;
   private final int mXID;
-  // these are set once we doAs
   private final String mUser;
   private final String[] mGroups;
   private final FileSystem mFileSystem;

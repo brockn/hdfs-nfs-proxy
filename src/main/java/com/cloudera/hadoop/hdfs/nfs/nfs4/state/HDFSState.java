@@ -47,6 +47,10 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 
+/**
+ * FileSystem objects are passed in because they need to be created
+ * with the users security context.
+ */
 public class HDFSState {
   protected static final Logger LOGGER = Logger.getLogger(HDFSState.class);
   private static final AtomicLong FILEID = new AtomicLong(0L);
