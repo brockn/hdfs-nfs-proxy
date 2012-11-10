@@ -4,8 +4,8 @@ Questions? email brock at cloudera dot com
 
 1. Requirements:
 
-    # HDFS Instance of CDH3 or CDH4
-    # NFS Packages (nfs-utils on RHEL, CentOS and nfs-common on Ubuntu)
+    - HDFS Instance of CDH3 or CDH4
+    - NFS Packages (nfs-utils on RHEL, CentOS and nfs-common on Ubuntu)
     must be installed on any clients wishing to mount HDFS
         
 1. Download
@@ -63,15 +63,15 @@ Questions? email brock at cloudera dot com
 
 Note this support is experimental and requires all users must have kerberos principals.
 
-# Have a working Keberos enabled Hadoop cluster
-# Generated a keytab for the nfs/_HOST@DOMAIN user
-# Enable security via the options described in hdfs-nfs-site.secure-sample.xml
-# Enable sec=krb5p on the client mount
+- Have a working Keberos enabled Hadoop cluster
+- Generated a keytab for the nfs/_HOST@DOMAIN user
+- Enable security via the options described in hdfs-nfs-site.secure-sample.xml
+- Enable sec=krb5p on the client mount
 
 * How can I configure this to use another port, say 2051?
 
-# Change your start command to: ./start-nfs-server.sh conf/ 2055
-# Add port=2055 to the mount options
+- Change your start command to: ./start-nfs-server.sh conf/ 2055
+- Add port=2055 to the mount options
 
 * What is this good for? or Can I replace my expensive NAS?
 
@@ -113,9 +113,10 @@ I think there is something in Hadoop which does user mapping as well. If so, it 
 make sense to be consistent.
 * RFC 3530 (NFS4):
 
-         - Client ID logic is complex and not completely followed.
-         - Many reccomended attributes are not implemented such as 14 archive, 25 hidden,
-         49 timebackup, 55 mounted on fileid
-         - File appends
+    - Client ID logic is complex and not completely followed.
+    - Many reccomended attributes are not implemented such as 14 archive, 25 hidden,
+        49 timebackup, 55 mounted on fileid
+    - File appends
+
 * Metrics:
 A simple metrics system is used. We should use Hadoops Metric System. 
