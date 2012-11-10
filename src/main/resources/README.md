@@ -4,7 +4,7 @@ Questions? email brock at cloudera dot com
 
 1. Requirements:
 
-HDFS (CDH 3 or 4), Java 1.6, Maven, and NFS Packages (nfs-utils on RHEL, CentOS and nfs-common on Ubuntu)
+    HDFS (CDH 3 or 4), Java 1.6, Maven, and NFS Packages (nfs-utils on RHEL, CentOS and nfs-common on Ubuntu)
         
 1. Download
 
