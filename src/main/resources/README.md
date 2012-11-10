@@ -61,10 +61,10 @@ Questions? email brock at cloudera dot com
 
 * How do I use the dameon with Kerberos security enabled?
 
-1. Have a working Keberos enabled Hadoop cluster
-1. Generated a keytab for the nfs/_HOST@DOMAIN user
-1. Enable security via the options described in hdfs-nfs-site.secure-sample.xml
-1. Enable sec=krb5p on the client mount
+    > 1. Have a working Keberos enabled Hadoop cluster
+    > 1. Generated a keytab for the nfs/_HOST@DOMAIN user
+    > 1. Enable security via the options described in hdfs-nfs-site.secure-sample.xml
+    > 1. Enable sec=krb5p on the client mount
 
 * How can I configure this to use another port, say 2051?
 
@@ -73,28 +73,28 @@ Questions? email brock at cloudera dot com
 
 * What is this good for? or Can I replace my expensive NAS?
 
-    This is another way to access HDFS. It is not a replacement 
+    > This is another way to access HDFS. It is not a replacement 
 for NAS when you need the functionality NAS provides. To be sure,
 this does not provide you the ability to run Oracle over NFS on 
 top of HDFS.
 
 * All user/groups show up as nobody?
 
-    NFS4 returns user/group with user@domain. Today by default it responds with
+    > NFS4 returns user/group with user@domain. Today by default it responds with
 user@clientDomain. The client then uses the idmap service to lookup the user
 for a uid. As such, it's likely you have not configured idmap.
-
-    Say the domain is acme.com, you would change: /etc/idmapd.conf from:
-
-        Domain = localdomain
-
-    to:
-
-        Domain = bashkew.com
-
-    and then restart idmapd:
- 
-       /etc/init.d/rpcidmapd restart
+    >
+    > Say the domain is acme.com, you would change: /etc/idmapd.conf from:
+    >
+    >    Domain = localdomain
+    >
+    > to:
+    >
+    >    Domain = bashkew.com
+    >
+    > and then restart idmapd:
+    >
+    >   /etc/init.d/rpcidmapd restart
 
 * All user/groups still show up as nobody or some long number?
 
