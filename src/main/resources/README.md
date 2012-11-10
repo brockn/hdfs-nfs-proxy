@@ -4,8 +4,8 @@ Questions? email brock at cloudera dot com
 
 1. Requirements:
 
-    - HDFS Instance of CDH3 or CDH4
-    - NFS Packages (nfs-utils on RHEL, CentOS and nfs-common on Ubuntu)
+- HDFS Instance of CDH3 or CDH4
+- NFS Packages (nfs-utils on RHEL, CentOS and nfs-common on Ubuntu)
     must be installed on any clients wishing to mount HDFS
         
 1. Download
@@ -60,8 +60,6 @@ Questions? email brock at cloudera dot com
 # FAQ
 
 * How do I use the dameon with Kerberos security enabled?
-
-Note this support is experimental and requires all users must have kerberos principals.
 
 - Have a working Keberos enabled Hadoop cluster
 - Generated a keytab for the nfs/_HOST@DOMAIN user
