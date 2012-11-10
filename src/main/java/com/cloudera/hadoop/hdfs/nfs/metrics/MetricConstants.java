@@ -1,5 +1,5 @@
 /**
- * Copyright 2012 The Apache Software Foundation
+ * Copyright 2012 Cloudera Inc.
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
