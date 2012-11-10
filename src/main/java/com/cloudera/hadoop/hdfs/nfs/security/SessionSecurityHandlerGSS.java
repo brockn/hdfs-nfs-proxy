@@ -122,6 +122,9 @@ public class SessionSecurityHandlerGSS extends SessionSecurityHandler<VerifierGS
       try {
         mToken = mContext.acceptSecContext(mToken, 0, mToken.length);
       } catch (GSSException e) {
+        LOGGER.warn("Error on accept: major = " + e.getMajor() + 
+            ", minor = " + e.getMinor() + ", major = " + e.getMajorString() + 
+            ", minor = " + e.getMinorString(), e);
         InitializeResponse initResponse = new InitializeResponse();
         initResponse.setContextID(null);
         initResponse.setMajorErrorCode(e.getMajor());

@@ -50,13 +50,13 @@ public class TestLOOKUPHandler extends TestBaseHandler {
   }
   @Test
   public void testDoesNotExist() throws Exception {
-    when(hdfsState.fileExists(file)).thenReturn(false);
+    when(hdfsState.fileExists(fs, file)).thenReturn(false);
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_NOENT, response.getStatus());
   }
   @Test
   public void testExists() throws Exception {
-    when(hdfsState.fileExists(file)).thenReturn(true);
+    when(hdfsState.fileExists(fs, file)).thenReturn(true);
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4_OK, response.getStatus());
   }

@@ -59,11 +59,7 @@ public class TestUtils {
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
       public void run() {
-        try {
-          PathUtils.fullyDelete(new File(tmpDirPathForTest));
-        } catch (IOException e) {
-
-        }
+        PathUtils.fullyDelete(new File(tmpDirPathForTest));
       }
     });
   }
@@ -237,7 +233,7 @@ public class TestUtils {
     if(conf.get(USER_ID_MAPPER_CLASS) == null) {
       conf.set(USER_ID_MAPPER_CLASS, FixedUserIDMapper.class.getName());
     }
-    conf.set(ALLOWED_HOSTS, "*");
+    conf.set(SECURITY_ALLOWED_HOSTS, "*");
     conf.set(SECURITY_FLAVOR, SECURITY_FLAVOR_DEFAULT);
     return conf;
   }

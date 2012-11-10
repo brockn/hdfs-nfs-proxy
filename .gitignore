@@ -11,3 +11,6 @@ bin/
 *.iml
 *.orig
 *~
+conf/hdfs-site.xml
+conf/core-site.xml
+

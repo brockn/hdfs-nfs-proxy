@@ -44,14 +44,14 @@ public class TestREMOVEHandler extends TestBaseHandler {
     request = new REMOVERequest();
     
     request.setName(path.getName());
-    when(hdfsState.fileExists(path)).thenReturn(true);
+    when(hdfsState.fileExists(fs, path)).thenReturn(true);
     
-    when(hdfsState.delete(path)).thenReturn(true);
+    when(hdfsState.delete(fs, path)).thenReturn(true);
 
   }
   @Test
   public void testDeleteFails() throws Exception {
-    when(hdfsState.delete(path)).thenReturn(false);
+    when(hdfsState.delete(fs, path)).thenReturn(false);
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_PERM, response.getStatus());
   }
@@ -75,7 +75,7 @@ public class TestREMOVEHandler extends TestBaseHandler {
   
   @Test
   public void testPathDoesNotExist() throws Exception {
-    when(hdfsState.fileExists(path)).thenReturn(false);
+    when(hdfsState.fileExists(fs, path)).thenReturn(false);
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_NOENT, response.getStatus());
   }

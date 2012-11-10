@@ -23,6 +23,7 @@ import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.security.PrivilegedExceptionAction;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -106,11 +107,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       @Override
       public void run() {
         for(File tempDir : mTempDirs) {
-          try {
-            PathUtils.fullyDelete(tempDir);
-          } catch (IOException e) {
-            LOGGER.error("Error deleting " + tempDir, e);
-          }
+          PathUtils.fullyDelete(tempDir);
         }
       }
     });
@@ -123,9 +120,9 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
     Preconditions.checkState(fileHandleINodeDir.isDirectory() || fileHandleINodeDir.mkdirs());
     FileHandleINodeMap fileHandleINodeMap = 
         new FileHandleINodeMap(new File(fileHandleINodeDir, "map"));
-    mHDFSState = new HDFSState(fileHandleINodeMap, mTempDirs, mFileSystem, mMetrics, 
+    mHDFSState = new HDFSState(fileHandleINodeMap, mTempDirs, mMetrics, 
         writeOrderHandlerMap, openFileMap);
-    mHDFSStateBackgroundWorker = new HDFSStateBackgroundWorker(mHDFSState, 
+    mHDFSStateBackgroundWorker = new HDFSStateBackgroundWorker(mFileSystem, mHDFSState, 
         writeOrderHandlerMap, openFileMap, fileHandleINodeMap, 60L * 1000L /* 1 minute*/, 
         maxInactiveOpenFileTime, 3L * 24L * 60L * 60L * 1000L /* 3 days */);
     mHDFSStateBackgroundWorker.setDaemon(true);
@@ -170,21 +167,22 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       SessionSecurityHandler<? extends Verifier> securityHandler = 
           mSecurityHandlerFactory.getSecurityHandler(creds);
       final String username = securityHandler.getUser();
-      UserGroupInformation sudoUgi;
+      UserGroupInformation ugi;
       if (UserGroupInformation.isSecurityEnabled()) {
-        sudoUgi = UserGroupInformation.createProxyUser(username,
-            UserGroupInformation.getCurrentUser());
+        ugi = UserGroupInformation.createProxyUser(username,
+            UserGroupInformation.getLoginUser());
       } else {
-        sudoUgi = UserGroupInformation.createRemoteUser(username);
+        ugi = UserGroupInformation.createRemoteUser(username);
       }
-      if(LOGGER.isDebugEnabled()) {
-        String msg = "Request for Username = " + username + ", UGI = " + sudoUgi;
-        LOGGER.debug(msg);
-      }
+      final FileSystem fileSystem = ugi.doAs(new PrivilegedExceptionAction<FileSystem>() {
+        @Override
+        public FileSystem run() throws Exception {
+          return FileSystem.get(mConfiguration);
+        }
+      });
       Session session = new Session(rpcRequest.getXid(), compoundRequest,
-          mConfiguration, mFileSystem, clientAddress, sessionID,
-          sudoUgi.getShortUserName(), sudoUgi.getGroupNames());
-      NFS4AsyncFuture task = new NFS4AsyncFuture(mHDFSState, session, sudoUgi);
+          mConfiguration, clientAddress, sessionID, ugi.getShortUserName(), ugi.getGroupNames(), fileSystem);
+      NFS4AsyncFuture task = new NFS4AsyncFuture(mHDFSState, session, ugi);
       executor.schedule(task);
       return task;
     } catch (NFS4Exception ex) {
@@ -205,11 +203,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   public void shutdown() throws IOException {
     mHDFSState.close();
     for(File tempDir : mTempDirs) {
-      try {
-        PathUtils.fullyDelete(tempDir);
-      } catch (IOException e) {
-        LOGGER.warn("Error deleting " + tempDir, e);
-      }
+      PathUtils.fullyDelete(tempDir);
     }
   }
 }

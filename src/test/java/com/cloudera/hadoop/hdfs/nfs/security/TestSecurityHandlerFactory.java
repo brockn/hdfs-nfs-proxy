@@ -62,7 +62,7 @@ public class TestSecurityHandlerFactory {
   @Before
   public void setup() throws Exception {
     conf = new Configuration();
-    conf.set(ALLOWED_HOSTS, "192.168.0.0/22");
+    conf.set(SECURITY_ALLOWED_HOSTS, "192.168.0.0/22");
     conf.set(SECURITY_FLAVOR, SECURITY_FLAVOR_KERBEROS);
     byte[] contextID = Bytes.toBytes(CONTEXT_ID);
     sessionID = "sessionID";
@@ -105,7 +105,7 @@ public class TestSecurityHandlerFactory {
   }
   @Test(expected = IllegalArgumentException.class)
   public void testEmptyAllowedHosts() throws Exception {
-    conf.set(ALLOWED_HOSTS, "");
+    conf.set(SECURITY_ALLOWED_HOSTS, "");
     new SecurityHandlerFactory(conf, gssManagerSupplier, sessionSecurityHandlerGSSFactory);
   }
   

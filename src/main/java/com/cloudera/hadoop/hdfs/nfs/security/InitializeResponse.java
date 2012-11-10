@@ -33,8 +33,8 @@ public class InitializeResponse implements MessageBase {
   @Override
   public void read(RPCBuffer buffer) {
     contextID = buffer.readBytes();
-    majorErrorCode = buffer.readUint32();
-    minorErrorCode = buffer.readUint32();
+    majorErrorCode = buffer.readInt();
+    minorErrorCode = buffer.readInt();
     sequenceWindow = buffer.readUint32();
     token = buffer.readBytes();    
   }
@@ -43,8 +43,8 @@ public class InitializeResponse implements MessageBase {
   public void write(RPCBuffer buffer) {
     buffer.writeUint32(contextID.length);
     buffer.writeBytes(contextID);
-    buffer.writeUint32(majorErrorCode);
-    buffer.writeUint32(minorErrorCode);
+    buffer.writeInt(majorErrorCode);
+    buffer.writeInt(minorErrorCode);
     buffer.writeUint32(sequenceWindow);
     buffer.writeUint32(token.length);
     buffer.writeBytes(token);

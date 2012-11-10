@@ -65,7 +65,7 @@ public class SizeHandler extends AttributeHandler<Size> {
       mProcessedRequests.put(session.getXID(), value);
       // open the file, overwriting if needed. Creation of an empty file with
       // overwrite on is the only way we can support truncating files
-      HDFSOutputStream out = hdfsState.openForWrite(stateID, session.getCurrentFileHandle(), true);
+      HDFSOutputStream out = hdfsState.openForWrite(session.getFileSystem(), stateID, session.getCurrentFileHandle(), true);
       out.sync();
       return true;
 

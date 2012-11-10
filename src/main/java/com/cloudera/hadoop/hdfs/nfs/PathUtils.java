@@ -64,7 +64,7 @@ public class PathUtils {
    * Delete a directory and all its contents.  If
    * we return false, the directory may be partially-deleted.
    */
-  public static boolean fullyDelete(File dir) throws IOException {
+  public static boolean fullyDelete(File dir) {
     if (!fullyDeleteContents(dir)) {
       return false;
     }
@@ -74,7 +74,7 @@ public class PathUtils {
    * Delete the contents of a directory, not the directory itself.  If
    * we return false, the directory may be partially-deleted.
    */
-  public static boolean fullyDeleteContents(File dir) throws IOException {
+  public static boolean fullyDeleteContents(File dir) {
     boolean deletionSucceeded = true;
     File contents[] = dir.listFiles();
     if (contents != null) {

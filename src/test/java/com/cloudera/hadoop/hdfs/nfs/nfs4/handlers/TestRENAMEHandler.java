@@ -57,8 +57,8 @@ public class TestRENAMEHandler extends TestBaseHandler {
     when(fs.getFileStatus(newPath.getParent())).thenReturn(isdir);
     when(fs.getFileStatus(oldPath.getParent())).thenReturn(isdir);
     
-    when(hdfsState.fileExists(oldPath)).thenReturn(true);
-    when(hdfsState.fileExists(newPath)).thenReturn(false);
+    when(hdfsState.fileExists(fs, oldPath)).thenReturn(true);
+    when(hdfsState.fileExists(fs, newPath)).thenReturn(false);
 
     when(fs.rename(oldPath, newPath)).thenReturn(true);
   }
@@ -103,7 +103,7 @@ public class TestRENAMEHandler extends TestBaseHandler {
   }
   @Test
   public void testNewPathExists() throws Exception {
-    when(hdfsState.fileExists(newPath)).thenReturn(true);
+    when(hdfsState.fileExists(fs, newPath)).thenReturn(true);
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_EXIST, response.getStatus());
   }
@@ -129,7 +129,7 @@ public class TestRENAMEHandler extends TestBaseHandler {
   }
   @Test
   public void testOldPathDoesNotExist() throws Exception {
-    when(hdfsState.fileExists(oldPath)).thenReturn(false);
+    when(hdfsState.fileExists(fs, oldPath)).thenReturn(false);
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_NOENT, response.getStatus());
   }

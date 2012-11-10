@@ -58,9 +58,9 @@ public class SecurityHandlerFactory {
     mGSSManagerSupplier = gssManagerSupplier;
     mSessionSecurityHandlerGSSFactory = sessionSecurityHandlerGSSFactory;
     
-    String allowedHosts = mConfiguration.get(ALLOWED_HOSTS, "").trim();
+    String allowedHosts = mConfiguration.get(SECURITY_ALLOWED_HOSTS, "").trim();
     if(allowedHosts.isEmpty()) {
-      throw new IllegalArgumentException("Required argument not found " + ALLOWED_HOSTS);
+      throw new IllegalArgumentException("Required argument not found " + SECURITY_ALLOWED_HOSTS);
     }    
     mClientHostsMatcher = new ClientHostsMatcher(allowedHosts);  
     String securityFlavor = mConfiguration.get(SECURITY_FLAVOR, "").trim();

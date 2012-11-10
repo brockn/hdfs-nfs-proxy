@@ -53,7 +53,7 @@ public class LOOKUPHandler extends OperationRequestHandler<LOOKUPRequest, LOOKUP
     }
     Path parentPath = hdfsState.getPath(session.getCurrentFileHandle());
     Path path = new Path(parentPath, request.getName());
-    if (!hdfsState.fileExists(path)) {
+    if (!hdfsState.fileExists(session.getFileSystem(), path)) {
       throw new NFS4Exception(NFS4ERR_NOENT, "Path " + path + " does not exist.", true);
     }
     LOOKUPResponse response = createResponse();

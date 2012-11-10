@@ -133,11 +133,7 @@ public class WriteOrderHandler extends Thread {
       }
       for(File tempDir : mTempDirs) {
         File dir = new File(tempDir, identifer);
-        try {
-          PathUtils.fullyDelete(dir);
-        } catch (IOException e) {
-          LOGGER.warn("Unexpected error cleaning up " + dir, e);
-        }
+        PathUtils.fullyDelete(dir);
       }
       checkState(mPendingWrites.isEmpty(), "Pending writes for " + mOutputStream + " at "
           + mOutputStream.getPos() + " = " + mPendingWrites);

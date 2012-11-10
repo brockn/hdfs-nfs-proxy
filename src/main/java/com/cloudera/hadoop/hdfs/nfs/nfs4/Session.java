@@ -34,27 +34,29 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
  * compound request
  */
 public class Session {
-  protected FileHandle mCurrentFileHandle;
-  protected FileHandle mSavedFileHandle;
-  protected final Configuration mConfiguration;
-  protected final CompoundRequest mCompoundRequest;
-  protected final FileSystem mFileSystem;
-  protected final InetAddress mClientAddress;
-  protected final String mSessionID;
-  protected final int mXID;
+  private FileHandle mCurrentFileHandle;
+  private FileHandle mSavedFileHandle;
+  private final Configuration mConfiguration;
+  private final CompoundRequest mCompoundRequest;
+  private final InetAddress mClientAddress;
+  private final String mSessionID;
+  private final int mXID;
+  // these are set once we doAs
   private final String mUser;
   private final String[] mGroups;
-  public Session(int xid, CompoundRequest compoundRequest, Configuration configuration, 
-      FileSystem fileSystem, InetAddress clientAddress, String sessionID, String user, String[] groups)
+  private final FileSystem mFileSystem;
+
+  public Session(int xid, CompoundRequest compoundRequest, Configuration configuration,
+      InetAddress clientAddress, String sessionID, String user, String[] groups, FileSystem fs)
       throws IOException {
     mXID = xid;
     mCompoundRequest = compoundRequest;
     mConfiguration = configuration;
-    mFileSystem = fileSystem;
     mClientAddress = clientAddress;
     mSessionID = sessionID;
     mUser = user;
     mGroups = groups;
+    mFileSystem = fs;
   }
   public InetAddress getClientAddress() {
     return mClientAddress;
@@ -73,18 +75,17 @@ public class Session {
   public FileSystem getFileSystem() {
     return mFileSystem;
   }
-
   public String[] getGroups() {
     return mGroups;
+  }
+  public String getUser() {
+    return mUser;
   }
   public FileHandle getSavedFileHandle() {
     return mSavedFileHandle;
   }
   public String getSessionID() {
     return mSessionID;
-  }
-  public String getUser() {
-    return mUser;
   }
   public int getXID() {
     return mXID;

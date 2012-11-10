@@ -401,7 +401,11 @@ public class Constants {
   public static final String SECURITY_FLAVOR_DEFAULT= "unix";
   public static final String SECURITY_FLAVOR_KERBEROS = "krb5p";
   
-  public static final String ALLOWED_HOSTS = "hdfs.nfs.security.allowed.hosts";
+  public static final String SECURITY_KERBEROS5_REALM = "hdfs.nfs.security.krb5.realm";  
+  public static final String SECURITY_KERBEROS5_KDC = "hdfs.nfs.security.krb5.kdc";
+  public static final String SECURITY_KERBEROS5_KEYTAB = "hdfs.nfs.security.krb5.keytab";
+  public static final String SECURITY_KERBEROS5_PRINCIPAL = "hdfs.nfs.security.krb5.principal";
+  public static final String SECURITY_ALLOWED_HOSTS = "hdfs.nfs.security.allowed.hosts";
   
   
   
@@ -410,5 +414,7 @@ public class Constants {
   
   public static final String SUPER_USER = "hdfs.nfs.super.user";
   public static final String DEFAULT_SUPER_USER = UserIDMapper.getCurrentUser();
+  
+  
 
 }

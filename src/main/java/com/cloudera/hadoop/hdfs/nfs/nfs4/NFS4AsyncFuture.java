@@ -47,7 +47,8 @@ implements AsyncFuture<CompoundResponse> {
   private final List<OperationRequest> requests;
   private final List<OperationResponse> responses;
   
-  private int lastStatus;
+  private volatile int lastStatus;
+  
   public NFS4AsyncFuture(HDFSState hdfsState, Session session, UserGroupInformation ugi) {
     this.hdfsState = hdfsState;
     this.session = session;
@@ -60,12 +61,11 @@ implements AsyncFuture<CompoundResponse> {
     if(lastStatus != NFS4_OK) {
       return AsyncFuture.Complete.COMPLETE;
     }
-    String username = UserGroupInformation.getCurrentUser().getShortUserName();
     for (Iterator<OperationRequest> iterator = requests.iterator(); iterator.hasNext();) {
       OperationRequest request = iterator.next();
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug(session.getSessionID() + " " + session.getXIDAsHexString() + 
-            " processing " + request + " for " + username);
+            " processing " + request + " for " + ugi);
       }
       OperationRequestHandler<OperationRequest, OperationResponse> requestHandler = OperationFactory.getHandler(request.getID());
       if(requestHandler.wouldBlock(hdfsState, session, request)) {
@@ -77,7 +77,7 @@ implements AsyncFuture<CompoundResponse> {
       lastStatus = response.getStatus();
       if (lastStatus != NFS4_OK) {
         LOGGER.warn(session.getSessionID() + " Quitting due to " + lastStatus + " on "
-            + request.getClass().getSimpleName() + " for " + username);
+            + request.getClass().getSimpleName() + " for " + ugi);
         return AsyncFuture.Complete.COMPLETE;
       }
       hdfsState.incrementMetric("NFS_" + request.getClass().getSimpleName(), 1);

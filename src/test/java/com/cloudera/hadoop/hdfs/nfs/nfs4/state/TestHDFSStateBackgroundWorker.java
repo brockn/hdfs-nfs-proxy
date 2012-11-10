@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import junit.framework.Assert;
 
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
@@ -56,6 +57,7 @@ public class TestHDFSStateBackgroundWorker {
   private WriteOrderHandler writeOrderHandler;
   private FileHandle fileHandle;
   private HDFSFile hdfsFile;
+  private FileSystem fileSystem;
   private HDFSState hdfsState;
   
   @Before
@@ -63,6 +65,7 @@ public class TestHDFSStateBackgroundWorker {
     writerOrderHandlerMap = Maps.newHashMap();
     openFileMap = Maps.newConcurrentMap();
     storageDir = Files.createTempDir();
+    fileSystem = mock(FileSystem.class);
     hdfsState = mock(HDFSState.class);
     out = mock(HDFSOutputStream.class);
     writeOrderHandler = mock(WriteOrderHandler.class);
@@ -76,7 +79,7 @@ public class TestHDFSStateBackgroundWorker {
     fileHandleReapInterval = 2000L;
     fileHandleINodeMap = 
         new FileHandleINodeMap(new File(storageDir, "map"));
-    worker = new HDFSStateBackgroundWorker(hdfsState, writerOrderHandlerMap, 
+    worker = new HDFSStateBackgroundWorker(fileSystem, hdfsState, writerOrderHandlerMap, 
         openFileMap, fileHandleINodeMap, interval, maxInactivity, 
         fileHandleReapInterval);
     worker.setDaemon(true);
@@ -136,8 +139,8 @@ public class TestHDFSStateBackgroundWorker {
     INode inode2 = new INode("/1", 2);
     fileHandleINodeMap.put(fh1, inode1);
     fileHandleINodeMap.put(fh2, inode2);
-    when(hdfsState.deleteFileHandleFileIfNotExist(fh1)).thenReturn(true);
-    when(hdfsState.deleteFileHandleFileIfNotExist(fh2)).thenReturn(false);
+    when(hdfsState.deleteFileHandleFileIfNotExist(fileSystem, fh1)).thenReturn(true);
+    when(hdfsState.deleteFileHandleFileIfNotExist(fileSystem, fh2)).thenReturn(false);
     
     Thread.sleep(fileHandleReapInterval + (interval * 2L));
     // will not be returned by getFileHandlesNotValidatedSince
@@ -146,9 +149,9 @@ public class TestHDFSStateBackgroundWorker {
     
     Thread.sleep(interval * 4L);
 
-    verify(hdfsState, atLeast(1)).deleteFileHandleFileIfNotExist(fh1);
-    verify(hdfsState, atLeast(1)).deleteFileHandleFileIfNotExist(fh2);
-    verify(hdfsState, times(0)).deleteFileHandleFileIfNotExist(fh3);
+    verify(hdfsState, atLeast(1)).deleteFileHandleFileIfNotExist(fileSystem, fh1);
+    verify(hdfsState, atLeast(1)).deleteFileHandleFileIfNotExist(fileSystem, fh2);
+    verify(hdfsState, times(0)).deleteFileHandleFileIfNotExist(fileSystem, fh3);
     INode inode2Updated = fileHandleINodeMap.getINodeByFileHandle(fh2);
     Assert.assertEquals(inode2, inode2Updated);
     Assert.assertTrue(inode2Updated.getCreationTime() > inode2.getCreationTime());

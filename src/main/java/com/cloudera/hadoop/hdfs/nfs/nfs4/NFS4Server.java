@@ -32,6 +32,7 @@ import org.ietf.jgss.GSSManager;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CompoundResponse;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCServer;
+import com.cloudera.hadoop.hdfs.nfs.security.SecurityConfiguration;
 import com.cloudera.hadoop.hdfs.nfs.security.SecurityHandlerFactory;
 import com.cloudera.hadoop.hdfs.nfs.security.SessionSecurityHandlerGSSFactory;
 import com.google.common.base.Supplier;
@@ -47,18 +48,14 @@ public class NFS4Server extends Configured implements Tool {
   RPCServer<CompoundRequest, CompoundResponse> mRPCServer;
 
   static{
-    Configuration.addDefaultResource("hdfs-default.xml");
-    Configuration.addDefaultResource("hdfs-site.xml");
-    
-    System.setProperty("java.security.krb5.realm", "LOCALDOMAIN");
-    System.setProperty("java.security.krb5.kdc", "localhost");
-    System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");
-    System.setProperty("java.security.auth.login.config", "conf/sec.conf");
+    Configuration.addDefaultResource("hdfs-nfs-site.xml");
   }
   
   public static void main(String[] args) throws Exception {
-
-    System.exit(ToolRunner.run(new Configuration(), new NFS4Server(), args));
+    Configuration conf = new Configuration();
+    SecurityConfiguration secConf = new SecurityConfiguration(conf);
+    secConf.configure();
+    System.exit(ToolRunner.run(conf, new NFS4Server(), args));
   }
 
   public int getPort() {

@@ -58,7 +58,7 @@ public class REMOVEHandler extends OperationRequestHandler<REMOVERequest, REMOVE
     Path path = new Path(parentPath, request.getName());
     FileSystem fs = session.getFileSystem();
     
-    if (!hdfsState.fileExists(path)) {
+    if (!hdfsState.fileExists(session.getFileSystem(), path)) {
       throw new NFS4Exception(NFS4ERR_NOENT);
     }
     REMOVEResponse response = createResponse();
@@ -73,7 +73,7 @@ public class REMOVEHandler extends OperationRequestHandler<REMOVERequest, REMOVE
     // for write. The call below will return false if the file
     // is open for write. Which could be a long time if the 
     // server writing to the file dies.
-    if(!hdfsState.delete(path)) {
+    if(!hdfsState.delete(session.getFileSystem(), path)) {
       throw new NFS4Exception(NFS4ERR_PERM);
     }
 

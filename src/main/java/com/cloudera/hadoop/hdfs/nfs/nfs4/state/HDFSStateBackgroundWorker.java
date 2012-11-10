@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
@@ -35,7 +36,8 @@ import com.google.common.collect.Sets;
 
 public class HDFSStateBackgroundWorker extends Thread {
   protected static final Logger LOGGER = Logger.getLogger(HDFSStateBackgroundWorker.class);
-  
+
+  private final FileSystem mFileSystem;
   private final HDFSState mHDFSState;
   private final ConcurrentMap<FileHandle, HDFSFile> mOpenFileMap;
   private final Map<FileHandle, WriteOrderHandler> mWriteOrderHandlerMap;
@@ -45,10 +47,11 @@ public class HDFSStateBackgroundWorker extends Thread {
   private final long mFileHandleReapInterval;
   private volatile boolean run;
   
-  public HDFSStateBackgroundWorker(HDFSState hdfsState,
+  public HDFSStateBackgroundWorker(FileSystem fileSystem, HDFSState hdfsState,
       Map<FileHandle, WriteOrderHandler> writeOrderHandlerMap,
       ConcurrentMap<FileHandle, HDFSFile> openFileMap, FileHandleINodeMap fileHandleINodeMap,
       long intervalMS, long maxInactivityMS, long fileHandleReapInterval) {
+    mFileSystem = fileSystem;
     mHDFSState = hdfsState;
     mWriteOrderHandlerMap = writeOrderHandlerMap;
     mOpenFileMap = openFileMap;
@@ -132,7 +135,7 @@ public class HDFSStateBackgroundWorker extends Thread {
         count++;
         String path = agedFileHandles.get(fileHandle);
         try {
-          if(!mHDFSState.deleteFileHandleFileIfNotExist(fileHandle)) {
+          if(!mHDFSState.deleteFileHandleFileIfNotExist(mFileSystem, fileHandle)) {
             fileHandlesWhichStillExist.add(fileHandle);
           }
           // expensive logic so do this slowly
