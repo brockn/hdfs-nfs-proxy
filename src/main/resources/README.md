@@ -61,15 +61,15 @@ Questions? email brock at cloudera dot com
 
 * How do I use the dameon with Kerberos security enabled?
 
-    1. Have a working Keberos enabled Hadoop cluster
-    1. Generated a keytab for the nfs/_HOST@DOMAIN user
-    1. Enable security via the options described in hdfs-nfs-site.secure-sample.xml
-    1. Enable sec=krb5p on the client mount
+1. Have a working Keberos enabled Hadoop cluster
+1. Generated a keytab for the nfs/_HOST@DOMAIN user
+1. Enable security via the options described in hdfs-nfs-site.secure-sample.xml
+1. Enable sec=krb5p on the client mount
 
 * How can I configure this to use another port, say 2051?
 
-    1. Change your start command to: ./start-nfs-server.sh conf/ 2055
-    1. Add port=2055 to the mount options
+    > 1. Change your start command to: ./start-nfs-server.sh conf/ 2055
+    > 1. Add port=2055 to the mount options
 
 * What is this good for? or Can I replace my expensive NAS?
 
