@@ -4,11 +4,9 @@ Questions? email brock at cloudera dot com
 
 1. Requirements:
 
-        - HDFS Instance with CDH, Apache Hadoop 2.x+, or Apache Hadoop 1.x+
+        - HDFS Instance of CDH3 or CDH4
         - NFS Packages (nfs-utils on RHEL, CentOS and nfs-common on Ubuntu)
           must be installed on any clients wishing to mount HDFS
-        - A native NFS Server cannot be running the hosts unless you change
-          the port of HDFS NFS Proxy, instructions in the FAQ
         
 1. Download
 
@@ -20,7 +18,7 @@ Questions? email brock at cloudera dot com
 
 1. Add this entry to /etc/fstab
 
-        <hostname of server running the proxy>:/   /mnt/hdfs   nfs4       rw,intr,timeo=600      0 0
+        <hostname of server running the proxy>:/   /mnt/hdfs   nfs4       rw,intr,timeo=600,port=2501      0 0
 
 1. Build binary:
 
@@ -42,25 +40,35 @@ Questions? email brock at cloudera dot com
 
 1. Start the server:
 
-        Below, /usr/lib/hadoop/conf, is the path to my *-site.xml files. Note that
-        the daemon should be started as the user running hdfs, typically hadoop or hdfs.
+        Below my conf/ directory has an hdfs-nfs-site.xml, hdfs-site.xml, core-site.xml,
+        and a log4j.properties file. Note the daemon would typically be started as the 
+        same user who is running the NameNode typically either hdfs or hadoop.
 
-        To run the server on port 2049:
+        To run the server on port 2051:
 
-        $ ./start-nfs-server.sh /usr/lib/hadoop/conf 2049
+        $ ./start-nfs-server.sh confi/ 2051
 
 1. Mount hdfs
 
-        $ sudo mount /mnt/hdfs
+        $ sudo mount -v /mnt/hdfs
 
 1. You should now be able to access HDFS via ls -la /mnt/hdfs 
 
 # FAQ
 
-* I am running an NFS Server on port 2049, how can I configure this to use another port, say 2050?
+* How do I use the dameon with Kerberos security enabled?
 
-         1) Change your start command to: ./start-nfs-server.sh /usr/lib/hadoop/conf 2050
-         2) Add port=2050 to the mount options
+Note this support is experimental and requires all users must have kerberos principals.
+
+         1) Have a working Keberos enabled Hadoop cluster
+         2) Generated a keytab for the nfs/_HOST@DOMAIN user
+         3) Enable security via the options described in hdfs-nfs-site.secure-sample.xml
+         4) Enable sec=krb5p on the client mount
+
+* How can I configure this to use another port, say 2051?
+
+         1) Change your start command to: ./start-nfs-server.sh conf/ 2055
+         2) Add port=2055 to the mount options
 
 * What is this good for? or Can I replace my expensive NAS?
 
@@ -91,23 +99,6 @@ and then restart idmapd:
 
 Disable ipv6
 
-* I am trying to do an operation as any user who is not running the daemon and
-I get errors?
-
-You will only be able to access HDFS as the user running the daemon unless
-you run the daemon as the user running the namenode (e.g. hadoop or hdfs)
-or have Secure Impersonation configured for the user running the proxy
-(http://hadoop.apache.org/common/docs/current/Secure_Impersonation.html).
-
-Say I have the proxy running as noland and I copy a file as root into
-/user/root, I will get this error below:
-
-    org.apache.hadoop.security.AccessControlException: Permission denied: 
-      user=noland, access=WRITE, inode="/user/root":root:hadoop:drwxr-xr-x
-
-The easiest option is to start the daemon as hadoop, hdfs or whatever user
-is running your namenode.
-
 # What needs improvement (in no order)
 
 None of these make the system unusable, they are just things we should improve.
@@ -122,17 +113,6 @@ make sense to be consistent.
          - Client ID logic is complex and not completely followed.
          - Many reccomended attributes are not implemented such as 14 archive, 25 hidden,
          49 timebackup, 55 mounted on fileid
-         - Kerberos
          - File appends
-
-* Read Ordering: 
-We recieve a fair number of threads blocked on reads of a single input stream.
-I think we could get better performance if we ordered these like writes because we
-know they will arrive out of order. As such the current impl is doing more seeks
-than required. We also might considering pooling input streams.
-* Garbage Collection:
-Heavy read loads use a fair amount of old gen likely due to our response cache
-and the size of read responses. If this becomes an issue we could easily exclude 
-read requests from the response cache.
 * Metrics:
 A simple metrics system is used. We should use Hadoops Metric System. 
