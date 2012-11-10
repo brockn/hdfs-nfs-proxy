@@ -23,18 +23,18 @@ Questions? email brock at cloudera dot com
 1. Build binary:
 
    Install JDBM in your local repo:
-         $ mvn install:install-file -Dfile=lib/jdbm-2.4.jar -DgroupId=thirdparty \
-           -DartifactId=jdbm -Dversion=2.4 -Dpackaging=jar
+        $ mvn install:install-file -Dfile=lib/jdbm-2.4.jar -DgroupId=thirdparty \
+        -DartifactId=jdbm -Dversion=2.4 -Dpackaging=jar
 
     Choose the appropiate hadoop version when building the package. Examples below:
 
     Hadoop 1:
-          $ mvn package -Pcdh3
-          $ mvn package -Phadoop1
+        $ mvn package -Pcdh3
+        $ mvn package -Phadoop1
 
     Hadoop 2:
-          $ mvn package -Pcdh4
-          $ mvn package -Phadoop2
+        $ mvn package -Pcdh4
+        $ mvn package -Phadoop2
 
     The output jar will be target/ you likely want the -with-deps jar.
 
