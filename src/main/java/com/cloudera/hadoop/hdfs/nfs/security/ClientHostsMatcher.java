@@ -41,7 +41,10 @@ public class ClientHostsMatcher {
     mMatches = Lists.newArrayList();
     for(String line : lines.split("\\n")) {
       LOGGER.debug("Processing line '" + line + "'");
-      mMatches.add(getMatch(line));
+      line = line.trim();
+      if(!line.isEmpty()) {
+        mMatches.add(getMatch(line));        
+      }
     }
   }
   public AccessPrivilege getAccessPrivilege(String address, String hostname) {
