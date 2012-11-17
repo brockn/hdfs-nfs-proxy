@@ -49,6 +49,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.SAVEFHRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.SETATTRRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.WRITERequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
+import com.cloudera.hadoop.hdfs.nfs.security.AccessPrivilege;
 import com.google.common.collect.ImmutableList;
 
 public class TestNullFileHandle {
@@ -90,6 +91,7 @@ public class TestNullFileHandle {
   public void setup() throws NFS4Exception {
     mHDFSState = mock(HDFSState.class);
     session = mock(Session.class);
+    when(session.getAccessPrivilege()).thenReturn(AccessPrivilege.READ_WRITE);
   }
 
   @Test

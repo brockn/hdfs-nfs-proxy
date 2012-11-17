@@ -36,6 +36,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.OPENRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.OPENResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSOutputStream;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
+import com.cloudera.hadoop.hdfs.nfs.security.AccessPrivilege;
 import com.google.common.base.Strings;
 
 public class OPENHandler extends OperationRequestHandler<OPENRequest, OPENResponse> {
@@ -62,7 +63,7 @@ public class OPENHandler extends OperationRequestHandler<OPENRequest, OPENRespon
       case NFS4_OPEN4_SHARE_ACCESS_WRITE:
         return write(hdfsState, session, request);
       default:
-        throw new NFS4Exception(NFS4ERR_NOTSUPP, "read OR write not both ", true);
+        throw new NFS4Exception(NFS4ERR_NOTSUPP, "read OR write but not both ");
     }
   }
 
@@ -98,6 +99,9 @@ public class OPENHandler extends OperationRequestHandler<OPENRequest, OPENRespon
 
   protected OPENResponse write(HDFSState hdfsState, Session session,
       OPENRequest request) throws NFS4Exception, IOException {
+    if(AccessPrivilege.READ_WRITE != session.getAccessPrivilege()) {
+      throw new NFS4Exception(NFS4ERR_PERM);
+    }
     // generate stateid
     StateID stateID = StateID.newStateID(request.getSeqID());
     Path parentPath = hdfsState.getPath(session.getCurrentFileHandle());

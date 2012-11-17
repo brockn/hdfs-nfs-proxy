@@ -48,6 +48,10 @@ public class WRITEHandler extends OperationRequestHandler<WRITERequest, WRITERes
   protected WRITEResponse createResponse() {
     return new WRITEResponse();
   }
+  @Override  
+  boolean isWriteOnlyHandler() {
+    return true;
+  }
   @Override
   protected WRITEResponse doHandle(HDFSState hdfsState, Session session,
       WRITERequest request) throws NFS4Exception, IOException {

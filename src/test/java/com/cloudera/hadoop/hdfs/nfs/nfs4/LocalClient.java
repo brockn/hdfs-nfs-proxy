@@ -30,6 +30,7 @@ import com.cloudera.hadoop.hdfs.nfs.TestUtils;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.CompoundResponse;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCTestUtil;
+import com.cloudera.hadoop.hdfs.nfs.security.AccessPrivilege;
 import com.cloudera.hadoop.hdfs.nfs.security.SecurityHandlerFactory;
 import com.cloudera.hadoop.hdfs.nfs.security.SessionSecurityHandlerGSSFactory;
 import com.google.common.base.Supplier;
@@ -56,7 +57,8 @@ public class LocalClient extends BaseClient {
   @Override
   protected CompoundResponse doMakeRequest(CompoundRequest request) {
     try {
-      CompoundResponse response = mServer.process(RPCTestUtil.createRequest(), request, LOCALHOST, "test").get();
+      CompoundResponse response = mServer.process(RPCTestUtil.createRequest(), request, 
+          AccessPrivilege.READ_WRITE, LOCALHOST, "test").get();
       return response;
     } catch(Exception e) {
       throw Throwables.propagate(e);

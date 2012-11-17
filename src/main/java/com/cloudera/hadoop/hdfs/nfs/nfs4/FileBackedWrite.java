@@ -49,9 +49,9 @@ public class FileBackedWrite extends AbstractPendingWrite {
   }
   private final File backingFile;
   private final int length;
-  private final int hashCode;
-  
+  private final int hashCode;  
   private final int size;
+  
   public FileBackedWrite(File backingFile, String name, int xid, long offset, boolean sync,
       byte[] data, int start, int length) {
     super(name, xid, offset, sync);
@@ -97,10 +97,10 @@ public class FileBackedWrite extends AbstractPendingWrite {
   public byte[] getData() {
     try {
       return readBytes();
-    } catch (Exception e) {
+    } catch (IOException e) {
       try {
         return readBytes();
-      } catch (Exception ex) {
+      } catch (IOException ex) {
         throw Throwables.propagate(ex);
       }
     }

@@ -62,7 +62,7 @@ public class TestSecurityHandlerFactory {
   @Before
   public void setup() throws Exception {
     conf = new Configuration();
-    conf.set(SECURITY_ALLOWED_HOSTS, "192.168.0.0/22");
+    conf.set(SECURITY_ALLOWED_HOSTS, "192.168.0.0/22 rw");
     conf.set(SECURITY_FLAVOR, SECURITY_FLAVOR_KERBEROS);
     byte[] contextID = Bytes.toBytes(CONTEXT_ID);
     sessionID = "sessionID";
@@ -120,7 +120,7 @@ public class TestSecurityHandlerFactory {
         sessionSecurityHandlerGSSFactory);
     InetAddress addr = mock(InetAddress.class);
     when(addr.getHostAddress()).thenReturn("192.168.0.1");
-    Assert.assertTrue(securityHandlerFactory.isClientAllowed(addr));
+    Assert.assertEquals(AccessPrivilege.READ_WRITE, securityHandlerFactory.getAccessPrivilege(addr));
   }
   @Test
   public void testClientHostsFalse()throws Exception {
@@ -128,7 +128,7 @@ public class TestSecurityHandlerFactory {
         sessionSecurityHandlerGSSFactory);
     InetAddress addr = mock(InetAddress.class);
     when(addr.getHostAddress()).thenReturn("10.0.0.1");
-    Assert.assertFalse(securityHandlerFactory.isClientAllowed(addr));
+    Assert.assertEquals(AccessPrivilege.NONE, securityHandlerFactory.getAccessPrivilege(addr));
   }
   @Test
   public void testSystemCredsFailWithKerberosEnabled() throws Exception {

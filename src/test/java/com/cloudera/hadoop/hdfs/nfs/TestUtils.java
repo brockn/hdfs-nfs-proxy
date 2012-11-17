@@ -233,7 +233,7 @@ public class TestUtils {
     if(conf.get(USER_ID_MAPPER_CLASS) == null) {
       conf.set(USER_ID_MAPPER_CLASS, FixedUserIDMapper.class.getName());
     }
-    conf.set(SECURITY_ALLOWED_HOSTS, "*");
+    conf.set(SECURITY_ALLOWED_HOSTS, "* rw");
     conf.set(SECURITY_FLAVOR, SECURITY_FLAVOR_DEFAULT);
     return conf;
   }

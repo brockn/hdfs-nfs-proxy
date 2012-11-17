@@ -44,6 +44,10 @@ public class REMOVEHandler extends OperationRequestHandler<REMOVERequest, REMOVE
   protected REMOVEResponse createResponse() {
     return new REMOVEResponse();
   }
+  @Override  
+  boolean isWriteOnlyHandler() {
+    return true;
+  }
 
   @Override
   protected REMOVEResponse doHandle(HDFSState hdfsState, Session session,

@@ -571,7 +571,7 @@ public class HDFSState {
       // rather oddly. It would open the file with overwrite=true but 
       // then send the data which was to be appended at offset 0
       throw new NFS4Exception(NFS4ERR_PERM,
-          "File Exists and overwrite = false", true);
+          "File Exists and overwrite = false");
     }
     if (path.getParent() != null) {
       // TODO bad perms will fail with IOException, perhaps we should check

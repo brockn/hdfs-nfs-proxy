@@ -43,6 +43,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.Client;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.ClientFactory;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
+import com.cloudera.hadoop.hdfs.nfs.security.AccessPrivilege;
 import com.google.common.base.Charsets;
 
 public class TestBaseHandler {
@@ -90,7 +91,7 @@ public class TestBaseHandler {
     when(fileStatus.getPermission()).thenReturn(filePermissions);
     when(fs.getFileStatus(any(Path.class))).thenReturn(fileStatus);
     when(session.getFileSystem()).thenReturn(fs);
-
+    when(session.getAccessPrivilege()).thenReturn(AccessPrivilege.READ_WRITE);
     when(session.getClientAddress()).thenReturn(addr);
     when(hdfsState.getPath(currentFileHandle)).thenReturn(new Path("/"));
     when(session.getCurrentFileHandle()).thenReturn(currentFileHandle);

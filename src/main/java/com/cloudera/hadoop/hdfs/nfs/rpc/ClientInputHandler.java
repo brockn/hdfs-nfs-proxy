@@ -38,6 +38,7 @@ import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.RequiresCredentials;
+import com.cloudera.hadoop.hdfs.nfs.security.AccessPrivilege;
 import com.cloudera.hadoop.hdfs.nfs.security.AuthenticatedCredentials;
 import com.cloudera.hadoop.hdfs.nfs.security.SecurityHandlerFactory;
 import com.cloudera.hadoop.hdfs.nfs.security.SessionSecurityHandler;
@@ -96,7 +97,7 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
   }
 
   private void execute(final SessionSecurityHandler<? extends Verifier> securityHandler, 
-      final RPCRequest request, RPCBuffer requestBuffer) throws Exception {
+      AccessPrivilege accessPrivilege, final RPCRequest request, RPCBuffer requestBuffer) throws Exception {
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug(mSessionID + " starting xid " + request.getXidAsHexString());
     }
@@ -108,7 +109,7 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
       requiresCredentials.setCredentials((AuthenticatedCredentials) request.getCredentials());
     }
     final ListenableFuture<RESPONSE> future = mHandler.process(request, applicationRequest, 
-        mClient.getInetAddress(), mSessionID);
+        accessPrivilege, mClient.getInetAddress(), mSessionID);
     future.addListener(new Runnable() {
       @Override
       public void run() {
@@ -145,10 +146,11 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
         mHandler.incrementMetric(CLIENT_BYTES_READ, requestBuffer.length());
         request = new RPCRequest();
         request.read(requestBuffer);
+        AccessPrivilege accessPrivilege = mSecurityHandlerFactory.getAccessPrivilege(mClient.getInetAddress());
         if(request.getRpcVersion() != RPC_VERSION) {
           LOGGER.info(mSessionID + " Denying client due to bad RPC version " + request.getRpcVersion() + " for " + mClientName);
           throw new RPCDeniedException(RPC_REJECT_MISMATCH);
-        } else if(!mSecurityHandlerFactory.isClientAllowed(mClient.getInetAddress())) {
+        } else if(accessPrivilege == AccessPrivilege.NONE) {
           throw new RPCAuthException(RPC_AUTH_STATUS_BADCRED);
         } else if(request.getCredentials() == null) {
           LOGGER.info(mSessionID + " Denying client due to null credentials for " + mClientName);
@@ -163,7 +165,8 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
           if(LOGGER.isDebugEnabled()) {
             LOGGER.debug(mSessionID + " Handling NFS Compound for " + mClientName);
           }
-          SessionSecurityHandler<? extends Verifier> securityHandler = mSecurityHandlerFactory.getSecurityHandler(request.getCredentials());
+          SessionSecurityHandler<? extends Verifier> securityHandler = 
+              mSecurityHandlerFactory.getSecurityHandler(request.getCredentials());
           if(!securityHandler.shouldSilentlyDrop(request)) {
             if(securityHandler.isUnwrapRequired()) {
               byte[] encryptedData = requestBuffer.readBytes();
@@ -187,7 +190,7 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
                 writeApplicationResponse(securityHandler, request, applicationResponse);
                 LOGGER.info(mSessionID + " serving cached response to " + request.getXidAsHexString());
               } else {
-                execute(securityHandler, request, requestBuffer);
+                execute(securityHandler, accessPrivilege, request, requestBuffer);
               }
             }            
           }

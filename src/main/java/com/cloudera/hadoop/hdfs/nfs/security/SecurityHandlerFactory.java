@@ -62,7 +62,7 @@ public class SecurityHandlerFactory {
     if(allowedHosts.isEmpty()) {
       throw new IllegalArgumentException("Required argument not found " + SECURITY_ALLOWED_HOSTS);
     }    
-    mClientHostsMatcher = new ClientHostsMatcher(allowedHosts);  
+    mClientHostsMatcher = new ClientHostsMatcher(allowedHosts);
     String securityFlavor = mConfiguration.get(SECURITY_FLAVOR, "").trim();
     if(SECURITY_FLAVOR_KERBEROS.equalsIgnoreCase(securityFlavor)) {
       mKerberosEnabled = true;
@@ -103,8 +103,8 @@ public class SecurityHandlerFactory {
         UserIDMapper.get(mConfiguration));
   }
   
-  public boolean isClientAllowed(InetAddress addr) {
-    return mClientHostsMatcher.isIncluded(addr.getHostAddress(), 
+  public AccessPrivilege getAccessPrivilege(InetAddress addr) {
+    return mClientHostsMatcher.getAccessPrivilege(addr.getHostAddress(), 
         addr.getCanonicalHostName());
   }
   public RPCBuffer handleNullRequest(String sessionID, String clientName, 

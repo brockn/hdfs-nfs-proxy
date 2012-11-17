@@ -45,6 +45,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSStateBackgroundWorker;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCHandler;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
+import com.cloudera.hadoop.hdfs.nfs.security.AccessPrivilege;
 import com.cloudera.hadoop.hdfs.nfs.security.AuthenticatedCredentials;
 import com.cloudera.hadoop.hdfs.nfs.security.SecurityHandlerFactory;
 import com.cloudera.hadoop.hdfs.nfs.security.SessionSecurityHandler;
@@ -155,8 +156,8 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
    */
   @Override
   public ListenableFuture<CompoundResponse> process(final RPCRequest rpcRequest,
-      final CompoundRequest compoundRequest, final InetAddress clientAddress,
-      final String sessionID) {
+      final CompoundRequest compoundRequest, AccessPrivilege accessPrivilege,
+      final InetAddress clientAddress, final String sessionID) {
     AuthenticatedCredentials creds = compoundRequest.getCredentials();
     if (creds == null) {
       CompoundResponse response = new CompoundResponse();
@@ -181,7 +182,8 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
         }
       });
       Session session = new Session(rpcRequest.getXid(), compoundRequest,
-          mConfiguration, clientAddress, sessionID, ugi.getShortUserName(), ugi.getGroupNames(), fileSystem);
+          mConfiguration, clientAddress, sessionID, ugi.getShortUserName(), ugi.getGroupNames(), 
+          fileSystem, accessPrivilege);
       NFS4AsyncFuture task = new NFS4AsyncFuture(mHDFSState, session, ugi);
       executor.schedule(task);
       return task;

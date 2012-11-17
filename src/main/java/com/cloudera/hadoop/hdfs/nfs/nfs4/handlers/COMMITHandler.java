@@ -40,6 +40,10 @@ public class COMMITHandler extends OperationRequestHandler<COMMITRequest, COMMIT
   protected COMMITResponse createResponse() {
     return new COMMITResponse();
   }
+  @Override  
+  boolean isWriteOnlyHandler() {
+    return true;
+  }
   @Override
   protected COMMITResponse doHandle(HDFSState hdfsState, Session session,
       COMMITRequest request) throws NFS4Exception, IOException {

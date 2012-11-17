@@ -23,6 +23,7 @@ import java.net.InetAddress;
 
 import com.cloudera.hadoop.hdfs.nfs.metrics.MetricConstants.Metric;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.MessageBase;
+import com.cloudera.hadoop.hdfs.nfs.security.AccessPrivilege;
 import com.google.common.util.concurrent.ListenableFuture;
 
 
@@ -35,7 +36,7 @@ public abstract class RPCHandler<REQUEST extends MessageBase, RESPONSE extends M
   public abstract void incrementMetric(Metric metric, long count);
 
   public abstract ListenableFuture<RESPONSE> process(final RPCRequest rpcRequest, final REQUEST request, 
-      final InetAddress clientAddress, final String sessionID);
+      AccessPrivilege accessPrivilege, final InetAddress clientAddress, final String sessionID);
 
 
 }

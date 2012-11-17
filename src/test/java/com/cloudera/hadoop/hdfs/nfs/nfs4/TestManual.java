@@ -60,6 +60,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.state.Client;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.ClientFactory;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
+import com.cloudera.hadoop.hdfs.nfs.security.AccessPrivilege;
 import com.cloudera.hadoop.hdfs.nfs.security.SecurityHandlerFactory;
 import com.cloudera.hadoop.hdfs.nfs.security.SessionSecurityHandlerGSSFactory;
 import com.google.common.base.Supplier;
@@ -125,7 +126,8 @@ public class TestManual {
     accesssRequest.setAccess(NFS_ACCESS_READ);
     operations.add(accesssRequest);
     request.setOperations(operations);
-    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test").get();
+    CompoundResponse response = server.process(new RPCRequest(), request, 
+        AccessPrivilege.READ_WRITE, LOCALHOST, "test").get();
     assertEquals(NFS4_OK, response.getStatus());
     assertTrue(response.getOperations().size() == 3);
     ImmutableList<OperationResponse> operationResponses = response.getOperations();
@@ -155,7 +157,8 @@ public class TestManual {
     List<OperationRequest> operations = Lists.newArrayList();
     operations.add(new PUTROOTFHRequest());
     request.setOperations(operations);
-    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test").get();
+    CompoundResponse response = server.process(new RPCRequest(), request, 
+        AccessPrivilege.READ_WRITE, LOCALHOST, "test").get();
     assertTrue(response.getOperations().size() == 1);
     OperationResponse operationResponse = response.getOperations().get(0);
     assertTrue(operationResponse instanceof PUTROOTFHResponse);
@@ -295,7 +298,8 @@ public class TestManual {
     getAttrRequest.setAttrs(requestAttrs);
     operations.add(getAttrRequest);
     compoundRequest.setOperations(operations);
-    CompoundResponse response = server.process(new RPCRequest(), compoundRequest, LOCALHOST, "test").get();
+    CompoundResponse response = server.process(new RPCRequest(), compoundRequest, 
+        AccessPrivilege.READ_WRITE, LOCALHOST, "test").get();
     assertEquals(NFS4_OK, response.getStatus());
 
     assertTrue(response.getOperations().size() == 3);
@@ -348,7 +352,8 @@ public class TestManual {
     List<OperationRequest> operations = Lists.newArrayList();
     operations.add(setClientIDRequest);
     request.setOperations(operations);
-    CompoundResponse response = server.process(new RPCRequest(), request, LOCALHOST, "test").get();
+    CompoundResponse response = server.process(new RPCRequest(), request, 
+        AccessPrivilege.READ_WRITE, LOCALHOST, "test").get();
     assertEquals(NFS4_OK, response.getStatus());
     SETCLIENTIDResponse setClientIDResponse = (SETCLIENTIDResponse) response.getOperations().get(0);
     assertEquals(NFS4_OK, setClientIDResponse.getStatus());

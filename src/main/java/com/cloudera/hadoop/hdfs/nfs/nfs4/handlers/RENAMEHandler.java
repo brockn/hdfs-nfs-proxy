@@ -43,6 +43,11 @@ public class RENAMEHandler extends OperationRequestHandler<RENAMERequest, RENAME
     return new RENAMEResponse();
   }
 
+  @Override  
+  boolean isWriteOnlyHandler() {
+    return true;
+  }
+
   @Override
   protected RENAMEResponse doHandle(HDFSState hdfsState, Session session,
       RENAMERequest request) throws NFS4Exception, IOException {

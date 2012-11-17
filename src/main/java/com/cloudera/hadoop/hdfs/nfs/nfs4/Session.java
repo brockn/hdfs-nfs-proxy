@@ -27,6 +27,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.CompoundRequest;
+import com.cloudera.hadoop.hdfs.nfs.security.AccessPrivilege;
 
 /**
  * Class represents the state of a request as
@@ -44,9 +45,11 @@ public class Session {
   private final String mUser;
   private final String[] mGroups;
   private final FileSystem mFileSystem;
-
+  private final AccessPrivilege mAccessPrivilege;
+  
   public Session(int xid, CompoundRequest compoundRequest, Configuration configuration,
-      InetAddress clientAddress, String sessionID, String user, String[] groups, FileSystem fs)
+      InetAddress clientAddress, String sessionID, String user, String[] groups, FileSystem fs,
+      AccessPrivilege accessPrivilege)
       throws IOException {
     mXID = xid;
     mCompoundRequest = compoundRequest;
@@ -56,6 +59,7 @@ public class Session {
     mUser = user;
     mGroups = groups;
     mFileSystem = fs;
+    mAccessPrivilege = accessPrivilege;
   }
   public InetAddress getClientAddress() {
     return mClientAddress;
@@ -66,13 +70,14 @@ public class Session {
   public Configuration getConfiguration() {
     return mConfiguration;
   }
-
   public FileHandle getCurrentFileHandle() {
     return mCurrentFileHandle;
   }
-
   public FileSystem getFileSystem() {
     return mFileSystem;
+  }
+  public AccessPrivilege getAccessPrivilege() {
+    return mAccessPrivilege;
   }
   public String[] getGroups() {
     return mGroups;
@@ -103,7 +108,8 @@ public class Session {
     return "Session [mCurrentFileHandle=" + mCurrentFileHandle
         + ", mSavedFileHandle=" + mSavedFileHandle + ", mCompoundRequest="
         + mCompoundRequest + ", mClientAddress=" + mClientAddress
-        + ", mSessionID=" + mSessionID + ", mXID=" + getXIDAsHexString() + "]";
+        + ", mSessionID=" + mSessionID + ", mXID=" + getXIDAsHexString() 
+        + ", mAccessPrivilege = " + mAccessPrivilege + "]";
   }
   
 }

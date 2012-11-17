@@ -31,6 +31,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.Session;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.OperationRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.OperationResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
+import com.cloudera.hadoop.hdfs.nfs.security.AccessPrivilege;
 
 /**
  * Subclasses process a specific Request, Response pair. They MUST be stateless
@@ -74,14 +75,15 @@ public abstract class OperationRequestHandler<IN extends OperationRequest, OUT e
    */
   public OUT handle(HDFSState hdfsState, Session session, IN request) {
     try {
+      if(isWriteOnlyHandler() && AccessPrivilege.READ_WRITE != session.getAccessPrivilege()) {
+        throw new NFS4Exception(NFS4ERR_PERM);
+      }
       return doHandle(hdfsState, session, request);
     } catch (Exception ex) {
       hdfsState.incrementMetric("EXCEPTION_" + ex.getClass().getSimpleName(), 1);
       OUT response = createResponse();
-      boolean log = true;
       if (ex instanceof NFS4Exception) {
         NFS4Exception nfsEx = (NFS4Exception) ex;
-        log = !nfsEx.shouldLog();
         response.setStatus(nfsEx.getError());
       } else if (ex instanceof FileNotFoundException) {
         response.setStatus(NFS4ERR_NOENT);
@@ -98,15 +100,14 @@ public abstract class OperationRequestHandler<IN extends OperationRequest, OUT e
       }
       String msg = session.getSessionID() + " Error for client "
           + session.getClientAddress() + " and " + response.getClass().getSimpleName();
-          if (log || LOGGER.isDebugEnabled()) {
-            LOGGER.warn(msg, ex);
-          } else {
-            LOGGER.warn(msg);
-          }
-          return response;
+      LOGGER.warn(msg, ex);
+      return response;
     }
   }
 
+  boolean isWriteOnlyHandler() {
+    return false;
+  }
   public boolean wouldBlock(HDFSState server, Session session, IN request) {
     return false;
   }

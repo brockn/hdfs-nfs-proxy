@@ -37,25 +37,33 @@ public class ClientHostsMatcher {
 
   private final List<Match> mMatches;
   
-  public ClientHostsMatcher(String hosts) {
+  public ClientHostsMatcher(String lines) {
     mMatches = Lists.newArrayList();
-    for(String host : hosts.split("\\s+")) {
-      mMatches.add(getMatch(host));
+    for(String line : lines.split("\\n")) {
+      LOGGER.debug("Processing line '" + line + "'");
+      mMatches.add(getMatch(line));
     }
   }
-  public boolean isIncluded(String address, String hostname) {
+  public AccessPrivilege getAccessPrivilege(String address, String hostname) {
     for(Match match : mMatches) {
       if(match.isIncluded(address, hostname)) {
-        return true;
+        return match.accessPrivilege;
       }
     }
-    return false;
+    return AccessPrivilege.NONE;
   }
   
-  private static abstract class Match {    
+  private static abstract class Match {
+    private final AccessPrivilege accessPrivilege;
+    private Match(AccessPrivilege accessPrivilege) {
+      this.accessPrivilege = accessPrivilege;
+    }
     public abstract boolean isIncluded(String address, String hostname);
   }
   private static class AnonymousMatch extends Match {
+    private AnonymousMatch(AccessPrivilege accessPrivilege) {
+      super(accessPrivilege);
+    }
     @Override
     public boolean isIncluded(String ip, String hostname) {
       return true;
@@ -63,7 +71,8 @@ public class ClientHostsMatcher {
   }
   private static class CIDRMatch extends Match {
     private final SubnetInfo subnetInfo;
-    private CIDRMatch(SubnetInfo subnetInfo) {
+    private CIDRMatch(AccessPrivilege accessPrivilege, SubnetInfo subnetInfo) {
+      super(accessPrivilege);
       this.subnetInfo = subnetInfo;
     }
     @Override
@@ -81,7 +90,8 @@ public class ClientHostsMatcher {
   }
   private static class ExactMatch extends Match {
     private String ipOrHost;
-    private ExactMatch(String ipOrHost) {
+    private ExactMatch(AccessPrivilege accessPrivilege, String ipOrHost) {
+      super(accessPrivilege);
       this.ipOrHost = ipOrHost;
     }
     @Override
@@ -100,7 +110,8 @@ public class ClientHostsMatcher {
   
   private static class RegexMatch extends Match {
     private final Pattern pattern;
-    private RegexMatch(String wildcard) {
+    private RegexMatch(AccessPrivilege accessPrivilege, String wildcard) {
+      super(accessPrivilege);
       this.pattern = Pattern.compile(wildcard, Pattern.CASE_INSENSITIVE);
     }
     @Override
@@ -117,24 +128,41 @@ public class ClientHostsMatcher {
     }    
   }
  
-  private static Match getMatch(String host) {
+  private static Match getMatch(String line) {
+   String[] parts = line.split("\\s+");
+   String host;
+   AccessPrivilege privilege = AccessPrivilege.READ_ONLY;
+   switch(parts.length) {
+   case 1:
+     host = parts[0];
+     break;
+   case 2:
+     host = parts[0];
+     String option = parts[1].trim();
+     if("rw".equalsIgnoreCase(option)) {
+       privilege = AccessPrivilege.READ_WRITE;
+     }
+     break;
+   default:
+       throw new IllegalArgumentException("Incorrectly formatted line '" + line + "'");
+   }
    host = host.toLowerCase().trim();
    if(host.equals("*")) {
-     LOGGER.debug("Using match all for '" + host + "'");
-     return new AnonymousMatch();
+     LOGGER.debug("Using match all for '" + host + "' and " + privilege);
+     return new AnonymousMatch(privilege);
    } else if(CIDR_FORMAT_SHORT.matcher(host).matches()) {
-     LOGGER.debug("Using CIDR match for '" + host + "'");
-     return new CIDRMatch(new SubnetUtils(host).getInfo());
+     LOGGER.debug("Using CIDR match for '" + host + "' and " + privilege);
+     return new CIDRMatch(privilege, new SubnetUtils(host).getInfo());
    } else if(CIDR_FORMAT_LONG.matcher(host).matches()) {
-     LOGGER.debug("Using CIDR match for '" + host + "'");
+     LOGGER.debug("Using CIDR match for '" + host + "' and " + privilege);
      String[] pair = host.split("/");
-     return new CIDRMatch(new SubnetUtils(pair[0], pair[1]).getInfo());
+     return new CIDRMatch(privilege, new SubnetUtils(pair[0], pair[1]).getInfo());
    } else if(host.contains("*") || host.contains("?") || 
        host.contains("[") || host.contains("]")) {
-     LOGGER.debug("Using Regex match for '" + host + "'");
-     return new RegexMatch(host);
+     LOGGER.debug("Using Regex match for '" + host + "' and " + privilege);
+     return new RegexMatch(privilege, host);
    }
-   LOGGER.debug("Using exact match for '" + host + "'");
-   return new ExactMatch(host);
+   LOGGER.debug("Using exact match for '" + host + "' and " + privilege);
+   return new ExactMatch(privilege, host);
   }
 }
