@@ -18,13 +18,18 @@
   </property>
   <property>
     <name>hdfs.nfs.security.allowed.hosts</name>
-    <value>localhost.localdomain</value>
+    <value>
+      localhost.localdomain rw
+      * ro
+    </value>
     <!--
-        This is a space seperated list of any of the following:
+        This is a new line seperated list of any of the following:
         1) * - which exports filesystem to all hosts
         2) hostnames or ip addresses
         3) CIDR such as 192.168.0.0/255.255.252.0 or 192.168.0.0/22
         4) Java Regex match host or ip such as: 192.168.0.[0-9]+ or [a-z]+.b.com
+
+        followed by either ro for read-only access or rw for read write access
     -->
   </property>
 </configuration>

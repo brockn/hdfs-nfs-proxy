@@ -6,6 +6,7 @@ Questions? email brock at cloudera dot com
 * Kerberos Support (from NFS4 client all the way to HDFS)
 * Completely in userspace (simple Java process)
 * Client mounts continue working after restart of proxy
+* Read Write/Read Only export based on hostname
 
 # How to use
 
@@ -46,15 +47,19 @@ Questions? email brock at cloudera dot com
 
     The output jar will be target/ you likely want the -with-deps jar.
 
+1. Configure the server:
+
+    Place a hdfs-nfs-site, hdfs-site, core-site.xml, and a log4j.properties file
+    in the conf/ directory.
+
 1. Start the server:
 
-    Below my conf/ directory has an hdfs-nfs-site.xml, hdfs-site.xml, core-site.xml,
-    and a log4j.properties file. Note the daemon would typically be started as the 
-    same user who is running the NameNode typically either hdfs or hadoop.
+    Note the daemon would typically be started as the same user who is running 
+    the NameNode typically either hdfs or hadoop.
 
     To run the server on port 2051:
 
-        $ ./start-nfs-server.sh confi/ 2051
+        $ ./start-nfs-server.sh conf/ 2051
 
 1. Mount hdfs
 
