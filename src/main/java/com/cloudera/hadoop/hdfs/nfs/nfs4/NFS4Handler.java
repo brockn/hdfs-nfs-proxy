@@ -62,6 +62,7 @@ import com.google.common.util.concurrent.ListenableFuture;
  */
 public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   protected static final Logger LOGGER = Logger.getLogger(NFS4Handler.class);
+  private final Object fileSystemCreationLock = new Object();
   private final Configuration mConfiguration;
   private final SecurityHandlerFactory mSecurityHandlerFactory;
   private final OperationFactory mOperationFactory;
@@ -180,7 +181,9 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       final FileSystem fileSystem = ugi.doAs(new PrivilegedExceptionAction<FileSystem>() {
         @Override
         public FileSystem run() throws Exception {
-          return FileSystem.get(mConfiguration);
+          synchronized (fileSystemCreationLock) {
+            return FileSystem.get(mConfiguration);            
+          }
         }
       });
       Session session = new Session(rpcRequest.getXid(), compoundRequest,
