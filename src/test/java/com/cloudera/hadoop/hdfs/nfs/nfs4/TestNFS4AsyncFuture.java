@@ -30,7 +30,6 @@ import java.util.List;
 import junit.framework.Assert;
 
 import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.hadoop.thirdparty.guava.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -43,6 +42,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.PUTROOTFHRequest;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.OperationResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.responses.PUTROOTFHResponse;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
+import com.google.common.collect.Lists;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class TestNFS4AsyncFuture {
