@@ -301,8 +301,6 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
     writeRPCResponse(response, null);
   }
 
-  // TODO should have RPCException and NFS4Exception
-
   protected void writeRPCResponse(RPCResponse response, RPCBuffer payload) {
     if(LOGGER.isDebugEnabled()) {
       LOGGER.debug(mSessionID + " Writing bare RPC Response to "  + mClientName);
