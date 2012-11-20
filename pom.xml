@@ -253,24 +253,27 @@
                     <groupId>org.apache.hadoop</groupId>
                     <artifactId>hadoop-core</artifactId>
                     <version>${hadoop.version}</version>
+                    <scope>provided</scope>
                 </dependency>
             </dependencies>
         </profile>
         <profile>
             <id>cdh4</id>
             <properties>
-                <hadoop.version>2.0.0-cdh4.1.1</hadoop.version>
+                <hadoop.version>2.0.0-cdh4.1.2</hadoop.version>
             </properties>
             <dependencies>
                 <dependency>
                     <groupId>org.apache.hadoop</groupId>
                     <artifactId>hadoop-common</artifactId>
                     <version>${hadoop.version}</version>
+                    <scope>provided</scope>
                 </dependency>
                 <dependency>
                     <groupId>org.apache.hadoop</groupId>
                     <artifactId>hadoop-hdfs</artifactId>
                     <version>${hadoop.version}</version>
+                    <scope>provided</scope>
                 </dependency>
             </dependencies>
         </profile>
@@ -284,11 +287,13 @@
                     <groupId>org.apache.hadoop</groupId>
                     <artifactId>hadoop-common</artifactId>
                     <version>${hadoop.version}</version>
+                    <scope>provided</scope>
                 </dependency>
                 <dependency>
                     <groupId>org.apache.hadoop</groupId>
                     <artifactId>hadoop-hdfs</artifactId>
                     <version>${hadoop.version}</version>
+                    <scope>provided</scope>
                 </dependency>
             </dependencies>
         </profile>
@@ -302,6 +307,7 @@
                     <groupId>org.apache.hadoop</groupId>
                     <artifactId>hadoop-core</artifactId>
                     <version>${hadoop.version}</version>
+                    <scope>provided</scope>
                 </dependency>
             </dependencies>
         </profile>
