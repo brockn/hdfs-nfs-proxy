@@ -64,7 +64,7 @@ public class Bitmap implements MessageBase {
       }
     }
   }
-  
+
   public void set(int bitIndex) {
     mMask.set(bitIndex);
   }
@@ -82,7 +82,7 @@ public class Bitmap implements MessageBase {
   public void write(RPCBuffer buffer) {
     int bits = mMask.size();
     // all the written to an array of 32 bit integers
-    int size = bits % 32 == 0 ? bits / 32 : (bits / 32) + 1;
+    int size = (bits % 32) == 0 ? bits / 32 : (bits / 32) + 1;
     buffer.writeUint32(size);
     for (int i = 0; i < size; i++) {
       int target = 0;

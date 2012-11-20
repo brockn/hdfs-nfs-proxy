@@ -76,7 +76,7 @@ public class Constants {
   public static final int RPC_AUTH_STATUS_REJECTEDVERF = 4;  /* verifier expired or replayed  */
   public static final int RPC_AUTH_STATUS_TOOWEAK      = 5;   /* rejected for security reasons */
 
-  
+
   public static final int RPC_AUTH_STATUS_GSS_CREDPROBLEM = 13;
   public static final int RPC_AUTH_STATUS_GSS_CTXPROBLEM = 14;
 
@@ -105,7 +105,7 @@ public class Constants {
 
   public static final int RPCSEC_GSS_SEQUENCE_WINDOW = 1024;
 
-  
+
   public static final int RPCSEC_GSS_COMPLETE                 = 0x00000000;
   public static final int RPCSEC_GSS_CONTINUE_NEEDED          = 0x00000001;
   public static final int RPCSEC_GSS_DUPLICATE_TOKEN          = 0x00000002;
@@ -374,8 +374,10 @@ public class Constants {
       throw new RuntimeException("Unable to find localhost", e);
     }
   }
-  
+
   public static final long ONE_MB = 1024L * 1024L;
+
+  public static final long ONE_GB = ONE_MB * 1024L;
 
   public static final int ROOT_USER_UID = 0;
   public static final long NFS4_COOKIE_OFFSET = Integer.MAX_VALUE;
@@ -386,7 +388,7 @@ public class Constants {
 
   public static final int NFS4_SET_TO_SERVER_TIME4 = 0;
   public static final int NFS4_SET_TO_CLIENT_TIME4 = 1;
-  
+
 
 
   public static final String USER_ID_MAPPER_CACHE = "hdfs.nfs.useridmapper.cache";
@@ -394,27 +396,27 @@ public class Constants {
   public static final String NFS_OWNER_DOMAIN = "hdfs.nfs.nfs4.owner.domain";
 
   public static final String DATA_DIRECTORY = "hdfs.nfs.data.dir";
-  
+
   public static final String TEMP_DIRECTORIES = "hdfs.nfs.temp.dirs";
-  
+
   public static final String SECURITY_FLAVOR = "hdfs.nfs.security.flavor";
   public static final String SECURITY_FLAVOR_DEFAULT= "unix";
   public static final String SECURITY_FLAVOR_KERBEROS = "krb5p";
-  
-  public static final String SECURITY_KERBEROS5_REALM = "hdfs.nfs.security.krb5.realm";  
+
+  public static final String SECURITY_KERBEROS5_REALM = "hdfs.nfs.security.krb5.realm";
   public static final String SECURITY_KERBEROS5_KDC = "hdfs.nfs.security.krb5.kdc";
   public static final String SECURITY_KERBEROS5_KEYTAB = "hdfs.nfs.security.krb5.keytab";
   public static final String SECURITY_KERBEROS5_PRINCIPAL = "hdfs.nfs.security.krb5.principal";
   public static final String SECURITY_ALLOWED_HOSTS = "hdfs.nfs.security.allowed.hosts";
-  
-  
-  
-  public static final String MAX_OPEN_FILE_INACTIVITY_PERIOD = "hdfs.nfs.max.open.file.inactivity.ms";  
+
+
+
+  public static final String MAX_OPEN_FILE_INACTIVITY_PERIOD = "hdfs.nfs.max.open.file.inactivity.ms";
   public static final int DEFAULT_MAX_OPEN_FILE_INACTIVITY_PERIOD = 30;
-  
+
   public static final String SUPER_USER = "hdfs.nfs.super.user";
   public static final String DEFAULT_SUPER_USER = UserIDMapper.getCurrentUser();
-  
-  
+
+
 
 }

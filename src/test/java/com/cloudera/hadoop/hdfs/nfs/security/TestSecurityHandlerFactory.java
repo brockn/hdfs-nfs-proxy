@@ -58,7 +58,7 @@ public class TestSecurityHandlerFactory {
   private VerifierGSS veriferGSS;
   private InitializeResponse initResponse;
   private SessionSecurityHandlerGSSFactory sessionSecurityHandlerGSSFactory;
-  
+
   @Before
   public void setup() throws Exception {
     conf = new Configuration();
@@ -92,13 +92,13 @@ public class TestSecurityHandlerFactory {
     when(securityHandler.initializeContext(request, requestBuffer)).then(
         new Answer<Pair<? extends Verifier, InitializeResponse> >() {
       @Override
-      public Pair<? extends Verifier, InitializeResponse>  answer(InvocationOnMock invocation) 
+      public Pair<? extends Verifier, InitializeResponse>  answer(InvocationOnMock invocation)
           throws Throwable {
         return new Pair<VerifierGSS, InitializeResponse>(veriferGSS, initResponse);
       }
     });
     when(securityHandler.getContextID()).thenReturn(credentialsGSS.getContext().getData());
-    sessionSecurityHandlerGSSFactory = mock(SessionSecurityHandlerGSSFactory.class);    
+    sessionSecurityHandlerGSSFactory = mock(SessionSecurityHandlerGSSFactory.class);
     when(sessionSecurityHandlerGSSFactory.
         getInstance(any(CredentialsGSS.class), any(GSSManager.class), anyInt(), anyString())).
         thenReturn(securityHandler);
@@ -108,7 +108,7 @@ public class TestSecurityHandlerFactory {
     conf.set(SECURITY_ALLOWED_HOSTS, "");
     new SecurityHandlerFactory(conf, gssManagerSupplier, sessionSecurityHandlerGSSFactory);
   }
-  
+
   @Test(expected = IllegalArgumentException.class)
   public void testBadSecurityFlavor() throws Exception {
     conf.set(SECURITY_FLAVOR, "");
@@ -116,7 +116,7 @@ public class TestSecurityHandlerFactory {
   }
   @Test
   public void testClientHostsTrue() throws Exception {
-    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier, 
+    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier,
         sessionSecurityHandlerGSSFactory);
     InetAddress addr = mock(InetAddress.class);
     when(addr.getHostAddress()).thenReturn("192.168.0.1");
@@ -124,7 +124,7 @@ public class TestSecurityHandlerFactory {
   }
   @Test
   public void testClientHostsFalse()throws Exception {
-    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier, 
+    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier,
         sessionSecurityHandlerGSSFactory);
     InetAddress addr = mock(InetAddress.class);
     when(addr.getHostAddress()).thenReturn("10.0.0.1");
@@ -132,10 +132,10 @@ public class TestSecurityHandlerFactory {
   }
   @Test
   public void testSystemCredsFailWithKerberosEnabled() throws Exception {
-    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier, 
+    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier,
         sessionSecurityHandlerGSSFactory);
     try {
-      securityHandlerFactory.getSecurityHandler(credentialsSystem);      
+      securityHandlerFactory.getSecurityHandler(credentialsSystem);
     } catch (RPCAuthException e) {
       Assert.assertEquals(RPC_AUTH_STATUS_BADCRED, e.getAuthState());
     }
@@ -143,10 +143,10 @@ public class TestSecurityHandlerFactory {
   @Test
   public void testKerberosCredsFailWithSystemEnabled() throws Exception {
     conf.set(SECURITY_FLAVOR, SECURITY_FLAVOR_DEFAULT);
-    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier, 
+    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier,
         sessionSecurityHandlerGSSFactory);
     try {
-      securityHandlerFactory.getSecurityHandler(credentialsGSS);      
+      securityHandlerFactory.getSecurityHandler(credentialsGSS);
       Assert.fail();
     } catch (RPCAuthException e) {
       Assert.assertEquals(RPC_AUTH_STATUS_REJECTEDCRED, e.getAuthState());
@@ -154,10 +154,10 @@ public class TestSecurityHandlerFactory {
   }
   @Test
   public void testContextIDDoesNotExist() throws Exception {
-    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier, 
+    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier,
         sessionSecurityHandlerGSSFactory);
     try {
-      securityHandlerFactory.getSecurityHandler(credentialsGSS);      
+      securityHandlerFactory.getSecurityHandler(credentialsGSS);
       Assert.fail();
     } catch (RPCAuthException e) {
       Assert.assertEquals(RPC_AUTH_STATUS_GSS_CREDPROBLEM, e.getAuthState());
@@ -166,7 +166,7 @@ public class TestSecurityHandlerFactory {
   @Test
   public void testSecurityDisabledNullRequestForKerberos() throws Exception {
     conf.set(SECURITY_FLAVOR, SECURITY_FLAVOR_DEFAULT);
-    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier, 
+    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier,
         sessionSecurityHandlerGSSFactory);
     try {
       securityHandlerFactory.handleNullRequest(sessionID, clientName, request, requestBuffer);
@@ -177,14 +177,14 @@ public class TestSecurityHandlerFactory {
   }
   @Test
   public void testSecurityEnabledNullRequestForSystem() throws Exception {
-    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier, 
+    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier,
         sessionSecurityHandlerGSSFactory);
     request.setCredentials(credentialsSystem);
     securityHandlerFactory.handleNullRequest(sessionID, clientName, request, requestBuffer);
   }
   @Test
   public void testSecurityEnabledNullRequestBadProc() throws Exception {
-    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier, 
+    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier,
         sessionSecurityHandlerGSSFactory);
     try {
       securityHandlerFactory.handleNullRequest(sessionID, clientName, request, requestBuffer);
@@ -195,7 +195,7 @@ public class TestSecurityHandlerFactory {
   }
   @Test
   public void testSecurityEnabledNullRequestInit() throws Exception {
-    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier, 
+    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier,
         sessionSecurityHandlerGSSFactory);
     credentialsGSS.setProcedure(RPCSEC_GSS_INIT);
     RPCBuffer responseBuffer = securityHandlerFactory.
@@ -208,7 +208,7 @@ public class TestSecurityHandlerFactory {
   }
   @Test
   public void testSecurityEnabledNullRequestContinueInit() throws Exception {
-    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier, 
+    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier,
         sessionSecurityHandlerGSSFactory);
     credentialsGSS.setProcedure(RPCSEC_GSS_CONTINUE_INIT);
     RPCBuffer responseBuffer = securityHandlerFactory.
@@ -221,7 +221,7 @@ public class TestSecurityHandlerFactory {
   }
   @Test
   public void testSecurityEnabledNullRequestDestory() throws Exception {
-    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier, 
+    securityHandlerFactory = new SecurityHandlerFactory(conf, gssManagerSupplier,
         sessionSecurityHandlerGSSFactory);
     credentialsGSS.setProcedure(RPCSEC_GSS_DESTROY);
     RPCBuffer responseBuffer = securityHandlerFactory.

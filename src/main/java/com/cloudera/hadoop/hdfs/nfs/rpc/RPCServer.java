@@ -47,13 +47,13 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
   protected ConcurrentMap<Integer, Long> mRequestsInProgress = Maps.newConcurrentMap();
   private final SecurityHandlerFactory mSecurityHandlerFactory;
 
-  public RPCServer(RPCHandler<REQUEST, RESPONSE> rpcHandler, Configuration conf, 
+  public RPCServer(RPCHandler<REQUEST, RESPONSE> rpcHandler, Configuration conf,
       SecurityHandlerFactory securityHandlerFactory, InetAddress address) throws Exception {
     this(rpcHandler, conf, securityHandlerFactory, address, 0);
   }
 
-  public RPCServer(RPCHandler<REQUEST, RESPONSE> rpcHandler, Configuration conf, 
-      SecurityHandlerFactory securityHandlerFactory, InetAddress address, int port) 
+  public RPCServer(RPCHandler<REQUEST, RESPONSE> rpcHandler, Configuration conf,
+      SecurityHandlerFactory securityHandlerFactory, InetAddress address, int port)
           throws IOException {
     mHandler = rpcHandler;
     mConfiguration = conf;
@@ -94,7 +94,7 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
         String name = client.getInetAddress().getCanonicalHostName() + ":" + client.getPort();
         LOGGER.info(mHandler.getClass() + " got client " + name);
 
-        ClientInputHandler<REQUEST, RESPONSE> worker = new ClientInputHandler<REQUEST, RESPONSE>(mConfiguration, this, mHandler, 
+        ClientInputHandler<REQUEST, RESPONSE> worker = new ClientInputHandler<REQUEST, RESPONSE>(mConfiguration, this, mHandler,
             mSecurityHandlerFactory, client);
         mClients.put(client, worker);
         worker.start();
@@ -110,7 +110,7 @@ public class RPCServer<REQUEST extends MessageBase, RESPONSE extends MessageBase
     // first close clients
     for (Socket client : mClients.keySet()) {
       ClientInputHandler<REQUEST, RESPONSE> worker = mClients.get(client);
-      if (worker != null && worker.isAlive()) {
+      if ((worker != null) && worker.isAlive()) {
         worker.shutdown();
       }
       IOUtils.closeSocket(client);

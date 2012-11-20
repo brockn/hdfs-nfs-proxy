@@ -20,23 +20,17 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
 public interface PendingWrite {
 
-  /**
-   * Release any resources used by the write
-   */
-  public void close();
   @Override
   public boolean equals(Object obj);
   public byte[] getData();
   public int getLength();
-  public String getName();
   public long getOffset();
-  public int getSize();
   public int getStart();
   public int getXid();
   public String getXidAsHexString();
   @Override
   public int hashCode();
-  
+
   public boolean isSync();
 
 }

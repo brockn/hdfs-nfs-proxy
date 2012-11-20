@@ -27,7 +27,7 @@ import com.cloudera.hadoop.hdfs.nfs.security.Verifier;
 /**
  * Represents an RPC Request as defined by the RPC RFC.
  */
-public class RPCRequest extends RPCPacket implements Cloneable {
+public class RPCRequest extends RPCPacket {
 
   private int mCredentialsFlavor;
   private Credentials mCredentials;
@@ -73,8 +73,8 @@ public class RPCRequest extends RPCPacket implements Cloneable {
     mCredentialsFlavor = buffer.readUint32();
     mCredentials = Credentials.readCredentials(mCredentialsFlavor, buffer);
     mVerifier = null;
-    if(!(mCredentials instanceof CredentialsGSS && 
-        ((CredentialsGSS) mCredentials).getProcedure() == RPCSEC_GSS_DESTROY)) {
+    if(!((mCredentials instanceof CredentialsGSS) &&
+        (((CredentialsGSS) mCredentials).getProcedure() == RPCSEC_GSS_DESTROY))) {
       int verifierFlavor = buffer.readUint32();
       mVerifier = Verifier.readVerifier(verifierFlavor, buffer);
     }
@@ -114,7 +114,7 @@ public class RPCRequest extends RPCPacket implements Cloneable {
       mVerifier.write(buffer);
     }
   }
-  
+
   public byte[] getVerificationBuffer() {
     RPCBuffer buffer = new RPCBuffer();
     super.write(buffer);

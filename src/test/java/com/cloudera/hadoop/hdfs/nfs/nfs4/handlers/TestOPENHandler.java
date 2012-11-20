@@ -54,7 +54,7 @@ public class TestOPENHandler extends TestBaseHandler {
     file = new Path(parent, "file");
     request.setName(file.getName());
     out = mock(HDFSOutputStream.class);
-    when(hdfsState.openForWrite(any(FileSystem.class), any(StateID.class), 
+    when(hdfsState.openForWrite(any(FileSystem.class), any(StateID.class),
         any(FileHandle.class), any(Boolean.class))).thenReturn(out);
     when(hdfsState.getPath(currentFileHandle)).thenReturn(parent);
     when(hdfsState.getOrCreateFileHandle(file)).thenReturn(new FileHandle("file".getBytes(Charsets.UTF_8)));

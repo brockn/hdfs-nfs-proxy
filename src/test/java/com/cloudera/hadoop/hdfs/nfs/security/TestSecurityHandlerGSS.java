@@ -69,7 +69,7 @@ public class TestSecurityHandlerGSS {
   private SessionSecurityHandlerGSS securityHandler;
   private CredentialsGSS credentials;
   private RPCBuffer requestBuffer;
-  
+
   @Before
   public void setup() throws Exception {
     gssManager = mock(GSSManager.class);
@@ -152,7 +152,7 @@ public class TestSecurityHandlerGSS {
     Assert.assertTrue(Arrays.equals(GET_MIC_RESPONSE, verifier.get()));
   }
   @Test
-  public void testInitializeContextGetMICFails() throws Exception {  
+  public void testInitializeContextGetMICFails() throws Exception {
     credentials.setProcedure(RPCSEC_GSS_INIT);
     when(gssContext.getMIC(any(byte[].class), anyInt(), anyInt(), any(MessageProp.class))).
     thenThrow(new GSSException(1, 2, "abc"));
@@ -167,14 +167,14 @@ public class TestSecurityHandlerGSS {
     }
   }
   @Test(expected = IllegalStateException.class)
-  public void testInitializeContextBadProc() throws Exception {  
+  public void testInitializeContextBadProc() throws Exception {
     RPCRequest request = new RPCRequest();
     request.setVerifier(new VerifierNone());
     request.setCredentials(credentials);
     securityHandler.initializeContext(request, requestBuffer);
   }
   @Test(expected = IllegalStateException.class)
-  public void testInitializeContextBadVerifer() throws Exception {  
+  public void testInitializeContextBadVerifer() throws Exception {
     RPCRequest request = new RPCRequest();
     request.setVerifier(new VerifierGSS());
     request.setCredentials(credentials);
@@ -189,7 +189,7 @@ public class TestSecurityHandlerGSS {
     RPCRequest request = new RPCRequest();
     request.setVerifier(new VerifierNone());
     request.setCredentials(credentials);
-    Pair<? extends Verifier, InitializeResponse> result = 
+    Pair<? extends Verifier, InitializeResponse> result =
         securityHandler.initializeContext(request, requestBuffer);
     Assert.assertEquals(VerifierNone.class, result.getFirst().getClass());
     InitializeResponse initResponse = result.getSecond();
@@ -206,7 +206,7 @@ public class TestSecurityHandlerGSS {
     RPCRequest request = new RPCRequest();
     request.setVerifier(new VerifierNone());
     request.setCredentials(credentials);
-    Pair<? extends Verifier, InitializeResponse> result = 
+    Pair<? extends Verifier, InitializeResponse> result =
         securityHandler.initializeContext(request, requestBuffer);
     Assert.assertTrue(Arrays.equals(GET_MIC_RESPONSE, ((VerifierGSS)result.getFirst()).get()));
     InitializeResponse initResponse = result.getSecond();
@@ -266,14 +266,14 @@ public class TestSecurityHandlerGSS {
     Assert.assertFalse(securityHandler.shouldSilentlyDrop(request));
   }
   @Test(expected = IllegalStateException.class)
-  public void testUnwrapBadProc() throws Exception {  
+  public void testUnwrapBadProc() throws Exception {
     RPCRequest request = new RPCRequest();
     request.setCredentials(credentials);
     credentials.setProcedure(-1);
     securityHandler.unwrap(request, new byte[0]);
   }
   @Test(expected = IllegalStateException.class)
-  public void testUnwrapBadService() throws Exception {  
+  public void testUnwrapBadService() throws Exception {
     RPCRequest request = new RPCRequest();
     request.setCredentials(credentials);
     credentials.setProcedure(-1);
@@ -290,8 +290,8 @@ public class TestSecurityHandlerGSS {
       @Override
       public Void answer(InvocationOnMock invocation) throws Throwable {
         throw new GSSException(1, 2, "abc");
-      }      
-    }).when(gssContext).verifyMIC(any(byte[].class), anyInt(), anyInt(), 
+      }
+    }).when(gssContext).verifyMIC(any(byte[].class), anyInt(), anyInt(),
         any(byte[].class), anyInt(), anyInt(), any(MessageProp.class));
     try {
       securityHandler.unwrap(request, new byte[0]);
@@ -338,7 +338,7 @@ public class TestSecurityHandlerGSS {
     SortedSet<Integer> seqNums = field("mSequenceNumbers").
       ofType(SortedSet.class).in(securityHandler).get();
     int firstSeqNumber = 1;
-    for (int i = firstSeqNumber; i < RPCSEC_GSS_SEQUENCE_WINDOW + 1; i++) {
+    for (int i = firstSeqNumber; i < (RPCSEC_GSS_SEQUENCE_WINDOW + 1); i++) {
       seqNums.add(i);
     }
     RPCRequest request = new RPCRequest();

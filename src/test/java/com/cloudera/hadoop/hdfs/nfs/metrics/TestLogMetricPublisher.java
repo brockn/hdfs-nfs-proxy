@@ -38,7 +38,7 @@ public class TestLogMetricPublisher {
   private LogMetricPublisher publisher;
   private Logger logger;
   private String result;
-  
+
   @Before
   public void setup() {
     logger = mock(Logger.class);
@@ -52,14 +52,14 @@ public class TestLogMetricPublisher {
     }).when(logger).info(any());
     publisher = new LogMetricPublisher(logger);
   }
- 
+
   @Test
   public void testPublish() {
     Map<String, Long> values = Maps.newHashMap();
     values.put("metric-1", 1L);
     publisher.publish(values);
     Assert.assertEquals("Metric: metric-1 = 1", result);
-    
+
   }
   @Test
   public void testPublishBytes() throws Exception {

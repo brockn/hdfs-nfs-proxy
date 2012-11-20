@@ -161,7 +161,7 @@ public class TestUtils {
         prefix = clazz.getName() + ":" + method.getName();
         LOGGER.debug(prefix);
         int mod = method.getModifiers();
-        if (method.getName().startsWith("get") && method.getParameterTypes().length == 0
+        if (method.getName().startsWith("get") && (method.getParameterTypes().length == 0)
             && !(Modifier.isStatic(mod) || Modifier.isAbstract(mod) || Modifier.isNative(mod))) {
           Object baseResult = method.invoke(base, (Object[]) null);
           Object copyResult = method.invoke(copy, (Object[]) null);
@@ -176,7 +176,7 @@ public class TestUtils {
             assertEquals(baseList.size(), copyList.size());
             for (int i = 0; i < baseList.size(); i++) {
               if(baseList.get(i) instanceof MessageBase) {
-                deepEquals((MessageBase)baseList.get(i), (MessageBase)copyList.get(i), count);                
+                deepEquals((MessageBase)baseList.get(i), (MessageBase)copyList.get(i), count);
               } else {
                 count.addAndGet(1);
                 assertEquals(baseList.get(i), copyList.get(i));
@@ -184,7 +184,7 @@ public class TestUtils {
             }
           } else if (baseResult.getClass().isArray()) {
             if(baseResult instanceof byte[]) {
-              assertTrue(Bytes.compareTo((byte[])baseResult, (byte[])copyResult) == 0);              
+              assertTrue(Bytes.compareTo((byte[])baseResult, (byte[])copyResult) == 0);
             } else if(baseResult instanceof int[]) {
               assertTrue(Arrays.equals((int[])baseResult, (int[])copyResult));
             } else if(baseResult instanceof long[]) {
@@ -200,7 +200,7 @@ public class TestUtils {
               Object baseValue = baseMap.get(key);
               Object copyValue = baseMap.get(key);
               if(baseValue instanceof MessageBase) {
-                deepEquals((MessageBase) baseValue, (MessageBase)copyValue); 
+                deepEquals((MessageBase) baseValue, (MessageBase)copyValue);
               } else {
                 assertEquals(baseValue, copyValue);
               }

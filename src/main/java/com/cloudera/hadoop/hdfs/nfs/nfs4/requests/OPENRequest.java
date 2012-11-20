@@ -116,8 +116,8 @@ public class OPENRequest extends OperationRequest {
         mVerifer = new OpaqueData8();
         mVerifer.read(buffer);
       } else {
-        Preconditions.checkArgument(mCreateMode == NFS4_CREATE_UNCHECKED4 || 
-            mCreateMode == NFS4_CREATE_GUARDED4, Integer.toHexString(mCreateMode));
+        Preconditions.checkArgument((mCreateMode == NFS4_CREATE_UNCHECKED4) ||
+            (mCreateMode == NFS4_CREATE_GUARDED4), Integer.toHexString(mCreateMode));
         Pair<Bitmap, ImmutableList<Attribute>> pair = Attribute.readAttrs(buffer);
         mAttrs = pair.getFirst();
         mAttrValues = pair.getSecond();
@@ -192,8 +192,8 @@ public class OPENRequest extends OperationRequest {
       if(mCreateMode == NFS4_CREATE_EXCLUSIVE4) {
         mVerifer.write(buffer);
       } else {
-        Preconditions.checkArgument(mCreateMode == NFS4_CREATE_UNCHECKED4 || 
-            mCreateMode == NFS4_CREATE_GUARDED4, Integer.toHexString(mCreateMode));
+        Preconditions.checkArgument((mCreateMode == NFS4_CREATE_UNCHECKED4) ||
+            (mCreateMode == NFS4_CREATE_GUARDED4), Integer.toHexString(mCreateMode));
         Attribute.writeAttrs(buffer, mAttrs, mAttrValues);
       }
     }

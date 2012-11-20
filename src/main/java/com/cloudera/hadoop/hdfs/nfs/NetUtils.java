@@ -31,7 +31,7 @@ import com.google.common.base.Joiner;
 public class NetUtils {
   protected static final Logger LOGGER = Logger.getLogger(NetUtils.class);
   private static final Random RANDOM = new Random();
-  
+
   public static String getDomain(Configuration conf, InetAddress address) {
     String override = conf.get(NFS_OWNER_DOMAIN);
     if(override != null) {
@@ -44,19 +44,19 @@ public class NetUtils {
       return "localdomain";
     }
     int pos;
-    if((pos = host.indexOf('.')) > 0 && pos < host.length()) {
+    if(((pos = host.indexOf('.')) > 0) && (pos < host.length())) {
       return host.substring(pos + 1);
     }
     LOGGER.error(Joiner.on("\n").join(
         "Unable to find the domain the server is running on. Please report.",
-        "canonicalHostName = " + host, 
+        "canonicalHostName = " + host,
         "hostname = " + address.getHostName(),
         "isLoopback = " + address.isLoopbackAddress(),
         "hostAdddress = " + address.getHostAddress()));
     return "unknown";
   }
 
-  
+
   public static synchronized int nextRandomInt() {
     return RANDOM.nextInt();
   }

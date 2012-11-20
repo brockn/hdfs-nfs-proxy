@@ -34,7 +34,7 @@ public class OwnerHandler extends AttributeHandler<Owner> {
 
   public static String removeDomain(String user) {
     int pos;
-    if((pos = user.indexOf('@')) > 0 && pos < user.length()) {
+    if(((pos = user.indexOf('@')) > 0) && (pos < user.length())) {
       return user.substring(pos + 1);
     }
     return user;

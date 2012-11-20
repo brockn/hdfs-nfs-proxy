@@ -22,12 +22,12 @@ import org.ietf.jgss.GSSManager;
 
 public class SessionSecurityHandlerGSSFactory {
 
-  public SessionSecurityHandlerGSS getInstance(CredentialsGSS crentialsGSS, 
+  public SessionSecurityHandlerGSS getInstance(CredentialsGSS crentialsGSS,
       GSSManager manager, int contextID, String superUser) {
-    SessionSecurityHandlerGSS securityHandler = 
-        new SessionSecurityHandlerGSS(crentialsGSS, 
-            manager, 
-            contextID, 
+    SessionSecurityHandlerGSS securityHandler =
+        new SessionSecurityHandlerGSS(crentialsGSS,
+            manager,
+            contextID,
             superUser);
     return securityHandler;
   }

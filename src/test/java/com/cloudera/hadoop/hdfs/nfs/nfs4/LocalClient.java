@@ -42,7 +42,7 @@ public class LocalClient extends BaseClient {
 
   public LocalClient() throws NFS4Exception, IOException {
     Configuration conf = TestUtils.setupConf();
-    SecurityHandlerFactory securityHandlerFactory = 
+    SecurityHandlerFactory securityHandlerFactory =
         new SecurityHandlerFactory(
         conf, new Supplier<GSSManager>() {
           @Override
@@ -57,7 +57,7 @@ public class LocalClient extends BaseClient {
   @Override
   protected CompoundResponse doMakeRequest(CompoundRequest request) {
     try {
-      CompoundResponse response = mServer.process(RPCTestUtil.createRequest(), request, 
+      CompoundResponse response = mServer.process(RPCTestUtil.createRequest(), request,
           AccessPrivilege.READ_WRITE, LOCALHOST, "test").get();
       return response;
     } catch(Exception e) {

@@ -64,8 +64,8 @@ public class INode implements Serializable {
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + (int) (number ^ (number >>> 32));
-    result = prime * result + ((path == null) ? 0 : path.hashCode());
+    result = (prime * result) + (int) (number ^ (number >>> 32));
+    result = (prime * result) + ((path == null) ? 0 : path.hashCode());
     return result;
   }
   @Override
@@ -73,5 +73,5 @@ public class INode implements Serializable {
     return "INode [path=" + path + ", number=" + number + ", creationTime="
         + creationTime + "]";
   }
-  
+
 }

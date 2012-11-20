@@ -75,7 +75,7 @@ public abstract class OperationRequestHandler<IN extends OperationRequest, OUT e
    */
   public OUT handle(HDFSState hdfsState, Session session, IN request) {
     try {
-      if(isWriteOnlyHandler() && AccessPrivilege.READ_WRITE != session.getAccessPrivilege()) {
+      if(isWriteOnlyHandler() && (AccessPrivilege.READ_WRITE != session.getAccessPrivilege())) {
         throw new NFS4Exception(NFS4ERR_PERM);
       }
       return doHandle(hdfsState, session, request);
@@ -108,7 +108,7 @@ public abstract class OperationRequestHandler<IN extends OperationRequest, OUT e
   boolean isWriteOnlyHandler() {
     return false;
   }
-  public boolean wouldBlock(HDFSState server, Session session, IN request) {
+  public boolean wouldBlock(HDFSState hdfsState, Session session, IN request) {
     return false;
   }
 }

@@ -46,7 +46,7 @@ public class HDFSStateBackgroundWorker extends Thread {
   private final long mMaxInactivityMS;
   private final long mFileHandleReapInterval;
   private volatile boolean run;
-  
+
   public HDFSStateBackgroundWorker(FileSystem fileSystem, HDFSState hdfsState,
       Map<FileHandle, WriteOrderHandler> writeOrderHandlerMap,
       ConcurrentMap<FileHandle, HDFSFile> openFileMap, FileHandleINodeMap fileHandleINodeMap,
@@ -70,7 +70,7 @@ public class HDFSStateBackgroundWorker extends Thread {
       } catch (InterruptedException e) {
         // not interruptible
       }
-      long minimumLastOperationTime = System.currentTimeMillis() - mMaxInactivityMS;      
+      long minimumLastOperationTime = System.currentTimeMillis() - mMaxInactivityMS;
       /*
        * We must close inactive streams first so that because in WRITEHandler we use
        *  the stream to get the WriteOrderHandler and if we remove the handler first
@@ -83,7 +83,7 @@ public class HDFSStateBackgroundWorker extends Thread {
       }
       for(FileHandle fileHandle : fileHandles) {
         HDFSFile file = mOpenFileMap.get(fileHandle);
-        if(file != null && file.isOpen()) {
+        if((file != null) && file.isOpen()) {
           try {
             file.closeResourcesInactiveSince(minimumLastOperationTime);
           } catch(Exception ex) {
@@ -124,7 +124,7 @@ public class HDFSStateBackgroundWorker extends Thread {
        */
       Long upperBound = System.currentTimeMillis() - mFileHandleReapInterval;
       LOGGER.info("Validating file handles older than " + new Date(upperBound));
-      Map<FileHandle, String> agedFileHandles = 
+      Map<FileHandle, String> agedFileHandles =
           mFileHandleINodeMap.getFileHandlesNotValidatedSince(upperBound);
       Set<FileHandle> fileHandlesWhichStillExist = Sets.newHashSet();
       int count = 0;

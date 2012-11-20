@@ -66,7 +66,7 @@ public class TestACCESSHandler extends TestBaseHandler {
     public int getGIDForGroup(String user, int defaultGID)
         throws Exception {
       return conf.getInt(GID, 0);
-    }    
+    }
     @Override
     public String getGroupForGID(int gid,
         String defaultGroup) throws Exception {
@@ -97,7 +97,7 @@ public class TestACCESSHandler extends TestBaseHandler {
   }
   private static final String USER = "test.user";
   private static final String GROUP = "test.group";
-  
+
   private static final String UID = "test.uid";
   private static final String GID = "test.gid";
 
@@ -110,26 +110,26 @@ public class TestACCESSHandler extends TestBaseHandler {
     super.setup();
     handler = new ACCESSHandler();
     request = new ACCESSRequest();
-    request.setAccess(ACCESSHandler.ACCESS_READ | ACCESSHandler.ACCESS_WRITE | 
+    request.setAccess(ACCESSHandler.ACCESS_READ | ACCESSHandler.ACCESS_WRITE |
         ACCESSHandler.ACCESS_EXECUTE);
     configuration.set(USER_ID_MAPPER_CLASS, TestUserIDMapper.class.getName());
-    
+
     when(fileStatus.getOwner()).thenReturn("root");
     when(fileStatus.getGroup()).thenReturn("wheel");
     configuration.set(USER, "root");
     configuration.set(GROUP, "wheel");
   }
-  
+
   @Test
   public void testAllPerms() throws Exception {
-    when(filePermissions.toShort()).thenReturn(new FsPermission(FsAction.ALL, 
+    when(filePermissions.toShort()).thenReturn(new FsPermission(FsAction.ALL,
         FsAction.ALL, FsAction.ALL).toShort());
     ACCESSResponse response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4_OK, response.getStatus());
-    assertEquals(ACCESSHandler.ACCESS_READ | ACCESSHandler.ACCESS_WRITE | 
+    assertEquals(ACCESSHandler.ACCESS_READ | ACCESSHandler.ACCESS_WRITE |
         ACCESSHandler.ACCESS_EXECUTE, response.getAccess());
   }
-  
+
   @Test
   public void testGetPermsExecute() throws Exception {
     int result1 = ACCESSHandler.getPerms(ACCESSHandler.ACCESS_EXECUTE, true);
@@ -137,7 +137,7 @@ public class TestACCESSHandler extends TestBaseHandler {
     assertEquals(result1, result2);
     assertEquals(NFS_ACCESS_EXECUTE, result1);
   }
-  
+
   @Test
   public void testGetPermsRead() throws Exception {
     int result1 = ACCESSHandler.getPerms(ACCESSHandler.ACCESS_READ, true);
@@ -153,7 +153,7 @@ public class TestACCESSHandler extends TestBaseHandler {
     assertEquals(NFS_ACCESS_MODIFY | NFS_ACCESS_EXTEND | NFS_ACCESS_DELETE, result1);
     assertEquals(NFS_ACCESS_MODIFY | NFS_ACCESS_EXTEND, result2);
   }
-  
+
 
   @Test
   public void testNoPerms() throws Exception {
@@ -161,119 +161,119 @@ public class TestACCESSHandler extends TestBaseHandler {
     assertEquals(NFS4_OK, response.getStatus());
     assertEquals(0, response.getAccess());
   }
-  
-  
+
+
   @Test
   public void testPerms() throws Exception {
     List<PermTest> perms = Lists.newArrayList();
     // read for owner when owner
-    perms.add(new PermTest("root", "wheel", 
-        new FsPermission(FsAction.READ, FsAction.NONE,  FsAction.NONE), 
+    perms.add(new PermTest("root", "wheel",
+        new FsPermission(FsAction.READ, FsAction.NONE,  FsAction.NONE),
         NFS_ACCESS_READ | NFS_ACCESS_LOOKUP));
     // read for group when owner
-    perms.add(new PermTest("root", "wheel", 
-        new FsPermission(FsAction.NONE, FsAction.READ,  FsAction.NONE), 
+    perms.add(new PermTest("root", "wheel",
+        new FsPermission(FsAction.NONE, FsAction.READ,  FsAction.NONE),
         NFS_ACCESS_READ | NFS_ACCESS_LOOKUP));
     // read for other when owner
-    perms.add(new PermTest("root", "wheel", 
-        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.READ), 
+    perms.add(new PermTest("root", "wheel",
+        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.READ),
         NFS_ACCESS_READ | NFS_ACCESS_LOOKUP));
     // read for other when not owner
-    perms.add(new PermTest("notroot", "wheel", 
-        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.READ), 
+    perms.add(new PermTest("notroot", "wheel",
+        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.READ),
         NFS_ACCESS_READ | NFS_ACCESS_LOOKUP));
     // read for other when not owner
-    perms.add(new PermTest("root", "notwheel", 
-        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.READ), 
+    perms.add(new PermTest("root", "notwheel",
+        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.READ),
         NFS_ACCESS_READ | NFS_ACCESS_LOOKUP));
     // read for other when not owner or group
-    perms.add(new PermTest("notroot", "notwheel", 
-        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.READ), 
+    perms.add(new PermTest("notroot", "notwheel",
+        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.READ),
         NFS_ACCESS_READ | NFS_ACCESS_LOOKUP));
 
     // write for owner when owner
-    perms.add(new PermTest("root", "wheel", 
-        new FsPermission(FsAction.WRITE, FsAction.NONE,  FsAction.NONE), 
+    perms.add(new PermTest("root", "wheel",
+        new FsPermission(FsAction.WRITE, FsAction.NONE,  FsAction.NONE),
         NFS_ACCESS_MODIFY | NFS_ACCESS_EXTEND | NFS_ACCESS_DELETE));
     // write for group when owner
-    perms.add(new PermTest("root", "wheel", 
-        new FsPermission(FsAction.NONE, FsAction.WRITE,  FsAction.NONE), 
+    perms.add(new PermTest("root", "wheel",
+        new FsPermission(FsAction.NONE, FsAction.WRITE,  FsAction.NONE),
         NFS_ACCESS_MODIFY | NFS_ACCESS_EXTEND | NFS_ACCESS_DELETE));
     // write for other when owner
-    perms.add(new PermTest("root", "wheel", 
-        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.WRITE), 
+    perms.add(new PermTest("root", "wheel",
+        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.WRITE),
         NFS_ACCESS_MODIFY | NFS_ACCESS_EXTEND | NFS_ACCESS_DELETE));
     // write for other when not owner
-    perms.add(new PermTest("notroot", "wheel", 
-        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.WRITE), 
+    perms.add(new PermTest("notroot", "wheel",
+        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.WRITE),
         NFS_ACCESS_MODIFY | NFS_ACCESS_EXTEND));
     // write for other when not owner
-    perms.add(new PermTest("root", "notwheel", 
-        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.WRITE), 
+    perms.add(new PermTest("root", "notwheel",
+        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.WRITE),
         NFS_ACCESS_MODIFY | NFS_ACCESS_EXTEND | NFS_ACCESS_DELETE));
     // write for other when not owner or group
-    perms.add(new PermTest("notroot", "notwheel", 
-        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.WRITE), 
+    perms.add(new PermTest("notroot", "notwheel",
+        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.WRITE),
         NFS_ACCESS_MODIFY | NFS_ACCESS_EXTEND));
-    
+
     // execute for owner when owner
-    perms.add(new PermTest("root", "wheel", 
-        new FsPermission(FsAction.EXECUTE, FsAction.NONE,  FsAction.NONE), 
+    perms.add(new PermTest("root", "wheel",
+        new FsPermission(FsAction.EXECUTE, FsAction.NONE,  FsAction.NONE),
         NFS_ACCESS_EXECUTE));
     // execute for group when owner
-    perms.add(new PermTest("root", "wheel", 
-        new FsPermission(FsAction.NONE, FsAction.EXECUTE,  FsAction.NONE), 
+    perms.add(new PermTest("root", "wheel",
+        new FsPermission(FsAction.NONE, FsAction.EXECUTE,  FsAction.NONE),
         NFS_ACCESS_EXECUTE));
     // execute for other when owner
-    perms.add(new PermTest("root", "wheel", 
-        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.EXECUTE), 
+    perms.add(new PermTest("root", "wheel",
+        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.EXECUTE),
         NFS_ACCESS_EXECUTE));
     // execute for other when not owner
-    perms.add(new PermTest("notroot", "wheel", 
-        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.EXECUTE), 
+    perms.add(new PermTest("notroot", "wheel",
+        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.EXECUTE),
         NFS_ACCESS_EXECUTE));
     // execute for other when not owner
-    perms.add(new PermTest("root", "notwheel", 
-        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.EXECUTE), 
+    perms.add(new PermTest("root", "notwheel",
+        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.EXECUTE),
         NFS_ACCESS_EXECUTE));
     // execute for other when not owner or group
-    perms.add(new PermTest("notroot", "notwheel", 
-        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.EXECUTE), 
+    perms.add(new PermTest("notroot", "notwheel",
+        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.EXECUTE),
         NFS_ACCESS_EXECUTE));
     // no perms but owner, this might be rethought?
-    perms.add(new PermTest("root", "wheel", 
-        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.NONE), 
+    perms.add(new PermTest("root", "wheel",
+        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.NONE),
         0));
     // all for user/group but not user/groups
-    perms.add(new PermTest("notroot", "notwheel", 
-        new FsPermission(FsAction.ALL, FsAction.ALL,  FsAction.NONE), 
-        0));    
+    perms.add(new PermTest("notroot", "notwheel",
+        new FsPermission(FsAction.ALL, FsAction.ALL,  FsAction.NONE),
+        0));
     // all for user/group but not user/group
-    perms.add(new PermTest("notroot", "wheel", 
-        new FsPermission(FsAction.ALL, FsAction.NONE,  FsAction.NONE), 
+    perms.add(new PermTest("notroot", "wheel",
+        new FsPermission(FsAction.ALL, FsAction.NONE,  FsAction.NONE),
         0));
     // owner has all, is owner
-    perms.add(new PermTest("root", "wheel", 
-        new FsPermission(FsAction.ALL, FsAction.NONE,  FsAction.NONE), 
-        NFS_ACCESS_READ | NFS_ACCESS_LOOKUP | NFS_ACCESS_MODIFY | 
+    perms.add(new PermTest("root", "wheel",
+        new FsPermission(FsAction.ALL, FsAction.NONE,  FsAction.NONE),
+        NFS_ACCESS_READ | NFS_ACCESS_LOOKUP | NFS_ACCESS_MODIFY |
         NFS_ACCESS_EXTEND | NFS_ACCESS_DELETE | NFS_ACCESS_EXECUTE));
     // group has all is owner
-    perms.add(new PermTest("root", "wheel", 
-        new FsPermission(FsAction.NONE, FsAction.ALL,  FsAction.NONE), 
-        NFS_ACCESS_READ | NFS_ACCESS_LOOKUP | NFS_ACCESS_MODIFY | 
+    perms.add(new PermTest("root", "wheel",
+        new FsPermission(FsAction.NONE, FsAction.ALL,  FsAction.NONE),
+        NFS_ACCESS_READ | NFS_ACCESS_LOOKUP | NFS_ACCESS_MODIFY |
         NFS_ACCESS_EXTEND | NFS_ACCESS_DELETE | NFS_ACCESS_EXECUTE));
     // other has all is owner
-    perms.add(new PermTest("root", "wheel", 
-        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.ALL), 
-        NFS_ACCESS_READ | NFS_ACCESS_LOOKUP | NFS_ACCESS_MODIFY | 
+    perms.add(new PermTest("root", "wheel",
+        new FsPermission(FsAction.NONE, FsAction.NONE,  FsAction.ALL),
+        NFS_ACCESS_READ | NFS_ACCESS_LOOKUP | NFS_ACCESS_MODIFY |
         NFS_ACCESS_EXTEND | NFS_ACCESS_DELETE | NFS_ACCESS_EXECUTE));
-  
+
     for(PermTest permTest : perms) {
       when(filePermissions.toShort()).thenReturn(permTest.perm.toShort());
-      int result = ACCESSHandler.getPermsForUserGroup(permTest.user, 
+      int result = ACCESSHandler.getPermsForUserGroup(permTest.user,
           new String[] {permTest.group}, fileStatus);
-      assertEquals(permTest.toString(), 
-          Integer.toBinaryString(permTest.result), 
+      assertEquals(permTest.toString(),
+          Integer.toBinaryString(permTest.result),
           Integer.toBinaryString(result));
     }
   }

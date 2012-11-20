@@ -22,7 +22,7 @@ public class RPCException extends Exception {
   private static final long serialVersionUID = 20969169211308879L;
   private final int replyState;
   private final int acceptState;
-  
+
   public RPCException(int replyState, int acceptState) {
     super();
     this.replyState = replyState;
@@ -41,7 +41,7 @@ public class RPCException extends Exception {
   }
   @Override
   public String getMessage() {
-    String msg = "replyState=" + replyState + 
+    String msg = "replyState=" + replyState +
         ", acceptState=" + acceptState;
     if(super.getMessage() != null) {
       msg += ", getMessage()=" + super.getMessage();

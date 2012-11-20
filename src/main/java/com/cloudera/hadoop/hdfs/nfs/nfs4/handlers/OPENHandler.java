@@ -108,7 +108,7 @@ public class OPENHandler extends OperationRequestHandler<OPENRequest, OPENRespon
     Path path = new Path(parentPath, request.getName());
     session.setCurrentFileHandle(hdfsState.getOrCreateFileHandle(path));
     boolean overwrite = request.getOpenType() == NFS4_OPEN4_CREATE;
-    HDFSOutputStream out = hdfsState.openForWrite(session.getFileSystem(), stateID, 
+    HDFSOutputStream out = hdfsState.openForWrite(session.getFileSystem(), stateID,
         session.getCurrentFileHandle(), overwrite);
     out.sync(); // create file in namenode
     LOGGER.info(session.getSessionID() + " Opened " + path + " for write " + out);

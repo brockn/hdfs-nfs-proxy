@@ -32,7 +32,7 @@ public class SETATTRResponse extends OperationResponse implements Status {
   /*
    * On either success or failure of the operation, the server will return
    * the attrsset bitmask to represent what (if any) attributes were
-   * successfully set. 
+   * successfully set.
    */
   protected Bitmap mAttrs;
 

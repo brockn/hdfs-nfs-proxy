@@ -40,7 +40,7 @@ public class LogUtils {
     try {
       for(Method method : parent.getClass().getMethods()) {
         int mod = method.getModifiers();
-        if (method.getName().startsWith("get") && method.getParameterTypes().length == 0
+        if (method.getName().startsWith("get") && (method.getParameterTypes().length == 0)
             && !(Modifier.isStatic(mod) || Modifier.isAbstract(mod) || Modifier.isNative(mod))) {
           Object result = method.invoke(parent, (Object[]) null);
           if(result instanceof List) {

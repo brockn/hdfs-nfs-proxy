@@ -160,7 +160,7 @@ public class RPCBuffer {
   }
 
   protected void ensureCapacity(int length) {
-    if (mBuffer.position() + length > mBuffer.capacity()) {
+    if ((mBuffer.position() + length) > mBuffer.capacity()) {
       length = Math.max(length * 2, DEFAULT_BUFFER_SIZE) + mBuffer.capacity();
       ByteBuffer buffer = ByteBuffer.allocate(mBuffer.capacity() + length);
       mBuffer.flip();
@@ -191,7 +191,7 @@ public class RPCBuffer {
 
   public boolean readBoolean() {
     int value = readInt();
-    if (!(value == 1 || value == 0)) {
+    if (!((value == 1) || (value == 0))) {
       throw new RuntimeException("readBoolean read " + value);
     }
     return value == 1;
@@ -244,7 +244,7 @@ public class RPCBuffer {
     }
     return s;
   }
-  
+
   public int readUint32() {
     int i = readInt();
     if (i < 0) {
@@ -274,7 +274,7 @@ public class RPCBuffer {
    * write
    */
   public void write(OutputStream out) throws IOException {
-    putInt(0, RPC_LAST_FRAGEMANT | limit() - 4);
+    putInt(0, RPC_LAST_FRAGEMANT | (limit() - 4));
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug("To OutputStream " + Bytes.asHex(mBuffer.array(), 0, limit()));
     }

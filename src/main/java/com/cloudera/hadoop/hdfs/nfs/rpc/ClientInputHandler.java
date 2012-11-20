@@ -80,7 +80,7 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
    */
   protected long mRetransmits = 0L;
 
-  public ClientInputHandler(Configuration conf, RPCServer<REQUEST, RESPONSE> server, 
+  public ClientInputHandler(Configuration conf, RPCServer<REQUEST, RESPONSE> server,
       RPCHandler<REQUEST, RESPONSE> handler, SecurityHandlerFactory securityHandlerFactory, Socket client) {
     mConfiguration = conf;
     mRPCServer = server;
@@ -96,7 +96,7 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
     mResponseCache = mRPCServer.getResponseCache();
   }
 
-  private void execute(final SessionSecurityHandler<? extends Verifier> securityHandler, 
+  private void execute(final SessionSecurityHandler<? extends Verifier> securityHandler,
       AccessPrivilege accessPrivilege, final RPCRequest request, RPCBuffer requestBuffer) throws Exception {
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug(mSessionID + " starting xid " + request.getXidAsHexString());
@@ -108,7 +108,7 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
       // check to ensure it's auth creds is above
       requiresCredentials.setCredentials((AuthenticatedCredentials) request.getCredentials());
     }
-    final ListenableFuture<RESPONSE> future = mHandler.process(request, applicationRequest, 
+    final ListenableFuture<RESPONSE> future = mHandler.process(request, applicationRequest,
         accessPrivilege, mClient.getInetAddress(), mSessionID);
     future.addListener(new Runnable() {
       @Override
@@ -140,7 +140,7 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
         // a failure packet in case of an error
         request = null;
         mRetransmits = mRetransmits > 0 ? mRetransmits : 0;
-        
+
         RPCBuffer requestBuffer = RPCBuffer.from(in);
         LOGGER.info(mSessionID + " got request");
         mHandler.incrementMetric(CLIENT_BYTES_READ, requestBuffer.length());
@@ -165,7 +165,7 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
           if(LOGGER.isDebugEnabled()) {
             LOGGER.debug(mSessionID + " Handling NFS Compound for " + mClientName);
           }
-          SessionSecurityHandler<? extends Verifier> securityHandler = 
+          SessionSecurityHandler<? extends Verifier> securityHandler =
               mSecurityHandlerFactory.getSecurityHandler(request.getCredentials());
           if(!securityHandler.shouldSilentlyDrop(request)) {
             if(securityHandler.isUnwrapRequired()) {
@@ -173,7 +173,7 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
               requestBuffer = securityHandler.unwrap(request, encryptedData);
             }
             // if putIfAbsent returns non-null then the request is already in progress
-            boolean inProgress = mRequestsInProgress.putIfAbsent(request.getXid(), 
+            boolean inProgress = mRequestsInProgress.putIfAbsent(request.getXid(),
                 System.currentTimeMillis()) != null;
             if(inProgress) {
               mRetransmits++;
@@ -192,7 +192,7 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
               } else {
                 execute(securityHandler, accessPrivilege, request, requestBuffer);
               }
-            }            
+            }
           }
         } else {
           throw new UnsupportedOperationException("Unknown Proc " + request.getProcedure());
@@ -242,16 +242,16 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
         writeRPCResponse(response);
       } catch (Exception x) {
         LOGGER.error(mSessionID + " Error writing RPC Exception packet", x);
-      }        
+      }
     }
   }
   public void shutdown() {
     this.interrupt();
   }
-  protected void writeApplicationResponse(SessionSecurityHandler<? extends Verifier> securityHandler, 
+  protected void writeApplicationResponse(SessionSecurityHandler<? extends Verifier> securityHandler,
       RPCRequest request, MessageBase applicationResponse) {
     mResponseCache.put(request.getXid(), applicationResponse);
-    LOGGER.info(mSessionID + " " + request.getXidAsHexString() + " Writing " + 
+    LOGGER.info(mSessionID + " " + request.getXidAsHexString() + " Writing " +
         applicationResponse.getClass().getSimpleName() + " to "  + mClientName);
     RPCBuffer responseBuffer = new RPCBuffer();
     // save space for length header
@@ -261,7 +261,7 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
       response.setReplyState(RPC_REPLY_STATE_ACCEPT);
       response.setAcceptState(RPC_ACCEPT_SUCCESS);
       response.setVerifier(securityHandler.getVerifer(request));
-      response.write(responseBuffer);  
+      response.write(responseBuffer);
       if(securityHandler.isWrapRequired()) {
         byte[] data = securityHandler.wrap(request, applicationResponse);
         responseBuffer.writeUint32(data.length);
@@ -297,13 +297,13 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
     }
     mHandler.incrementMetric(CLIENT_BYTES_WROTE, responseBuffer.length());
   }
-  
+
   protected void writeRPCResponse(RPCResponse response) {
     writeRPCResponse(response, null);
   }
 
   // TODO should have RPCException and NFS4Exception
-  
+
   protected void writeRPCResponse(RPCResponse response, RPCBuffer payload) {
     if(LOGGER.isDebugEnabled()) {
       LOGGER.debug(mSessionID + " Writing bare RPC Response to "  + mClientName);

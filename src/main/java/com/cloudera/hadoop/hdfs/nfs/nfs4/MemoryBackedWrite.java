@@ -21,33 +21,17 @@ package com.cloudera.hadoop.hdfs.nfs.nfs4;
 import com.cloudera.hadoop.hdfs.nfs.Bytes;
 
 public class MemoryBackedWrite extends AbstractPendingWrite {
-  private static int getSize(String name, int dataLength) {
-    int size = 4; // obj header     
-    size += name.length() + 4; // string, 4 byte length?
-    size += 4; // xid
-    size += 8; // offset
-    size += 1; // sync
-    size += dataLength; // data
-    size += 4; // start
-    size += 4; // length
-    size += 4; // hashcode
-    size += 4; // size
-    return size;
-  }
-  final byte[] data;
-  final int start;
-  final int length;
-  final int hashCode;
-  
-  final int size;
-  public MemoryBackedWrite(String name, int xid, long offset, boolean sync,
+  private final byte[] data;
+  private final int start;
+  private final int length;
+  private final int hashCode;
+  public MemoryBackedWrite(int xid, long offset, boolean sync,
       byte[] data, int start, int length) {
-    super(name, xid, offset, sync);
+    super(xid, offset, sync);
     this.data = data;
     this.start = start;
     this.length = length;
     this.hashCode = getHashCode(offset, data, start, length);
-    this.size = getSize(name, length);
   }
   @Override
   public boolean equals(Object obj) {
@@ -73,10 +57,6 @@ public class MemoryBackedWrite extends AbstractPendingWrite {
   @Override
   public int getLength() {
     return length;
-  }
-  @Override
-  public int getSize() {
-    return size;
   }
   @Override
   public int getStart() {

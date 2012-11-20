@@ -62,7 +62,7 @@ public class HDFSFile {
     }
   }
 
-  public synchronized void closeResourcesInactiveSince(long inactiveSince) 
+  public synchronized void closeResourcesInactiveSince(long inactiveSince)
       throws IOException {
     if (mOutputStream != null) {
       OpenResource<?> resource = mOutputStream.getSecond();

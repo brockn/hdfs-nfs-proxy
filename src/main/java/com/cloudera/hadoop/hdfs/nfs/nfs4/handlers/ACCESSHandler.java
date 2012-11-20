@@ -65,14 +65,14 @@ public class ACCESSHandler extends OperationRequestHandler<ACCESSRequest, ACCESS
   @VisibleForTesting
   public static int getPermsForUserGroup(String user, String[] groups, FileStatus fileStatus) {
     FsPermission perms = fileStatus.getPermission();
-    int permissions = perms.toShort();    
+    int permissions = perms.toShort();
     boolean isOwner = user.equals(fileStatus.getOwner());
     int rtn = getPerms(permissions, isOwner);
     permissions = permissions >> 3;
     for(String group : groups) {
       if (group.equals(fileStatus.getGroup())) {
         rtn |= getPerms(permissions, isOwner);
-      }      
+      }
     }
     permissions = permissions >> 3;
     if (user.equals(fileStatus.getOwner())) {

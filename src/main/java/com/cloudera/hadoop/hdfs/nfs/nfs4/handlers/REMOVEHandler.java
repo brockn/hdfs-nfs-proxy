@@ -44,7 +44,7 @@ public class REMOVEHandler extends OperationRequestHandler<REMOVERequest, REMOVE
   protected REMOVEResponse createResponse() {
     return new REMOVEResponse();
   }
-  @Override  
+  @Override
   boolean isWriteOnlyHandler() {
     return true;
   }
@@ -61,7 +61,7 @@ public class REMOVEHandler extends OperationRequestHandler<REMOVERequest, REMOVE
     Path parentPath = hdfsState.getPath(session.getCurrentFileHandle());
     Path path = new Path(parentPath, request.getName());
     FileSystem fs = session.getFileSystem();
-    
+
     if (!hdfsState.fileExists(session.getFileSystem(), path)) {
       throw new NFS4Exception(NFS4ERR_NOENT);
     }
@@ -75,7 +75,7 @@ public class REMOVEHandler extends OperationRequestHandler<REMOVERequest, REMOVE
     // TODO we should handle this better like HDFS does or at least
     // cleanup the write order handlers for files which are open
     // for write. The call below will return false if the file
-    // is open for write. Which could be a long time if the 
+    // is open for write. Which could be a long time if the
     // server writing to the file dies.
     if(!hdfsState.delete(session.getFileSystem(), path)) {
       throw new NFS4Exception(NFS4ERR_PERM);

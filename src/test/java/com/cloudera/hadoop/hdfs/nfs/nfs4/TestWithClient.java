@@ -159,10 +159,10 @@ public class TestWithClient {
     }
     LOGGER.info("Executing " + Arrays.toString(cmd));
     try {
-      return Shell.execCommand(cmd).trim();      
+      return Shell.execCommand(cmd).trim();
     } finally {
       if(script != null) {
-        script.delete();        
+        script.delete();
       }
     }
   }
@@ -180,10 +180,10 @@ public class TestWithClient {
     }
     LOGGER.info("Executing " + Arrays.toString(cmd));
     try {
-      return Shell.execCommand(cmd).trim();      
+      return Shell.execCommand(cmd).trim();
     } finally {
       if(script != null) {
-        script.delete();        
+        script.delete();
       }
     }
   }

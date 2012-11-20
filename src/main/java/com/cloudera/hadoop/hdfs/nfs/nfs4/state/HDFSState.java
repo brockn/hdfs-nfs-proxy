@@ -65,7 +65,7 @@ public class HDFSState {
   private final Map<FileHandle, WriteOrderHandler> mWriteOrderHandlerMap;
   private final MetricsAccumulator mMetrics;
   private final File[] mTempDirs;
-  
+
   public HDFSState(FileHandleINodeMap fileHandleINodeMap, File[] tempDirs,
       MetricsAccumulator metrics, Map<FileHandle, WriteOrderHandler> writeOrderHandlerMap,
       Map<FileHandle, HDFSFile> openFilesMap) throws IOException {
@@ -73,7 +73,7 @@ public class HDFSState {
     mTempDirs = tempDirs;
     mMetrics = metrics;
     mWriteOrderHandlerMap = writeOrderHandlerMap;
-    mOpenFilesMap = openFilesMap;    
+    mOpenFilesMap = openFilesMap;
     LOGGER.info("Writing temp files to " + Arrays.toString(mTempDirs));
   }
   protected boolean check(String user, List<String> groups, FileStatus
@@ -149,7 +149,7 @@ public class HDFSState {
     }
     synchronized (this) {
       if(hdfsFile.isOpenForRead()) {
-        hdfsFile.closeInputStream(stateID);        
+        hdfsFile.closeInputStream(stateID);
       } else if(hdfsFile.isOpenForWrite()) {
         hdfsFile.closeOutputStream(stateID);
       } else {
@@ -200,13 +200,13 @@ public class HDFSState {
    * @return
    * @throws IOException
    */
-  public synchronized boolean delete(FileSystem fs, Path path) 
+  public synchronized boolean delete(FileSystem fs, Path path)
       throws IOException {
     FileHandle fileHandle = mFileHandleINodeMap.getFileHandleByPath(realPath(path));
     HDFSFile hdfsFile = mOpenFilesMap.get(fileHandle);
-    if (hdfsFile != null && hdfsFile.isOpenForWrite()) {
+    if ((hdfsFile != null) && hdfsFile.isOpenForWrite()) {
       return false;
-    }    
+    }
     return fs.delete(path, false);
   }
 
@@ -215,12 +215,12 @@ public class HDFSState {
    * the backing file system. Due to this requirement,
    * this holds the underlying lock during an RPC to the
    * as such this method should be called with great care.
-   *  
+   *
    * @param fileHandle
    * @return true if the fileHandle was removed or false otherwise
    * @throws IOException
    */
-  public boolean deleteFileHandleFileIfNotExist(FileSystem fs, FileHandle fileHandle) 
+  public boolean deleteFileHandleFileIfNotExist(FileSystem fs, FileHandle fileHandle)
       throws IOException {
     INode inode = mFileHandleINodeMap.getINodeByFileHandle(fileHandle);
     if(inode != null) {
@@ -232,7 +232,7 @@ public class HDFSState {
           mFileHandleINodeMap.remove(fileHandle);
           return true;
         }
-      }      
+      }
     }
     return false;
   }
@@ -251,7 +251,7 @@ public class HDFSState {
       throws IOException {
     FileHandle fileHandle = getOrCreateFileHandle(path);
     HDFSFile hdfsFile = mOpenFilesMap.get(fileHandle);
-    if (hdfsFile != null && hdfsFile.isOpenForWrite()) {
+    if ((hdfsFile != null) && hdfsFile.isOpenForWrite()) {
       return true;
     }
     return fs.exists(path);
@@ -348,7 +348,7 @@ public class HDFSState {
     }
     throw new NFS4Exception(NFS4ERR_STALE, "Path " + realPath(path));
   }
-  
+
   /**
    * Files open for write will have an unreliable length according to the name
    * node. As such, this call intercepts calls for open files and returns the
@@ -370,7 +370,7 @@ public class HDFSState {
           HDFSOutputStream out = file.get();
           return out.getPos();
         }
-      }      
+      }
     }
     return status.getLen();
   }
@@ -413,7 +413,7 @@ public class HDFSState {
    * @throws IOException of the output stream throws an IO Exception while
    * creating the WriteOrderHandler.
    */
-  public WriteOrderHandler getOrCreateWriteOrderHandler(FileHandle fileHandle) 
+  public WriteOrderHandler getOrCreateWriteOrderHandler(FileHandle fileHandle)
       throws IOException, NFS4Exception {
     WriteOrderHandler writeOrderHandler;
     synchronized (mWriteOrderHandlerMap) {
@@ -460,7 +460,7 @@ public class HDFSState {
 
   /**
    * Return write order handler for a fileHandle
-   * @param fileHandle 
+   * @param fileHandle
    * @return WriteOrderHandler or null
    */
   public WriteOrderHandler getWriteOrderHandler(FileHandle fileHandle) {
@@ -502,7 +502,7 @@ public class HDFSState {
   }
   /**
    * Open a file for read.
-   * 
+   *
    * @param stateID
    * @param fileHandle
    * @return HDFSInputStream resource allocated
@@ -512,7 +512,7 @@ public class HDFSState {
   public synchronized HDFSInputStream openForRead(FileSystem fs, StateID stateID,
       FileHandle fileHandle) throws NFS4Exception, IOException {
     HDFSFile hdfsFile = mOpenFilesMap.get(fileHandle);
-    if (hdfsFile != null && hdfsFile.isOpenForWrite()) {
+    if ((hdfsFile != null) && hdfsFile.isOpenForWrite()) {
       throw new NFS4Exception(NFS4ERR_FILE_OPEN); // TODO lock unavailable
       // should be _LOCK?
     }
@@ -567,8 +567,8 @@ public class HDFSState {
     // even if there is a known race between the exists and create
     if (!overwrite && exists) {
       // append to a file
-      // We used to be NFS4ERR_EXIST here but the linux client behaved 
-      // rather oddly. It would open the file with overwrite=true but 
+      // We used to be NFS4ERR_EXIST here but the linux client behaved
+      // rather oddly. It would open the file with overwrite=true but
       // then send the data which was to be appended at offset 0
       throw new NFS4Exception(NFS4ERR_PERM,
           "File Exists and overwrite = false");

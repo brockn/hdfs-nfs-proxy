@@ -28,19 +28,19 @@ public class TestClientHostsMatcher {
   private final String address2 = "10.0.0.1";
   private final String hostname1 = "a.b.com";
   private final String hostname2 = "a.b.org";
-  
+
   @Test
   public void testWildcardRW() {
     ClientHostsMatcher matcher = new ClientHostsMatcher("* rw");
     Assert.assertEquals(AccessPrivilege.READ_WRITE, matcher.getAccessPrivilege(address1, hostname1));
   }
-  
+
   @Test
   public void testWildcardRO() {
     ClientHostsMatcher matcher = new ClientHostsMatcher("* ro");
     Assert.assertEquals(AccessPrivilege.READ_ONLY, matcher.getAccessPrivilege(address1, hostname1));
   }
-  
+
   @Test
   public void testExactAddressRW() {
     ClientHostsMatcher matcher = new ClientHostsMatcher(address1 + " rw");
@@ -53,47 +53,47 @@ public class TestClientHostsMatcher {
     Assert.assertEquals(AccessPrivilege.READ_ONLY, matcher.getAccessPrivilege(address1, hostname1));
     Assert.assertEquals(AccessPrivilege.NONE, matcher.getAccessPrivilege(address2, hostname1));
   }
-  
+
   @Test
   public void testExactHostRW() {
     ClientHostsMatcher matcher = new ClientHostsMatcher(hostname1 + " rw");
     Assert.assertEquals(AccessPrivilege.READ_WRITE, matcher.getAccessPrivilege(address1, hostname1));
   }
-  
+
   @Test
   public void testExactHostRO() {
     ClientHostsMatcher matcher = new ClientHostsMatcher(hostname1);
     Assert.assertEquals(AccessPrivilege.READ_ONLY, matcher.getAccessPrivilege(address1, hostname1));
   }
-  
+
   @Test
   public void testCidrShortRW() {
     ClientHostsMatcher matcher = new ClientHostsMatcher("192.168.0.0/22 rw");
     Assert.assertEquals(AccessPrivilege.READ_WRITE, matcher.getAccessPrivilege(address1, hostname1));
     Assert.assertEquals(AccessPrivilege.NONE, matcher.getAccessPrivilege(address2, hostname1));
   }
-  
+
   @Test
   public void testCidrShortRO() {
     ClientHostsMatcher matcher = new ClientHostsMatcher("192.168.0.0/22");
     Assert.assertEquals(AccessPrivilege.READ_ONLY, matcher.getAccessPrivilege(address1, hostname1));
     Assert.assertEquals(AccessPrivilege.NONE, matcher.getAccessPrivilege(address2, hostname1));
   }
-  
+
   @Test
   public void testCidrLongRW() {
     ClientHostsMatcher matcher = new ClientHostsMatcher("192.168.0.0/255.255.252.0 rw");
     Assert.assertEquals(AccessPrivilege.READ_WRITE, matcher.getAccessPrivilege(address1, hostname1));
     Assert.assertEquals(AccessPrivilege.NONE, matcher.getAccessPrivilege(address2, hostname1));
   }
-  
+
   @Test
   public void testCidrLongRO() {
     ClientHostsMatcher matcher = new ClientHostsMatcher("192.168.0.0/255.255.252.0");
     Assert.assertEquals(AccessPrivilege.READ_ONLY, matcher.getAccessPrivilege(address1, hostname1));
     Assert.assertEquals(AccessPrivilege.NONE, matcher.getAccessPrivilege(address2, hostname1));
   }
-  
+
   @Test
   public void testRegexIPRW() {
     ClientHostsMatcher matcher = new ClientHostsMatcher("192.168.0.[0-9]+ rw");

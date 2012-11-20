@@ -32,7 +32,7 @@ public class FileHandle implements MessageBase, Serializable {
   private static final long serialVersionUID = 2860563108015405150L;
 
   protected byte[] mBytes;
-  
+
   public FileHandle() {
 
   }
@@ -61,7 +61,7 @@ public class FileHandle implements MessageBase, Serializable {
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + Arrays.hashCode(mBytes);
+    result = (prime * result) + Arrays.hashCode(mBytes);
     return result;
   }
 

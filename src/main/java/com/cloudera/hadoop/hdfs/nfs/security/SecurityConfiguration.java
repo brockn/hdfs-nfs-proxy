@@ -18,7 +18,7 @@ public class SecurityConfiguration {
   public SecurityConfiguration(Configuration conf) {
     mConfiguration = conf;
   }
-  
+
   public void configure() throws IOException {
     if(SECURITY_FLAVOR_KERBEROS.equalsIgnoreCase(mConfiguration.get(SECURITY_FLAVOR))) {
       String realm = getRequired(SECURITY_KERBEROS5_REALM);
@@ -27,6 +27,7 @@ public class SecurityConfiguration {
       String principal = getRequired(SECURITY_KERBEROS5_PRINCIPAL);
       final File baseDir = Files.createTempDir();
       Runtime.getRuntime().addShutdownHook(new Thread() {
+        @Override
         public void run() {
           PathUtils.fullyDelete(baseDir);
         }
@@ -40,7 +41,7 @@ public class SecurityConfiguration {
       UserGroupInformation.loginUserFromKeytab(principal, keyTab);
     }
   }
-  
+
   private String getRequired(String key) {
     String value = mConfiguration.get(key);
     if(value == null) {
@@ -48,7 +49,7 @@ public class SecurityConfiguration {
     }
     return value;
   }
-  
+
   private String getLoginFileContents(String keytab, String principal) {
     String contents =
     "com.sun.security.jgss.initiate {\n" +

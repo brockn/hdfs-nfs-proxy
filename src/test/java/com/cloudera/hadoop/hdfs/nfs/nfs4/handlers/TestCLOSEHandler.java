@@ -41,7 +41,7 @@ public class TestCLOSEHandler extends TestBaseHandler {
   private CLOSEHandler handler;
   private CLOSERequest request;
   private WriteOrderHandler writeOrderHandler;
-  
+
   @Override
   @Before
   public void setup() throws Exception {
@@ -54,7 +54,7 @@ public class TestCLOSEHandler extends TestBaseHandler {
   @Test
   public void testSuccess() throws Exception {
     StateID stateID = new StateID();
-    when(hdfsState.close(any(String.class), any(StateID.class), any(Integer.class), 
+    when(hdfsState.close(any(String.class), any(StateID.class), any(Integer.class),
         any(FileHandle.class))).thenReturn(stateID);
     CLOSEResponse response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4_OK, response.getStatus());

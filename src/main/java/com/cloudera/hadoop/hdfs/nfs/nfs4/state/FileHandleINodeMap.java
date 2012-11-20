@@ -42,7 +42,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
 public class FileHandleINodeMap {
-  
+
   private final RecordManager mRecordManager;
   private final PrimaryHashMap<FileHandle, INode> mFileHandleINodeMap;
   private final SecondaryHashMap<String, FileHandle, INode> mPathMap;
@@ -50,7 +50,7 @@ public class FileHandleINodeMap {
   private final ReadWriteLock mReadWriteLock;
   private final Lock mReadLock;
   private final Lock mWriteLock;
-  
+
   public FileHandleINodeMap(File file) throws IOException {
     Properties properties = new Properties();
     properties.put(RecordManagerOptions.CACHE_TYPE, "mru");
@@ -61,15 +61,15 @@ public class FileHandleINodeMap {
     mReadWriteLock = new ReentrantReadWriteLock();
     mReadLock = mReadWriteLock.readLock();
     mWriteLock = mReadWriteLock.writeLock();
-    mPathMap = mFileHandleINodeMap.secondaryHashMap("path-index", 
+    mPathMap = mFileHandleINodeMap.secondaryHashMap("path-index",
         new SecondaryKeyExtractor<String, FileHandle, INode>() {
       @Override
       public String extractSecondaryKey(FileHandle fh, INode inode) {
         return inode.getPath();
       }
     });
-    
-    mValidationTimeMap = mFileHandleINodeMap.secondaryTreeMap("validation-time-index", 
+
+    mValidationTimeMap = mFileHandleINodeMap.secondaryTreeMap("validation-time-index",
         new SecondaryKeyExtractor<Long, FileHandle, INode>() {
       @Override
       public Long extractSecondaryKey(FileHandle fh, INode inode) {

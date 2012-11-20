@@ -73,7 +73,7 @@ public class StateID implements MessageBase {
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + ((mData == null) ? 0 : mData.hashCode());
+    result = (prime * result) + ((mData == null) ? 0 : mData.hashCode());
     return result;
   }
 

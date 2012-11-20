@@ -26,7 +26,7 @@ public interface AsyncFuture<V>  extends Future<V> {
     RETRY,
     COMPLETE
   }
-  
+
   /**
    * Executes the task until blocking
    * @return true if re-execution is required or false if complete

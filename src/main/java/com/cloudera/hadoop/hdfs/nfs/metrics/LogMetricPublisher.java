@@ -39,8 +39,9 @@ public class LogMetricPublisher implements MetricPublisher {
     if(interval == 0) {
       interval++;
     }
-    for (String name : values.keySet()) {
-      Long value = values.get(name);
+    for (Map.Entry<String, Long> entry : values.entrySet()) {
+      String name = entry.getKey();
+      Long value = entry.getValue();
       if (name.contains("_BYTES_")) {
         logger.info("Metric: " + name + " = "
             + Bytes.toHuman(value / interval) + "/sec");

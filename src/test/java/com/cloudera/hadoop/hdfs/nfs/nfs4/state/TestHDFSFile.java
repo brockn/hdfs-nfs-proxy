@@ -37,28 +37,28 @@ public class TestHDFSFile {
   private FileHandle fileHandle;
   private String path;
   private long fileID;
-  
+
   private StateID stateID;
-  
+
   private HDFSOutputStream out;
   private HDFSInputStream in;
-  
+
   @Before
   public void setup() throws Exception {
     fileHandle = new FileHandle(UUID.randomUUID().toString().getBytes(Charsets.UTF_8));
     path = "/file";
     fileID = 1;
     hdfsFile = new HDFSFile(fileHandle, path, fileID);
-    
+
     stateID = new StateID();
     OpaqueData12 opaque = new OpaqueData12();
     opaque.setData("1".getBytes(Charsets.UTF_8));
     stateID.setData(opaque);
-    
+
     out = mock(HDFSOutputStream.class);
     in = mock(HDFSInputStream.class);
   }
-  
+
   @Test
   public void testGetters() throws Exception {
     Assert.assertNull(hdfsFile.getHDFSOutputStream());
@@ -76,14 +76,14 @@ public class TestHDFSFile {
     hdfsFile.closeInputStream(stateID);
     verify(in).close();
   }
-  
+
   @Test
   public void testIsOpen() throws Exception {
     Assert.assertFalse(hdfsFile.isOpen());
     Assert.assertFalse(hdfsFile.isOpenForRead());
     Assert.assertFalse(hdfsFile.isOpenForWrite());
   }
-  
+
   @Test
   public void testOutputStream() throws Exception {
     hdfsFile.setHDFSOutputStream(stateID, out);
@@ -95,7 +95,7 @@ public class TestHDFSFile {
     hdfsFile.closeOutputStream(stateID);
     verify(out).close();
   }
-  
+
   @Test
   public void testTimestamp() throws Exception {
     hdfsFile.putInputStream(stateID, in);
@@ -105,7 +105,7 @@ public class TestHDFSFile {
     Thread.sleep(1001L);
     long inputLastUsedAfter = hdfsFile.getInputStream(stateID).getTimestamp();
     long outputLastUsedAfter = hdfsFile.getHDFSOutputStreamForWrite().getTimestamp();
-    Assert.assertTrue(inputLastUsedAfter - inputLastUsedBefore >= 1000);
-    Assert.assertTrue(outputLastUsedAfter - outputLastUsedBefore >= 1000);
+    Assert.assertTrue((inputLastUsedAfter - inputLastUsedBefore) >= 1000);
+    Assert.assertTrue((outputLastUsedAfter - outputLastUsedBefore) >= 1000);
   }
 }

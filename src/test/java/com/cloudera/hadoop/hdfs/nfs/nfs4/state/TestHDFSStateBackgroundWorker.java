@@ -59,7 +59,7 @@ public class TestHDFSStateBackgroundWorker {
   private HDFSFile hdfsFile;
   private FileSystem fileSystem;
   private HDFSState hdfsState;
-  
+
   @Before
   public void setUp() throws Exception {
     writerOrderHandlerMap = Maps.newHashMap();
@@ -77,10 +77,10 @@ public class TestHDFSStateBackgroundWorker {
     interval = 5L;
     maxInactivity = 10L;
     fileHandleReapInterval = 2000L;
-    fileHandleINodeMap = 
+    fileHandleINodeMap =
         new FileHandleINodeMap(new File(storageDir, "map"));
-    worker = new HDFSStateBackgroundWorker(fileSystem, hdfsState, writerOrderHandlerMap, 
-        openFileMap, fileHandleINodeMap, interval, maxInactivity, 
+    worker = new HDFSStateBackgroundWorker(fileSystem, hdfsState, writerOrderHandlerMap,
+        openFileMap, fileHandleINodeMap, interval, maxInactivity,
         fileHandleReapInterval);
     worker.setDaemon(true);
     worker.start();
@@ -141,12 +141,12 @@ public class TestHDFSStateBackgroundWorker {
     fileHandleINodeMap.put(fh2, inode2);
     when(hdfsState.deleteFileHandleFileIfNotExist(fileSystem, fh1)).thenReturn(true);
     when(hdfsState.deleteFileHandleFileIfNotExist(fileSystem, fh2)).thenReturn(false);
-    
+
     Thread.sleep(fileHandleReapInterval + (interval * 2L));
     // will not be returned by getFileHandlesNotValidatedSince
     INode inode3 = new INode("/3", 3);
     fileHandleINodeMap.put(fh3, inode3);
-    
+
     Thread.sleep(interval * 4L);
 
     verify(hdfsState, atLeast(1)).deleteFileHandleFileIfNotExist(fileSystem, fh1);

@@ -60,7 +60,7 @@ public class CLOSEHandler extends OperationRequestHandler<CLOSERequest, CLOSERes
       if(session.getCurrentFileHandle() != null) {
         WriteOrderHandler writeOrderHanlder = hdfsState.getWriteOrderHandler(session.getCurrentFileHandle());
         if(writeOrderHanlder != null) {
-          return writeOrderHanlder.closeWouldBlock();          
+          return writeOrderHanlder.closeWouldBlock();
         }
       }
     } catch(IOException e) {

@@ -38,7 +38,7 @@ public class MetricConstants {
     CLIENT_BYTES_READ,
     CLIENT_BYTES_WROTE,
     REQUEST_ELAPSED_TIME;
-    
+
     private final String divisor;
     private Metric() {
       this(null);

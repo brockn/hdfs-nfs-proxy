@@ -64,26 +64,28 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   protected static final Logger LOGGER = Logger.getLogger(NFS4Handler.class);
   private final Configuration mConfiguration;
   private final SecurityHandlerFactory mSecurityHandlerFactory;
+  private final OperationFactory mOperationFactory;
   private final FileSystem mFileSystem;
   private final MetricsAccumulator mMetrics;
   private final AsyncTaskExecutor<CompoundResponse> executor;
   private final HDFSState mHDFSState;
   private final HDFSStateBackgroundWorker mHDFSStateBackgroundWorker;
   private final File[] mTempDirs;
-  
+
 
   /**
    * Create a handler with the configuration passed into the constructor
    *
    * @param configuration
-   * @throws IOException 
+   * @throws IOException
    */
-  public NFS4Handler(Configuration configuration, 
+  public NFS4Handler(Configuration configuration,
       SecurityHandlerFactory securityHandlerFactory) throws IOException {
     mConfiguration = configuration;
     mSecurityHandlerFactory = securityHandlerFactory;
+    mOperationFactory = new OperationFactory();
     mFileSystem = FileSystem.get(mConfiguration);
-    mMetrics = new MetricsAccumulator(new LogMetricPublisher(LOGGER), 
+    mMetrics = new MetricsAccumulator(new LogMetricPublisher(LOGGER),
         TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES));
     String sDataDir = configuration.get(DATA_DIRECTORY);
     if(sDataDir == null) {
@@ -112,19 +114,19 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
         }
       }
     });
-    long maxInactiveOpenFileTime = configuration.getInt(MAX_OPEN_FILE_INACTIVITY_PERIOD, 
+    long maxInactiveOpenFileTime = configuration.getInt(MAX_OPEN_FILE_INACTIVITY_PERIOD,
         DEFAULT_MAX_OPEN_FILE_INACTIVITY_PERIOD);
     maxInactiveOpenFileTime = TimeUnit.MILLISECONDS.convert(maxInactiveOpenFileTime, TimeUnit.MINUTES);
     ConcurrentMap<FileHandle, HDFSFile> openFileMap = Maps.newConcurrentMap();
     Map<FileHandle, WriteOrderHandler> writeOrderHandlerMap = Maps.newHashMap();
     File fileHandleINodeDir = new File(dataDir, "fh-to-inode");
     Preconditions.checkState(fileHandleINodeDir.isDirectory() || fileHandleINodeDir.mkdirs());
-    FileHandleINodeMap fileHandleINodeMap = 
+    FileHandleINodeMap fileHandleINodeMap =
         new FileHandleINodeMap(new File(fileHandleINodeDir, "map"));
-    mHDFSState = new HDFSState(fileHandleINodeMap, mTempDirs, mMetrics, 
+    mHDFSState = new HDFSState(fileHandleINodeMap, mTempDirs, mMetrics,
         writeOrderHandlerMap, openFileMap);
-    mHDFSStateBackgroundWorker = new HDFSStateBackgroundWorker(mFileSystem, mHDFSState, 
-        writeOrderHandlerMap, openFileMap, fileHandleINodeMap, 60L * 1000L /* 1 minute*/, 
+    mHDFSStateBackgroundWorker = new HDFSStateBackgroundWorker(mFileSystem, mHDFSState,
+        writeOrderHandlerMap, openFileMap, fileHandleINodeMap, 60L * 1000L /* 1 minute*/,
         maxInactiveOpenFileTime, 3L * 24L * 60L * 60L * 1000L /* 3 days */);
     mHDFSStateBackgroundWorker.setDaemon(true);
     mHDFSStateBackgroundWorker.start();
@@ -139,7 +141,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
    * Simple thread used to dump out metrics to the log every minute so. FIXME
    * use hadoop metrics
    */
-  
+
 
   @Override
   public CompoundResponse createResponse() {
@@ -165,7 +167,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       return Futures.immediateFuture(response);
     }
     try {
-      SessionSecurityHandler<? extends Verifier> securityHandler = 
+      SessionSecurityHandler<? extends Verifier> securityHandler =
           mSecurityHandlerFactory.getSecurityHandler(creds);
       final String username = securityHandler.getUser();
       UserGroupInformation ugi;
@@ -182,9 +184,9 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
         }
       });
       Session session = new Session(rpcRequest.getXid(), compoundRequest,
-          mConfiguration, clientAddress, sessionID, ugi.getShortUserName(), ugi.getGroupNames(), 
+          mConfiguration, clientAddress, sessionID, ugi.getShortUserName(), ugi.getGroupNames(),
           fileSystem, accessPrivilege);
-      NFS4AsyncFuture task = new NFS4AsyncFuture(mHDFSState, session, ugi);
+      NFS4AsyncFuture task = new NFS4AsyncFuture(mOperationFactory, mHDFSState, session, ugi);
       executor.schedule(task);
       return task;
     } catch (NFS4Exception ex) {

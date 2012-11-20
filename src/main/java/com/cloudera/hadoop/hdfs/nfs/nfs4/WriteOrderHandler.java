@@ -37,7 +37,6 @@ import org.apache.log4j.Logger;
 
 import com.cloudera.hadoop.hdfs.nfs.PathUtils;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSOutputStream;
-import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -51,8 +50,9 @@ public class WriteOrderHandler extends Thread {
 
   protected static final Logger LOGGER = Logger.getLogger(WriteOrderHandler.class);
   private final HDFSOutputStream mOutputStream;
-  private final String identifer;
+  private final String mIdentifer;
   private final File[] mTempDirs;
+  private final PendingWriteFactory mPendingWriteFactory;
   private final ConcurrentMap<Long, PendingWrite> mPendingWrites = Maps.newConcurrentMap();
   private final AtomicLong mPendingWritesSize = new AtomicLong(0);
   private final List<Integer> mProcessedWrites = Lists.newArrayList();
@@ -62,12 +62,23 @@ public class WriteOrderHandler extends Thread {
   private IOException mIOException;
   private NFS4Exception mNFSException;
   private volatile boolean mbRun;
-  
+
   public WriteOrderHandler(File[] tempDirs, HDFSOutputStream outputStream) throws IOException {
     mTempDirs = tempDirs;
     mOutputStream = outputStream;
     mExpectedLength.set(mOutputStream.getPos());
-    identifer = UUID.randomUUID().toString();
+    mIdentifer = UUID.randomUUID().toString();
+    File[] myTempDirs = new File[mTempDirs.length];
+    for (int i = 0; i < myTempDirs.length; i++) {
+      myTempDirs[i] = new File(tempDirs[i], mIdentifer);
+      if(!myTempDirs[i].mkdirs()) {
+        if(!myTempDirs[i].isDirectory()) {
+          throw new IOException("Could not create " + myTempDirs[i]);
+        }
+      }
+    }
+    mPendingWriteFactory = new PendingWriteFactory(myTempDirs, ONE_GB);
+
     mbRun = true;
     mbClosed = false;
   }
@@ -86,14 +97,17 @@ public class WriteOrderHandler extends Thread {
   protected void checkPendingWrites() throws IOException {
     PendingWrite write = null;
     while ((write = mPendingWrites.remove(mOutputStream.getPos())) != null) {
-      mPendingWritesSize.addAndGet(-write.getSize());
+      mPendingWritesSize.addAndGet(-write.getLength());
+      if(write instanceof FileBackedWrite) {
+
+      }
       doWrite(write);
     }
   }
   // turns out NFS clients will send the same write twice if the write rate is slow
   protected void checkWriteState(PendingWrite write) throws NFS4Exception {
     PendingWrite other = mPendingWrites.get(write.getOffset());
-    if (other != null && !write.equals(other)) {
+    if ((other != null) && !write.equals(other)) {
       throw new NFS4Exception(NFS4ERR_PERM, "Unable to process write (random write) at "
           + write.getOffset()
           + ", sync = " + write.isSync()
@@ -118,28 +132,28 @@ public class WriteOrderHandler extends Thread {
         if (mbClosed) {
           throw new IOException("File closed");
         }
-        mbClosed = true;      
+        mbClosed = true;
       }
       if(!force) {
         while (closeWouldBlock()) {
           checkException();
           pause(1000L);
           sync(mExpectedLength.get());
-        }      
+        }
       }
       synchronized (mOutputStream) {
         mOutputStream.sync();
         mOutputStream.close();
       }
       for(File tempDir : mTempDirs) {
-        File dir = new File(tempDir, identifer);
+        File dir = new File(tempDir, mIdentifer);
         PathUtils.fullyDelete(dir);
       }
       checkState(mPendingWrites.isEmpty(), "Pending writes for " + mOutputStream + " at "
           + mOutputStream.getPos() + " = " + mPendingWrites);
       LOGGER.info("Closing " + mOutputStream + " at " + mOutputStream.getPos());
     } finally {
-      mbRun = false;      
+      mbRun = false;
     }
   }
 
@@ -152,31 +166,37 @@ public class WriteOrderHandler extends Thread {
     if(!isRunningAndOpen()) {
       return false;
     }
-    if(mOutputStream.getPos() < mExpectedLength.get()
+    if((mOutputStream.getPos() < mExpectedLength.get())
         || !(mPendingWrites.isEmpty() && mWriteQueue.isEmpty())) {
       if(LOGGER.isDebugEnabled()) {
         String pendingWrites;
         synchronized (mPendingWrites) {
           pendingWrites = mPendingWrites.keySet().toString();
         }
-        LOGGER.debug("Close would block for " + mOutputStream + ", expectedLength = " + mExpectedLength.get() + 
-            ", mOutputStream.getPos = " + mOutputStream.getPos() + ", pending writes = " + pendingWrites + 
-            ", write queue = " + mWriteQueue.size());
+        LOGGER.debug("Close would block for " + mOutputStream + ", expectedLength = " +
+            mExpectedLength.get() + ", mOutputStream.getPos = " + mOutputStream.getPos() +
+            ", pending writes = " + pendingWrites + ", write queue = " + mWriteQueue.size());
       }
       return true;
     }
     return false;
   }
   protected void doWrite(PendingWrite write) throws IOException {
-    long preWritePos = mOutputStream.getPos();
-    checkState(preWritePos == write.getOffset(), " Offset = " + write.getOffset() + ", pos = " + preWritePos);
-    mOutputStream.write(write.getData(), write.getStart(), write.getLength());
-    if(LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Writing to " + write.getName() + " " + write.getOffset() + ", "
-            + write.getLength() + ", new offset = " + mOutputStream.getPos() + ", hash = " + write.hashCode());
-    }
-    if (write.isSync()) {
-      mOutputStream.sync();
+    try {
+      long preWritePos = mOutputStream.getPos();
+      checkState(preWritePos == write.getOffset(), " Offset = " +
+      write.getOffset() + ", pos = " + preWritePos);
+      mOutputStream.write(write.getData(), write.getStart(), write.getLength());
+      if(LOGGER.isDebugEnabled()) {
+          LOGGER.debug("Writing to " + mOutputStream + " " + write.getOffset() + ", "
+              + write.getLength() + ", new offset = " + mOutputStream.getPos() +
+              ", hash = " + write.hashCode());
+      }
+      if (write.isSync()) {
+        mOutputStream.sync();
+      }
+    } finally {
+      mPendingWriteFactory.destroy(write);
     }
   }
   /**
@@ -189,20 +209,10 @@ public class WriteOrderHandler extends Thread {
    * @return unique identifer for this write order handler
    */
   public String getIdentifer() {
-    return identifer;
+    return mIdentifer;
   }
-  public File getTemporaryFile(String name) throws IOException {
-    int hashCode = name.hashCode() & Integer.MAX_VALUE;
-    int fileIndex = hashCode % mTempDirs.length;
-    File base = mTempDirs[fileIndex];
-    int bucketIndex = hashCode % 512;
-    File dir = new File(base, Joiner.on(File.separator).join(identifer, bucketIndex));
-    if(!dir.isDirectory()) {
-      if(!(dir.mkdirs() || dir.isDirectory())) {
-        throw new IOException("Unable to create " + dir);
-      }
-    }
-    return new File(dir, name);
+  public PendingWriteFactory getPendingWriteFactory() {
+    return mPendingWriteFactory;
   }
   public boolean isOpen() {
     return !mbClosed;
@@ -227,18 +237,18 @@ public class WriteOrderHandler extends Thread {
             synchronized (mPendingWrites) {
               SortedSet<Long> offsets = new TreeSet<Long>(mPendingWrites.keySet());
               if(!offsets.isEmpty()) {
-                LOGGER.info("Pending Write Offsets " + offsets.size() + ": first = " + 
+                LOGGER.info("Pending Write Offsets " + offsets.size() + ": first = " +
                     offsets.first() +  ", last = " + offsets.last());
               }
             }
           } else {
             checkWriteState(write);
             mPendingWrites.put(write.getOffset(), write);
-            mPendingWritesSize.addAndGet(write.getSize());
+            mPendingWritesSize.addAndGet(write.getLength());
           }
           if(mPendingWritesSize.get() > 0L) {
             LOGGER.info("Pending writes " + (mPendingWritesSize.get() / 1024L / 1024L) + "MB, " +
-            		"current offset = " + getCurrentPos());          
+            		"current offset = " + getCurrentPos());
           }
           synchronized (mOutputStream) {
             checkPendingWrites();
@@ -271,8 +281,8 @@ public class WriteOrderHandler extends Thread {
       pendingWrites = mPendingWrites.keySet().toString();
     }
     if(LOGGER.isDebugEnabled()) {
-      LOGGER.debug("Sync for " + mOutputStream + " and " + offset + 
-          ", pending writes = " + pendingWrites + ", write queue = " + mWriteQueue.size());      
+      LOGGER.debug("Sync for " + mOutputStream + " and " + offset +
+          ", pending writes = " + pendingWrites + ", write queue = " + mWriteQueue.size());
     }
     while (mOutputStream.getPos() < offset) {
       checkException();
@@ -322,7 +332,7 @@ public class WriteOrderHandler extends Thread {
               + ", length = " + write.getLength());
         }
         synchronized (mExpectedLength) {
-          if (write.getOffset() + write.getLength() > mExpectedLength.get()) {
+          if ((write.getOffset() + write.getLength()) > mExpectedLength.get()) {
             mExpectedLength.set(write.getOffset() + write.getLength());
           }
         }

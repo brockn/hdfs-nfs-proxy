@@ -35,7 +35,7 @@ public class RPCAuthException extends RPCDeniedException {
   }
   @Override
   public String getMessage() {
-    String msg = "replyState=" + getReplyState() + 
+    String msg = "replyState=" + getReplyState() +
         ", acceptState=" + getAcceptState() +
         ", authState=" + authState;
     return msg;

@@ -31,7 +31,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.AsyncTaskExecutor.DelayedRunnable;
 import com.google.common.util.concurrent.AbstractFuture;
 public class TestAsyncTaskExecutor {
 
-  
+
   private static class AsyncFutureImpl extends BaseAsyncFuture {
     AtomicInteger calls = new AtomicInteger(0);
     @Override
@@ -40,21 +40,22 @@ public class TestAsyncTaskExecutor {
         return AsyncFuture.Complete.COMPLETE;
       }
       return AsyncFuture.Complete.RETRY;
-    }    
+    }
   }
-  private static abstract class BaseAsyncFuture extends AbstractFuture<Void> 
+  private static abstract class BaseAsyncFuture extends AbstractFuture<Void>
   implements AsyncFuture<Void> {
+
   }
-  
+
   @Test
   public void testEqualsHashCode() throws InterruptedException {
-    DelayedRunnable delayRunnable1 = new DelayedRunnable(new Runnable() {      
+    DelayedRunnable delayRunnable1 = new DelayedRunnable(new Runnable() {
       @Override
       public void run() {
       }
     }, 2000L);
     Thread.sleep(5L);
-    DelayedRunnable delayRunnable2 = new DelayedRunnable(new Runnable() {      
+    DelayedRunnable delayRunnable2 = new DelayedRunnable(new Runnable() {
       @Override
       public void run() {
       }
@@ -64,7 +65,7 @@ public class TestAsyncTaskExecutor {
     Assert.assertTrue(delayRunnable1.equals(delayRunnable1));
     Assert.assertFalse(delayRunnable1.hashCode() == delayRunnable2.hashCode());
   }
-  
+
   @Test
   public void testError() throws InterruptedException {
     AsyncTaskExecutor<Void> executor = new AsyncTaskExecutor<Void>();
@@ -79,7 +80,7 @@ public class TestAsyncTaskExecutor {
     BlockingQueue queue = field("queue")
         .ofType(BlockingQueue.class)
         .in(executor)
-        .get();    
+        .get();
     Thread.sleep(2000L);
     Assert.assertTrue(queue.isEmpty());
   }
@@ -97,13 +98,13 @@ public class TestAsyncTaskExecutor {
     BlockingQueue queue = field("queue")
         .ofType(BlockingQueue.class)
         .in(executor)
-        .get();    
+        .get();
     Thread.sleep(2000L);
     Assert.assertTrue(queue.isEmpty());
   }
   @Test
   public void testGetDelayDelay() throws InterruptedException {
-    DelayedRunnable delayRunnable = new DelayedRunnable(new Runnable() {      
+    DelayedRunnable delayRunnable = new DelayedRunnable(new Runnable() {
       @Override
       public void run() {
       }
@@ -114,7 +115,7 @@ public class TestAsyncTaskExecutor {
   }
   @Test
   public void testGetDelayNoDelay() throws InterruptedException {
-    DelayedRunnable delayRunnable = new DelayedRunnable(new Runnable() {      
+    DelayedRunnable delayRunnable = new DelayedRunnable(new Runnable() {
       @Override
       public void run() {
       }
@@ -130,20 +131,20 @@ public class TestAsyncTaskExecutor {
     BlockingQueue queue = field("queue")
         .ofType(BlockingQueue.class)
         .in(executor)
-        .get();    
+        .get();
     Thread.sleep(2000L);
     Assert.assertEquals(2, task1.calls.get());
     Assert.assertTrue(queue.isEmpty());
   }
   @Test
   public void testSortOrder() throws InterruptedException {
-    DelayedRunnable delayRunnable1 = new DelayedRunnable(new Runnable() {      
+    DelayedRunnable delayRunnable1 = new DelayedRunnable(new Runnable() {
       @Override
       public void run() {
       }
     }, 2000L);
     Thread.sleep(5L);
-    DelayedRunnable delayRunnable2 = new DelayedRunnable(new Runnable() {      
+    DelayedRunnable delayRunnable2 = new DelayedRunnable(new Runnable() {
       @Override
       public void run() {
       }
@@ -153,9 +154,9 @@ public class TestAsyncTaskExecutor {
     // since this is based on time, we have to retry this a few times
     // in case the time changed during the call
     boolean result = false;
-    for (int i = 0; i < 10 && !result; i++) {
+    for (int i = 0; (i < 10) && !result; i++) {
       result = delayRunnable1.compareTo(delayRunnable1) == 0;
     }
     Assert.assertTrue(result);
   }
-} 
+}

@@ -39,7 +39,7 @@ public class TestBytes {
         (byte)'z',
       };
 
- 
+
   @Test
   public void testAdd() {
     Assert.assertEquals("abcxyz", new String(Bytes.add(a, b), Charsets.UTF_8));
@@ -54,7 +54,7 @@ public class TestBytes {
     Assert.assertTrue(Bytes.compareTo(b, a) > 0);
     Assert.assertTrue(Bytes.compareTo(a, a) == 0);
   }
-  
+
   @Test(expected = IllegalArgumentException.class)
   public void testExplainWrongLengthOrOffsetInt() {
     Bytes.toInt(new byte[]{}, 0, 0);
@@ -63,8 +63,8 @@ public class TestBytes {
   public void testExplainWrongLengthOrOffsetLong() {
     Bytes.toLong(new byte[]{}, 0, 0);
   }
-  
-  
+
+
   @Test
   public void testInteger() {
     int expected = Integer.MIN_VALUE;
@@ -75,7 +75,7 @@ public class TestBytes {
     long expected = Long.MIN_VALUE;
     Assert.assertEquals(expected, Bytes.toLong(Bytes.toBytes(expected)));
   }
-  
+
   @Test
   public void testMergeSingleArray() {
     List<byte[]> buffers = Lists.newArrayList();

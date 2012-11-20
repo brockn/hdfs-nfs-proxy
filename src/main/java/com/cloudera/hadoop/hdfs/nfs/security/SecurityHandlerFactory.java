@@ -41,27 +41,27 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Maps;
 
-public class SecurityHandlerFactory {  
+public class SecurityHandlerFactory {
   private static final Logger LOGGER = Logger.getLogger(SecurityHandlerFactory.class);
   private final Configuration mConfiguration;
   private final Supplier<GSSManager> mGSSManagerSupplier;
   private final ClientHostsMatcher mClientHostsMatcher;
   private final boolean mKerberosEnabled;
-  private final AtomicInteger mContextIDGenerator;  
+  private final AtomicInteger mContextIDGenerator;
   private final Map<ContextID, SessionSecurityHandlerGSS> mHandlers;
   private final SessionSecurityHandlerGSSFactory mSessionSecurityHandlerGSSFactory;
 
-  public SecurityHandlerFactory(Configuration configuration, 
-      Supplier<GSSManager> gssManagerSupplier, 
+  public SecurityHandlerFactory(Configuration configuration,
+      Supplier<GSSManager> gssManagerSupplier,
       SessionSecurityHandlerGSSFactory sessionSecurityHandlerGSSFactory) {
     mConfiguration = configuration;
     mGSSManagerSupplier = gssManagerSupplier;
     mSessionSecurityHandlerGSSFactory = sessionSecurityHandlerGSSFactory;
-    
+
     String allowedHosts = mConfiguration.get(SECURITY_ALLOWED_HOSTS, "").trim();
     if(allowedHosts.isEmpty()) {
       throw new IllegalArgumentException("Required argument not found " + SECURITY_ALLOWED_HOSTS);
-    }    
+    }
     mClientHostsMatcher = new ClientHostsMatcher(allowedHosts);
     String securityFlavor = mConfiguration.get(SECURITY_FLAVOR, "").trim();
     if(SECURITY_FLAVOR_KERBEROS.equalsIgnoreCase(securityFlavor)) {
@@ -74,7 +74,7 @@ public class SecurityHandlerFactory {
     mHandlers = Maps.newConcurrentMap();
     mContextIDGenerator = new AtomicInteger(0);
   }
-  
+
   public SessionSecurityHandler<? extends Verifier> getSecurityHandler(Credentials credentials)
   throws RPCException {
     boolean hasSecureCredentials = credentials instanceof CredentialsGSS;
@@ -83,10 +83,10 @@ public class SecurityHandlerFactory {
         throw new RPCAuthException(RPC_AUTH_STATUS_BADCRED);
       }
       CredentialsGSS secureCredentials = (CredentialsGSS)credentials;
-      Preconditions.checkState(secureCredentials.getProcedure() == RPCSEC_GSS_DATA, 
+      Preconditions.checkState(secureCredentials.getProcedure() == RPCSEC_GSS_DATA,
           String.valueOf(secureCredentials.getProcedure()));
       // TODO support none and integrity
-      Preconditions.checkState(secureCredentials.getService() == RPCSEC_GSS_SERVICE_PRIVACY, 
+      Preconditions.checkState(secureCredentials.getService() == RPCSEC_GSS_SERVICE_PRIVACY,
           String.valueOf(secureCredentials.getService()));
       ContextID contextID = new ContextID(secureCredentials.getContext().getData());
       SessionSecurityHandlerGSS securityHandler = mHandlers.get(contextID);
@@ -102,12 +102,12 @@ public class SecurityHandlerFactory {
     return new SessionSecurityHandlerSystem((CredentialsSystem)credentials,
         UserIDMapper.get(mConfiguration));
   }
-  
+
   public AccessPrivilege getAccessPrivilege(InetAddress addr) {
-    return mClientHostsMatcher.getAccessPrivilege(addr.getHostAddress(), 
+    return mClientHostsMatcher.getAccessPrivilege(addr.getHostAddress(),
         addr.getCanonicalHostName());
   }
-  public RPCBuffer handleNullRequest(String sessionID, String clientName, 
+  public RPCBuffer handleNullRequest(String sessionID, String clientName,
       RPCRequest request, RPCBuffer buffer) throws RPCException {
     Credentials creds = request.getCredentials();
     boolean hasSecureCredentials = creds instanceof CredentialsGSS;
@@ -127,11 +127,11 @@ public class SecurityHandlerFactory {
       throw new RPCAuthException(RPC_AUTH_STATUS_BADCRED);
     }
     CredentialsGSS credentials = (CredentialsGSS)request.getCredentials();
-    if(credentials.getProcedure() == RPCSEC_GSS_INIT || 
-        credentials.getProcedure() == RPCSEC_GSS_CONTINUE_INIT) {
+    if((credentials.getProcedure() == RPCSEC_GSS_INIT) ||
+        (credentials.getProcedure() == RPCSEC_GSS_CONTINUE_INIT)) {
       SessionSecurityHandlerGSS securityHandler = mSessionSecurityHandlerGSSFactory.
-          getInstance(credentials, mGSSManagerSupplier.get(), 
-              mContextIDGenerator.incrementAndGet(), 
+          getInstance(credentials, mGSSManagerSupplier.get(),
+              mContextIDGenerator.incrementAndGet(),
               mConfiguration.get(SUPER_USER, DEFAULT_SUPER_USER));
       ContextID contextID = new ContextID(securityHandler.getContextID());
       LOGGER.debug("Created contextID " + Bytes.asHex(contextID.contextID));
@@ -142,7 +142,7 @@ public class SecurityHandlerFactory {
       response.setReplyState(RPC_REPLY_STATE_ACCEPT);
       response.setAcceptState(RPC_ACCEPT_SUCCESS);
       response.setVerifier(security.getFirst());
-      
+
       RPCBuffer responseBuffer = new RPCBuffer();
       // save space for length
       responseBuffer.writeInt(Integer.MAX_VALUE);
@@ -191,7 +191,7 @@ public class SecurityHandlerFactory {
     public int hashCode() {
       final int prime = 31;
       int result = 1;
-      result = prime * result + Arrays.hashCode(contextID);
+      result = (prime * result) + Arrays.hashCode(contextID);
       return result;
     }
   }

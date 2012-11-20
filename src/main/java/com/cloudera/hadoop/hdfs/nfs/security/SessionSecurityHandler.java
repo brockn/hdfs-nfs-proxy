@@ -26,12 +26,12 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
 
 public abstract class SessionSecurityHandler<VERIFER extends Verifier> {
 
-  
+
   public abstract String getUser() throws NFS4Exception;
-  
+
   public abstract boolean shouldSilentlyDrop(RPCRequest request);
-  
-  
+
+
   public abstract VERIFER getVerifer(RPCRequest request) throws RPCException;
 
   public boolean isUnwrapRequired() {

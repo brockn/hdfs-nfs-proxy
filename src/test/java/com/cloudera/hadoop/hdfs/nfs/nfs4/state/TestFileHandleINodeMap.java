@@ -43,7 +43,7 @@ public class TestFileHandleINodeMap {
   private File baseDir;
   private File file;
   private FileHandleINodeMap fileHandleINodeMap;
-  
+
   @Before
   public void setup() throws IOException {
     baseDir = Files.createTempDir();
@@ -55,7 +55,7 @@ public class TestFileHandleINodeMap {
   public void teardown() throws Exception {
     PathUtils.fullyDelete(baseDir);
   }
-  
+
   @Test
   public void testLookup() throws Exception {
     fileHandleINodeMap.put(fh1, inode1);
@@ -64,30 +64,30 @@ public class TestFileHandleINodeMap {
     Assert.assertEquals(inode2, fileHandleINodeMap.getINodeByFileHandle(fh2));
     Assert.assertEquals(fh1, fileHandleINodeMap.getFileHandleByPath(inode1.getPath()));
     Assert.assertEquals(fh2, fileHandleINodeMap.getFileHandleByPath(inode2.getPath()));
-    
+
     fileHandleINodeMap.close();
     fileHandleINodeMap = new FileHandleINodeMap(file);
-    
+
     Assert.assertEquals(inode1, fileHandleINodeMap.getINodeByFileHandle(fh1));
     Assert.assertEquals(inode2, fileHandleINodeMap.getINodeByFileHandle(fh2));
     Assert.assertEquals(fh1, fileHandleINodeMap.getFileHandleByPath(inode1.getPath()));
-    Assert.assertEquals(fh2, fileHandleINodeMap.getFileHandleByPath(inode2.getPath()));    
+    Assert.assertEquals(fh2, fileHandleINodeMap.getFileHandleByPath(inode2.getPath()));
   }
   @Test
   public void testNullWhenEmpty() throws Exception {
     Assert.assertNull(fileHandleINodeMap.getINodeByFileHandle(fh1));
     Assert.assertNull(fileHandleINodeMap.getFileHandleByPath(inode1.getPath()));
   }
-  
+
   @Test
   public void testRemove() throws Exception {
     fileHandleINodeMap.put(fh1, inode1);
     Assert.assertNotNull(fileHandleINodeMap.getINodeByFileHandle(fh1));
     fileHandleINodeMap.remove(fh1);
-    
+
     fileHandleINodeMap.close();
     fileHandleINodeMap = new FileHandleINodeMap(file);
-    
+
     Assert.assertNull(fileHandleINodeMap.getINodeByFileHandle(fh1));
     Assert.assertNull(fileHandleINodeMap.getFileHandleByPath(inode1.getPath()));
     Assert.assertTrue(fileHandleINodeMap.getFileHandlesNotValidatedSince(0L).size() == 0);
@@ -97,10 +97,10 @@ public class TestFileHandleINodeMap {
     fileHandleINodeMap.put(fh1, inode1);
     long time = System.currentTimeMillis() - 1L;
     Thread.sleep(500L);
-    
+
     fileHandleINodeMap.close();
     fileHandleINodeMap = new FileHandleINodeMap(file);
-    
+
     Map<FileHandle, String> oldFileHandles = fileHandleINodeMap.getFileHandlesNotValidatedSince(time);
     Assert.assertTrue(oldFileHandles.size() == 1);
     Assert.assertEquals(inode1.getPath(), oldFileHandles.get(fh1));

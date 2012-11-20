@@ -144,7 +144,7 @@ public class OperationFactory {
    * @return a stateless handler for which accepts this request type
    */
   @SuppressWarnings("unchecked")
-  public static <IN extends OperationRequest, OUT extends OperationResponse> OperationRequestHandler<IN, OUT> getHandler(int id) {
+  public <IN extends OperationRequest, OUT extends OperationResponse> OperationRequestHandler<IN, OUT> getHandler(int id) {
     checkSupported(id);
     return (OperationRequestHandler<IN, OUT>) operations.get(id).handler;
   }

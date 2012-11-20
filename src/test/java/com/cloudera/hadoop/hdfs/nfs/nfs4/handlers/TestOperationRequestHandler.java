@@ -38,7 +38,7 @@ public class TestOperationRequestHandler extends TestBaseHandler {
 
   @Test
   public void testAccessControlException() throws Exception {
-    OperationRequestHandler<SAVEFHRequest, SAVEFHResponse> handler = 
+    OperationRequestHandler<SAVEFHRequest, SAVEFHResponse> handler =
         new OperationRequestHandler<SAVEFHRequest, SAVEFHResponse>() {
       @Override
       protected SAVEFHResponse createResponse() {
@@ -49,14 +49,14 @@ public class TestOperationRequestHandler extends TestBaseHandler {
           Session session, SAVEFHRequest request) throws NFS4Exception,
           IOException, UnsupportedOperationException {
         throw new AccessControlException();
-      }      
+      }
     };
     SAVEFHResponse response = handler.handle(hdfsState, session, null);
     Assert.assertEquals(NFS4ERR_PERM, response.getStatus());
   }
   @Test
   public void testIllegalArgumentException() throws Exception {
-    OperationRequestHandler<SAVEFHRequest, SAVEFHResponse> handler = 
+    OperationRequestHandler<SAVEFHRequest, SAVEFHResponse> handler =
         new OperationRequestHandler<SAVEFHRequest, SAVEFHResponse>() {
       @Override
       protected SAVEFHResponse createResponse() {
@@ -67,14 +67,14 @@ public class TestOperationRequestHandler extends TestBaseHandler {
           Session session, SAVEFHRequest request) throws NFS4Exception,
           IOException, UnsupportedOperationException {
         throw new IllegalArgumentException();
-      }      
+      }
     };
     SAVEFHResponse response = handler.handle(hdfsState, session, null);
     Assert.assertEquals(NFS4ERR_INVAL, response.getStatus());
   }
   @Test
   public void testRuntimeException() throws Exception {
-    OperationRequestHandler<SAVEFHRequest, SAVEFHResponse> handler = 
+    OperationRequestHandler<SAVEFHRequest, SAVEFHResponse> handler =
         new OperationRequestHandler<SAVEFHRequest, SAVEFHResponse>() {
       @Override
       protected SAVEFHResponse createResponse() {
@@ -85,14 +85,14 @@ public class TestOperationRequestHandler extends TestBaseHandler {
           Session session, SAVEFHRequest request) throws NFS4Exception,
           IOException, UnsupportedOperationException {
         throw new RuntimeException();
-      }      
+      }
     };
     SAVEFHResponse response = handler.handle(hdfsState, session, null);
     Assert.assertEquals(NFS4ERR_SERVERFAULT, response.getStatus());
   }
   @Test
   public void testUnsupportedOperationException() throws Exception {
-    OperationRequestHandler<SAVEFHRequest, SAVEFHResponse> handler = 
+    OperationRequestHandler<SAVEFHRequest, SAVEFHResponse> handler =
         new OperationRequestHandler<SAVEFHRequest, SAVEFHResponse>() {
       @Override
       protected SAVEFHResponse createResponse() {
@@ -103,7 +103,7 @@ public class TestOperationRequestHandler extends TestBaseHandler {
           Session session, SAVEFHRequest request) throws NFS4Exception,
           IOException, UnsupportedOperationException {
         throw new UnsupportedOperationException();
-      }      
+      }
     };
     SAVEFHResponse response = handler.handle(hdfsState, session, null);
     Assert.assertEquals(NFS4ERR_NOTSUPP, response.getStatus());

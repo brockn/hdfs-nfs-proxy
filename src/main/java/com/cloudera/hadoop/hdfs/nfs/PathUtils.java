@@ -34,7 +34,7 @@ public class PathUtils {
     return path;
   }
 
-  public static void ensureDirectoryIsWriteable(File tempDir) 
+  public static void ensureDirectoryIsWriteable(File tempDir)
       throws IOException {
     if(tempDir.isFile()) {
       if(!tempDir.delete()) {
@@ -52,14 +52,14 @@ public class PathUtils {
       }
       if(!testFile.createNewFile()) {
         throw new IOException("Unable to create test file " + testFile);
-      }        
+      }
     } finally {
       if(!testFile.delete()) {
         throw new IOException("Unable to delete test file " + testFile);
       }
-    } 
+    }
   }
-  
+
   /**
    * Delete a directory and all its contents.  If
    * we return false, the directory may be partially-deleted.

@@ -40,7 +40,7 @@ public class COMMITHandler extends OperationRequestHandler<COMMITRequest, COMMIT
   protected COMMITResponse createResponse() {
     return new COMMITResponse();
   }
-  @Override  
+  @Override
   boolean isWriteOnlyHandler() {
     return true;
   }

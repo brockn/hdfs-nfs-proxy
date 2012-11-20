@@ -112,7 +112,7 @@ public class Bytes {
   public static String asHex(byte[] buf, int start, int length) {
 
     StringBuilder sb = new StringBuilder();
-    for (int i = start; i < start + length; i++) {
+    for (int i = start; i < (start + length); i++) {
       int v = buf[i] & 0xFF;
       sb.append(HEX_CHARS[v >>> 4]);
       sb.append(HEX_CHARS[v & 0xF]);
@@ -120,7 +120,7 @@ public class Bytes {
     }
     return sb.toString().trim();
   }
-  
+
   /**
    * @param left left operand
    * @param right right operand
@@ -146,7 +146,7 @@ public class Bytes {
     // Bring WritableComparator code local
     int end1 = offset1 + length1;
     int end2 = offset2 + length2;
-    for (int i = offset1, j = offset2; i < end1 && j < end2; i++, j++) {
+    for (int i = offset1, j = offset2; (i < end1) && (j < end2); i++, j++) {
       int a = (buffer1[i] & 0xff);
       int b = (buffer2[j] & 0xff);
       if (a != b) {
@@ -223,9 +223,9 @@ public class Bytes {
   public static String toHuman(long count) {
     if(count < 1024L) {
       return count + " bytes";
-    } else if(count < 1024L * 1024L) {
+    } else if(count < (1024L * 1024L)) {
       return String.format("%2.2f", (count / 1024d)) + " KB";
-    } else if(count < 1024L * 1024L * 1024L) {
+    } else if(count < (1024L * 1024L * 1024L)) {
       return String.format("%2.2f", (count / 1024d / 1024d)) + " MB";
     } else {
       return String.format("%2.2f", (count / 1024d / 1024d / 1024d)) + " GB";
@@ -263,7 +263,7 @@ public class Bytes {
    * if there's not enough room in the array at the offset indicated.
    */
   public static int toInt(byte[] bytes, int offset, final int length) {
-    if (length != SIZEOF_INT || offset + length > bytes.length) {
+    if ((length != SIZEOF_INT) || ((offset + length) > bytes.length)) {
       throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_INT);
     }
     int n = 0;
@@ -295,14 +295,23 @@ public class Bytes {
    * if there's not enough room in the array at the offset indicated.
    */
   public static long toLong(byte[] bytes, int offset, final int length) {
-    if (length != SIZEOF_LONG || offset + length > bytes.length) {
+    if ((length != SIZEOF_LONG) || ((offset + length) > bytes.length)) {
       throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_LONG);
     }
     long l = 0;
-    for(int i = offset; i < offset + length; i++) {
+    for(int i = offset; i < (offset + length); i++) {
       l <<= 8;
       l ^= bytes[i] & 0xFF;
     }
     return l;
   }
+
+  public static int hashBytes(byte[] bytes, int offset, int length) {
+    int hash = 1;
+    for (int i = offset; i < (offset + length); i++) {
+      hash = (31 * hash) + bytes[i];
+    }
+    return hash;
+  }
+
 }

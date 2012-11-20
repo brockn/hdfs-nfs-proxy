@@ -72,7 +72,7 @@ public class TestWriteOrderHandler {
   @Test(expected=NFS4Exception.class)
   public void testCannotWriteToWhenClosed() throws IOException, NFS4Exception {
     mWriteOrderHandler.close();
-    mWriteOrderHandler.write(new MemoryBackedWrite("a file", xid.incrementAndGet(), 0, false, buffer, 0, buffer.length));
+    mWriteOrderHandler.write(new MemoryBackedWrite(xid.incrementAndGet(), 0, false, buffer, 0, buffer.length));
   }
 
   @Test(expected=NFS4Exception.class)
@@ -81,15 +81,15 @@ public class TestWriteOrderHandler {
     while(mWriteOrderHandler.isAlive()) {
       Thread.sleep(1);
     }
-    mWriteOrderHandler.write(new MemoryBackedWrite("a file", xid.incrementAndGet(), 0, false, buffer, 0, buffer.length));
+    mWriteOrderHandler.write(new MemoryBackedWrite(xid.incrementAndGet(), 0, false, buffer, 0, buffer.length));
   }
 
   @Test(expected=IOException.class)
   public void testErrorOnWriteAfterError() throws IOException, NFS4Exception, InterruptedException {
     doThrow(new IOException()).when(mOutputStream).write(any(byte[].class), anyInt(), anyInt());
-    mWriteOrderHandler.write(new MemoryBackedWrite("a file", xid.incrementAndGet(), 0, false, buffer, 0, buffer.length));
+    mWriteOrderHandler.write(new MemoryBackedWrite(xid.incrementAndGet(), 0, false, buffer, 0, buffer.length));
     Thread.sleep(100);
-    mWriteOrderHandler.write(new MemoryBackedWrite("a file", xid.incrementAndGet(), 0, false, buffer, 0, buffer.length));
+    mWriteOrderHandler.write(new MemoryBackedWrite(xid.incrementAndGet(), 0, false, buffer, 0, buffer.length));
   }
 
   @Test
@@ -97,7 +97,7 @@ public class TestWriteOrderHandler {
     AtomicLong expectedLength = field("mExpectedLength").ofType(AtomicLong.class).in(mWriteOrderHandler).get();
     assertEquals(0, expectedLength.get());
     int id = xid.incrementAndGet();
-    int length = mWriteOrderHandler.write(new MemoryBackedWrite("a file", id, 0, true, buffer, 0, buffer.length));
+    int length = mWriteOrderHandler.write(new MemoryBackedWrite(id, 0, true, buffer, 0, buffer.length));
     Thread.sleep(100);
     assertEquals(length, expectedLength.get());
   }
@@ -105,14 +105,14 @@ public class TestWriteOrderHandler {
   @Test(expected=NFS4Exception.class)
   public void testRandomWrite() throws IOException, NFS4Exception {
     when(mOutputStream.getPos()).thenReturn(1L);
-    mWriteOrderHandler.write(new MemoryBackedWrite("a file", xid.incrementAndGet(), 0, true, buffer, 0, buffer.length));
+    mWriteOrderHandler.write(new MemoryBackedWrite(xid.incrementAndGet(), 0, true, buffer, 0, buffer.length));
   }
 
   @Test
   public void testRetransmit() throws Exception {
     int id = xid.incrementAndGet();
-    int length = mWriteOrderHandler.write(new MemoryBackedWrite("a file", id, 0, true, buffer, 0, buffer.length));
-    assertEquals(length, mWriteOrderHandler.write(new MemoryBackedWrite("a file", id, 0, true, buffer, 0, buffer.length)));
+    int length = mWriteOrderHandler.write(new MemoryBackedWrite(id, 0, true, buffer, 0, buffer.length));
+    assertEquals(length, mWriteOrderHandler.write(new MemoryBackedWrite(id, 0, true, buffer, 0, buffer.length)));
     Thread.sleep(100L);
   }
   @Test
@@ -142,7 +142,7 @@ public class TestWriteOrderHandler {
         @Override
         public void run() {
           try {
-            int count = writeOrderHandler.write(new MemoryBackedWrite("a file", xid.incrementAndGet(), offset, false, buffer, 0, buffer.length));
+            int count = writeOrderHandler.write(new MemoryBackedWrite(xid.incrementAndGet(), offset, false, buffer, 0, buffer.length));
             if(count != buffer.length) {
               errors.add(new Exception("Expected to write " + buffer.length + " but wrote " + count));
             }
@@ -166,7 +166,7 @@ public class TestWriteOrderHandler {
           }
           fail(msg);
         }
-        if(System.currentTimeMillis() - start > 20000) {
+        if((System.currentTimeMillis() - start) > 20000) {
           fail("Timed out waiting for writes: expectedPos = " + expectedPos + ", pos = " + mOutputStream.getPos());
         }
       }
@@ -174,7 +174,7 @@ public class TestWriteOrderHandler {
   }
   @Test
   public void testSyncIsCalledForSyncWrite() throws Exception {
-    mWriteOrderHandler.write(new MemoryBackedWrite("a file", xid.incrementAndGet(), 0, true, buffer, 0, buffer.length));
+    mWriteOrderHandler.write(new MemoryBackedWrite(xid.incrementAndGet(), 0, true, buffer, 0, buffer.length));
     Thread.sleep(100L);
     verify(mOutputStream, atLeastOnce()).sync();
   }

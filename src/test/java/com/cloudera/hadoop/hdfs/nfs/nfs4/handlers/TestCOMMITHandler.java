@@ -36,14 +36,14 @@ public class TestCOMMITHandler extends TestBaseHandler {
   private COMMITHandler handler;
   private COMMITRequest request;
   private WriteOrderHandler writeOrderHandler;
-  
+
   @Override
   @Before
   public void setup() throws Exception {
     super.setup();
     handler = new COMMITHandler();
     request = new COMMITRequest();
-    
+
     writeOrderHandler = mock(WriteOrderHandler.class);
     when(hdfsState.getWriteOrderHandler(currentFileHandle)).thenReturn(writeOrderHandler);
   }

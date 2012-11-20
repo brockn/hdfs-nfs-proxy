@@ -60,7 +60,7 @@ public class UserIDMapperSystem extends UserIDMapper {
   /*
    * This class has two caches, negative (errors) and positive. Because
    * Creating sub processes is expensive, we can this for some time.
-   * 
+   *
    * Good idea? Well, if you changed the UID of a user which has files
    * in HDFS as well, it would take a little time for this class to be
    * notified. Tradeoffs....
@@ -93,7 +93,7 @@ public class UserIDMapperSystem extends UserIDMapper {
   }
   /**
    * Times are in milliseconds
-   * 
+   *
    * @param negativeCacheTime
    * @param positiveCacheTime
    */
@@ -105,7 +105,7 @@ public class UserIDMapperSystem extends UserIDMapper {
       Map<String, Long> negativeCache, Map<String, IDCache<Integer>> postitveCache) throws Exception {
     Long timestamp = negativeCache.get(name);
     if(timestamp != null) {
-      if(System.currentTimeMillis() - timestamp < mNegativeCacheTime) {
+      if((System.currentTimeMillis() - timestamp) < mNegativeCacheTime) {
         return defaultID;
       } else {
         negativeCache.remove(name);
@@ -114,7 +114,7 @@ public class UserIDMapperSystem extends UserIDMapper {
 
     IDCache<Integer> cache = postitveCache.get(name);
     if(cache != null) {
-      if(System.currentTimeMillis() - cache.timestamp < mPositiveCacheTime) {
+      if((System.currentTimeMillis() - cache.timestamp) < mPositiveCacheTime) {
         return cache.id;
       } else {
         postitveCache.remove(name);
@@ -138,7 +138,7 @@ public class UserIDMapperSystem extends UserIDMapper {
       Map<Integer, Long> negativeCache, Map<Integer, IDCache<String>> postitveCache) throws Exception {
     Long timestamp = negativeCache.get(id);
     if(timestamp != null) {
-      if(System.currentTimeMillis() - timestamp < mNegativeCacheTime) {
+      if((System.currentTimeMillis() - timestamp) < mNegativeCacheTime) {
         return defaultID;
       } else {
         negativeCache.remove(id);
@@ -147,7 +147,7 @@ public class UserIDMapperSystem extends UserIDMapper {
 
     IDCache<String> cache = postitveCache.get(id);
     if(cache != null) {
-      if(System.currentTimeMillis() - cache.timestamp < mPositiveCacheTime) {
+      if((System.currentTimeMillis() - cache.timestamp) < mPositiveCacheTime) {
         return cache.id;
       } else {
         postitveCache.remove(id);

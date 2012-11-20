@@ -43,7 +43,7 @@ public class RENAMEHandler extends OperationRequestHandler<RENAMERequest, RENAME
     return new RENAMEResponse();
   }
 
-  @Override  
+  @Override
   boolean isWriteOnlyHandler() {
     return true;
   }
@@ -51,7 +51,7 @@ public class RENAMEHandler extends OperationRequestHandler<RENAMERequest, RENAME
   @Override
   protected RENAMEResponse doHandle(HDFSState hdfsState, Session session,
       RENAMERequest request) throws NFS4Exception, IOException {
-    if (session.getCurrentFileHandle() == null || session.getSavedFileHandle() == null) {
+    if ((session.getCurrentFileHandle() == null) || (session.getSavedFileHandle() == null)) {
       throw new NFS4Exception(NFS4ERR_NOFILEHANDLE);
     }
     if (Strings.isNullOrEmpty(request.getOldName()) || Strings.isNullOrEmpty(request.getNewName())) {
@@ -64,7 +64,7 @@ public class RENAMEHandler extends OperationRequestHandler<RENAMERequest, RENAME
     Path newPath = new Path(newParentPath, request.getNewName());
     if (!(fs.getFileStatus(oldParentPath).isDir() && fs.getFileStatus(newParentPath).isDir())) {
       throw new NFS4Exception(NFS4ERR_NOTDIR);
-    }     
+    }
     if (!hdfsState.fileExists(session.getFileSystem(), oldPath)) {
       throw new NFS4Exception(NFS4ERR_NOENT, "Path " + oldPath + " does not exist.");
     }

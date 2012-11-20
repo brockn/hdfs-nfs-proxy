@@ -28,7 +28,7 @@ public class Time implements MessageBase {
     this(0, 0);
   }
   public Time(long ms) {
-    this((ms / 1000L), (int)(ms % 1000L * 1000000L));
+    this((ms / 1000L), (int)((ms % 1000L) * 1000000L));
   }
   public Time(long seconds, int nanoSeconds) {
     this.mSeconds = seconds;

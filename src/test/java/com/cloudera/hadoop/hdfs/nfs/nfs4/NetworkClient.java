@@ -37,7 +37,6 @@ import com.cloudera.hadoop.hdfs.nfs.rpc.RPCBuffer;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCResponse;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCTestUtil;
-import com.cloudera.hadoop.hdfs.nfs.security.Credentials;
 
 public class NetworkClient extends BaseClient {
 
@@ -70,7 +69,7 @@ public class NetworkClient extends BaseClient {
     buffer.writeInt(Integer.MAX_VALUE);
     RPCRequest rpcRequest = RPCTestUtil.createRequest();
     LOGGER.info(rpcRequest.getXidAsHexString() + ": request = " + request);
-    rpcRequest.setCredentials((Credentials)TestUtils.newCredentials());
+    rpcRequest.setCredentials(TestUtils.newCredentials());
     rpcRequest.write(buffer);
     request.write(buffer);
     buffer.flip();
@@ -80,7 +79,7 @@ public class NetworkClient extends BaseClient {
     buffer = RPCBuffer.from(mInputStream);
     RPCResponse rpcResponse = new RPCResponse();
     rpcResponse.read(buffer);
-    
+
     LOGGER.info("Got response for " + rpcResponse.getXidAsHexString());
 
     assertEquals(rpcRequest.getXidAsHexString(), rpcResponse.getXidAsHexString());

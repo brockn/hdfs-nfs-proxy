@@ -103,7 +103,7 @@ public class TestBaseHandler {
 
     isdir = mock(FileStatus.class);
     when(isdir.isDir()).thenReturn(true);
-    
+
     CompoundRequest compoundRequest = new CompoundRequest();
     when(session.getCompoundRequest()).thenReturn(compoundRequest);
     compoundRequest.setCredentials(TestUtils.newCredentials());

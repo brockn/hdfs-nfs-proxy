@@ -37,10 +37,9 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import com.cloudera.hadoop.hdfs.nfs.PathUtils;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.FileBackedWrite;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.FileHandle;
-import com.cloudera.hadoop.hdfs.nfs.nfs4.MemoryBackedWrite;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.PendingWrite;
+import com.cloudera.hadoop.hdfs.nfs.nfs4.PendingWriteFactory;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.StateID;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.WriteOrderHandler;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.WRITERequest;
@@ -50,20 +49,20 @@ import com.google.common.io.Files;
 
 public class TestWRITEHandler extends TestBaseHandler {
 
+  private File baseDir;
   private WRITEHandler handler;
   private WRITERequest request;
   private Path file;
-  File fileBackedWrite;
-
+  private PendingWriteFactory pendingWriteFactory;
   private WriteOrderHandler writeOrderHandler;
   private HDFSOutputStream outputStream;
   private AtomicReference<PendingWrite> writeReference;
-  
+
   @Override
   @Before
   public void setup() throws Exception {
     super.setup();
-    fileBackedWrite = new File(Files.createTempDir(), "file");
+    baseDir = Files.createTempDir();
     handler = new WRITEHandler();
     request = new WRITERequest();
     writeReference = new AtomicReference<PendingWrite>();
@@ -72,23 +71,24 @@ public class TestWRITEHandler extends TestBaseHandler {
     file = new Path("dir", "file");
     writeOrderHandler = mock(WriteOrderHandler.class);
     outputStream = mock(HDFSOutputStream.class);
+    pendingWriteFactory = new PendingWriteFactory(new File[] { baseDir }, ONE_MB);
     when(hdfsState.getPath(currentFileHandle)).thenReturn(file);
-    when(hdfsState.openForWrite(any(FileSystem.class), any(StateID.class), any(FileHandle.class), 
+    when(hdfsState.openForWrite(any(FileSystem.class), any(StateID.class), any(FileHandle.class),
         any(Boolean.class))).thenReturn(outputStream);
     when(hdfsState.forWrite(any(StateID.class), any(FileHandle.class))).thenReturn(outputStream);
     when(hdfsState.getOrCreateWriteOrderHandler(currentFileHandle)).thenReturn(writeOrderHandler);
-    when(writeOrderHandler.getTemporaryFile(any(String.class))).thenReturn(fileBackedWrite);
+    when(writeOrderHandler.getPendingWriteFactory()).thenReturn(pendingWriteFactory);
     when(writeOrderHandler.write(any(PendingWrite.class))).then(new Answer<Integer>() {
       @Override
       public Integer answer(InvocationOnMock invocation) throws Throwable {
         writeReference.set((PendingWrite)invocation.getArguments()[0]);
-        return writeReference.get().getLength();
-      }      
+        return request.getLength();
+      }
     });
   }
   @After
   public void tearDown() throws IOException {
-    PathUtils.fullyDelete(fileBackedWrite.getParentFile());
+    PathUtils.fullyDelete(baseDir);
   }
   @Test
   public void testBasicWrite() throws Exception {
@@ -97,7 +97,6 @@ public class TestWRITEHandler extends TestBaseHandler {
     assertEquals(request.getLength(), response.getCount());
     PendingWrite write = writeReference.get();
     assertNotNull(write);
-    assertTrue(write instanceof MemoryBackedWrite);
   }
   @Test
   public void testFileBackedWrite() throws Exception {
@@ -107,9 +106,8 @@ public class TestWRITEHandler extends TestBaseHandler {
     assertEquals(request.getLength(), response.getCount());
     PendingWrite write = writeReference.get();
     assertNotNull(write);
-    assertTrue(write instanceof FileBackedWrite);
   }
-  
+
   @Test
   public void testSyncNotBlock() throws Exception {
     when(writeOrderHandler.writeWouldBlock(any(Long.class))).thenReturn(false);
@@ -121,7 +119,7 @@ public class TestWRITEHandler extends TestBaseHandler {
     assertNotNull(write);
     assertTrue(write.isSync());
   }
-  
+
   @Test
   public void testSyncRandomWrite() throws Exception {
     when(writeOrderHandler.writeWouldBlock(any(Long.class))).thenReturn(true);
@@ -134,7 +132,7 @@ public class TestWRITEHandler extends TestBaseHandler {
     assertNotNull(write);
     assertFalse(write.isSync());
   }
-  
+
   @Test
   public void testWouldBlock() throws Exception {
     assertFalse(writeOrderHandler.writeWouldBlock(Long.MAX_VALUE));

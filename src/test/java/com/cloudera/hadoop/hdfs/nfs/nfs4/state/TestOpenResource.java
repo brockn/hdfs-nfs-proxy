@@ -35,7 +35,7 @@ public class TestOpenResource {
   private StateID stateID;
   private Closeable closeable;
   private OpenResource<Closeable> res;
-  
+
   @Before
   public void setup() throws Exception {
     stateID = new StateID();
@@ -69,11 +69,11 @@ public class TestOpenResource {
     Assert.assertFalse(res.isConfirmed());
 
     Assert.assertEquals(stateID, res.getStateID());
-    
+
     int seq = stateID.getSeqID() + 1;
     res.setSequenceID(seq);
     Assert.assertEquals(seq, stateID.getSeqID());
-    
+
     long ts = res.getTimestamp() + 1;
     res.setTimestamp(ts);
     Assert.assertEquals(ts, res.getTimestamp());

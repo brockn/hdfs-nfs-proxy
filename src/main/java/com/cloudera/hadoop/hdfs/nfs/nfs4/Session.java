@@ -46,7 +46,7 @@ public class Session {
   private final String[] mGroups;
   private final FileSystem mFileSystem;
   private final AccessPrivilege mAccessPrivilege;
-  
+
   public Session(int xid, CompoundRequest compoundRequest, Configuration configuration,
       InetAddress clientAddress, String sessionID, String user, String[] groups, FileSystem fs,
       AccessPrivilege accessPrivilege)
@@ -108,8 +108,8 @@ public class Session {
     return "Session [mCurrentFileHandle=" + mCurrentFileHandle
         + ", mSavedFileHandle=" + mSavedFileHandle + ", mCompoundRequest="
         + mCompoundRequest + ", mClientAddress=" + mClientAddress
-        + ", mSessionID=" + mSessionID + ", mXID=" + getXIDAsHexString() 
+        + ", mSessionID=" + mSessionID + ", mXID=" + getXIDAsHexString()
         + ", mAccessPrivilege = " + mAccessPrivilege + "]";
   }
-  
+
 }

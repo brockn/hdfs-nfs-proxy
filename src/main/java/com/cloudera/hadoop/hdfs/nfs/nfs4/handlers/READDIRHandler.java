@@ -85,23 +85,23 @@ public class READDIRHandler extends OperationRequestHandler<READDIRRequest, READ
       cookie++;
     }
     long requestVerifer = Bytes.toLong(request.getCookieVerifer().getData());
-    if((requestVerifer != 0 && verifer != requestVerifer)) {
+    if(((requestVerifer != 0) && (verifer != requestVerifer))) {
       /*
-       * "If the server determines that the cookieverf is no longer valid 
+       * "If the server determines that the cookieverf is no longer valid
        * for the directory, the error NFS4ERR_NOT_SAME must be returned."
-       * 
+       *
        * However, the linux client ignores the cookieverf. However, the
        * server will notice the update mtime of the directory after
        * this error and re-read it. See this discussion on why the linux
        * client ignores the cookieverf:
        * http://www.spinics.net/lists/linux-nfs/msg33321.html
        */
-      throw new NFS4Exception(NFS4ERR_NOT_SAME, "verifer = " + verifer + 
+      throw new NFS4Exception(NFS4ERR_NOT_SAME, "verifer = " + verifer +
           ", requestVerifer = " + requestVerifer);
     }
-    if ((cookie != 0 && (cookie > (fileStati.length + NFS4_COOKIE_OFFSET) ||
-            cookie < NFS4_COOKIE_OFFSET))) {
-      throw new NFS4Exception(NFS4ERR_BAD_COOKIE, "fileStati.length = " + 
+    if (((cookie != 0) && ((cookie > (fileStati.length + NFS4_COOKIE_OFFSET)) ||
+            (cookie < NFS4_COOKIE_OFFSET)))) {
+      throw new NFS4Exception(NFS4ERR_BAD_COOKIE, "fileStati.length = " +
             fileStati.length + ", cookie = " + cookie);
     }
     // TODO improve this guess
@@ -134,7 +134,7 @@ public class READDIRHandler extends OperationRequestHandler<READDIRRequest, READ
       entry.write(buffer);
       buffer.flip();
       int entryLength = buffer.length();
-      if (messageSize + entryLength >= maxMessageSize) {
+      if ((messageSize + entryLength) >= maxMessageSize) {
         break;
       }
       messageSize += entryLength;

@@ -71,8 +71,8 @@ public class READHandler extends OperationRequestHandler<READRequest, READRespon
       byte[] data = new byte[size];
       int count = inputStream.read(data);
       long fileLength = -1;
-      if (count > 0 && count != data.length
-          && (request.getOffset() + count) < (fileLength = fs.getFileStatus(path).getLen())) {
+      if ((count > 0) && (count != data.length)
+          && ((request.getOffset() + count) < (fileLength = fs.getFileStatus(path).getLen()))) {
         LOGGER.info("Short read " + path
             + " at pos = " + request.getOffset()
             + ", wanted " + data.length + " and read " + count

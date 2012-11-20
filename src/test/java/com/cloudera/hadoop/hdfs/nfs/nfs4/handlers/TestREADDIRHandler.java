@@ -42,7 +42,7 @@ public class TestREADDIRHandler extends TestBaseHandler {
 
   private READDIRHandler handler;
   private READDIRRequest request;
-  
+
   private Path dir;
 
   @Override
@@ -51,7 +51,7 @@ public class TestREADDIRHandler extends TestBaseHandler {
     super.setup();
     handler = new READDIRHandler();
     request = new READDIRRequest();
-    dir = new Path("/somedir");    
+    dir = new Path("/somedir");
     request.setCookieVerifer(new OpaqueData8(0L));
     request.setCookie(0L);
     request.setMaxCount(1024);
@@ -129,7 +129,7 @@ public class TestREADDIRHandler extends TestBaseHandler {
       entries.addAll(directoryList.getDirEntries());
       request.setCookieVerifer(response.getCookieVerifer());
       for(DirectoryEntry entry : directoryList.getDirEntries()) {
-        request.setCookie(entry.getCookie());     
+        request.setCookie(entry.getCookie());
       }
     }
     assertTrue(numRequests > 1);

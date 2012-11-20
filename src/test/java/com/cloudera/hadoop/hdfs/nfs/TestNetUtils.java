@@ -45,15 +45,15 @@ public class TestNetUtils {
     domain = "apache.org";
     fqdn = hostname + "." + domain;
     ip = "10.0.0.1";
-    when(address.getCanonicalHostName()).thenReturn(fqdn);  
-    when(address.getHostName()).thenReturn(hostname);  
-    when(address.getHostAddress()).thenReturn(ip);  
+    when(address.getCanonicalHostName()).thenReturn(fqdn);
+    when(address.getHostName()).thenReturn(hostname);
+    when(address.getHostAddress()).thenReturn(ip);
   }
   @Test
   public void testGetDomain() {
     Assert.assertEquals(domain, NetUtils.getDomain(conf, address));
   }
-  
+
   @Test
   public void testGetDomainLocalhost() {
     when(address.isLoopbackAddress()).thenReturn(true);
@@ -62,17 +62,17 @@ public class TestNetUtils {
   @Test
   public void testGetDomainLocalhostUnresolable() {
     when(address.isLoopbackAddress()).thenReturn(true);
-    when(address.getHostName()).thenReturn(ip);  
+    when(address.getHostName()).thenReturn(ip);
     Assert.assertEquals("localdomain", NetUtils.getDomain(conf, address));
   }
   @Test
   public void testGetDomainNoDomain() {
-    when(address.getCanonicalHostName()).thenReturn(hostname); 
+    when(address.getCanonicalHostName()).thenReturn(hostname);
     Assert.assertEquals("unknown", NetUtils.getDomain(conf, address));
   }
   @Test
   public void testGetDomainOnlyDomain() {
-    when(address.getCanonicalHostName()).thenReturn("." + hostname); 
+    when(address.getCanonicalHostName()).thenReturn("." + hostname);
     Assert.assertEquals("unknown", NetUtils.getDomain(conf, address));
   }
   @Test

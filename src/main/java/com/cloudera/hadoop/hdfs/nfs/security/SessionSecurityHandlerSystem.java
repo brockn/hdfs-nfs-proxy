@@ -37,7 +37,7 @@ public class SessionSecurityHandlerSystem extends SessionSecurityHandler<Verifie
   @Override
   public String getUser() throws NFS4Exception {
     try {
-      return mUserIDMapper.getUserForUID(mCredentialsSystem.getUID(), ANONYMOUS_USERNAME); 
+      return mUserIDMapper.getUserForUID(mCredentialsSystem.getUID(), ANONYMOUS_USERNAME);
     } catch (Exception e) {
       throw new NFS4Exception(NFS4ERR_SERVERFAULT, e);
     }

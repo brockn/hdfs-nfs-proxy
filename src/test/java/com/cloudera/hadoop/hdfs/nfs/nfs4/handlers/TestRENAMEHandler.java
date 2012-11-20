@@ -39,7 +39,7 @@ public class TestRENAMEHandler extends TestBaseHandler {
   private RENAMERequest request;
   private final Path oldPath = new Path("/old", "a");
   private final Path newPath = new Path("/new", "b");
-  
+
   @Override
   @Before
   public void setup() throws Exception {
@@ -50,13 +50,13 @@ public class TestRENAMEHandler extends TestBaseHandler {
     request.setNewName(newPath.getName());
 
     when(session.getSavedFileHandle()).thenReturn(savedFileHandle);
-    
+
     when(hdfsState.getPath(currentFileHandle)).thenReturn(newPath.getParent());
     when(hdfsState.getPath(savedFileHandle)).thenReturn(oldPath.getParent());
-    
+
     when(fs.getFileStatus(newPath.getParent())).thenReturn(isdir);
     when(fs.getFileStatus(oldPath.getParent())).thenReturn(isdir);
-    
+
     when(hdfsState.fileExists(fs, oldPath)).thenReturn(true);
     when(hdfsState.fileExists(fs, newPath)).thenReturn(false);
 
@@ -80,7 +80,7 @@ public class TestRENAMEHandler extends TestBaseHandler {
     request.setNewName("");
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_INVAL, response.getStatus());
-    
+
     request.setNewName(null);
     response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_INVAL, response.getStatus());
@@ -90,7 +90,7 @@ public class TestRENAMEHandler extends TestBaseHandler {
     request.setOldName("");
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_INVAL, response.getStatus());
-    
+
     request.setOldName(null);
     response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_INVAL, response.getStatus());

@@ -37,7 +37,7 @@ public class FSInfo {
 
   private static boolean useDFSClient = false;
   private static final Map<Configuration, BlockingQueue<DFSClient>> clients = Maps.newHashMap();
-  
+
   static {
     try {
       FileSystem.class.getMethod("getStatus", (Class[])null);
@@ -57,9 +57,9 @@ public class FSInfo {
       throw new RuntimeException("The version of hadoop you have is not supported", ex);
     }
   }
-  
-   
-  private static DFSClient getDFSClient(Configuration conf) 
+
+
+  private static DFSClient getDFSClient(Configuration conf)
       throws IOException {
     BlockingQueue<DFSClient> clientQueue;
     synchronized(clients) {
@@ -67,7 +67,7 @@ public class FSInfo {
       if(clientQueue == null) {
         clientQueue = new ArrayBlockingQueue<DFSClient>(1);
         clients.put(conf, clientQueue);
-      }      
+      }
     }
     DFSClient client = clientQueue.poll();
     if(client == null) {
@@ -83,7 +83,7 @@ public class FSInfo {
       throw new RuntimeException(e);
     }
   }
-  private static void putDFSClient(Configuration conf, DFSClient client) 
+  private static void putDFSClient(Configuration conf, DFSClient client)
       throws IOException {
     BlockingQueue<DFSClient> clientQueue;
     synchronized(clients) {
@@ -91,7 +91,7 @@ public class FSInfo {
       if(clientQueue == null) {
         clientQueue = new ArrayBlockingQueue<DFSClient>(1);
         clients.put(conf, clientQueue);
-      }      
+      }
     }
     if(!clientQueue.offer(client)) {
       client.close();

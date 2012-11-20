@@ -31,7 +31,7 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 public class SpaceAvailableHandler extends AttributeHandler<SpaceAvailable> {
 
   private final FSInfo fsInfo = new FSInfo();
-  
+
   @Override
   public SpaceAvailable get(HDFSState hdfsState, Session session,
       FileSystem fs, FileStatus fileStatus) throws NFS4Exception, IOException {

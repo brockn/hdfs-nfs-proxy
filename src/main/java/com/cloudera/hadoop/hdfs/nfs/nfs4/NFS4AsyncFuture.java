@@ -22,7 +22,6 @@ import static com.cloudera.hadoop.hdfs.nfs.metrics.MetricConstants.Metric.*;
 import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
 
 import java.io.IOException;
-import java.lang.reflect.UndeclaredThrowableException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Iterator;
 import java.util.List;
@@ -38,18 +37,21 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.AbstractFuture;
 
-public class NFS4AsyncFuture extends AbstractFuture<CompoundResponse> 
+public class NFS4AsyncFuture extends AbstractFuture<CompoundResponse>
 implements AsyncFuture<CompoundResponse> {
   protected static final Logger LOGGER = Logger.getLogger(NFS4AsyncFuture.class);
+  private final OperationFactory operationFactory;
   private final HDFSState hdfsState;
   private final Session session;
   private final UserGroupInformation ugi;
   private final List<OperationRequest> requests;
   private final List<OperationResponse> responses;
-  
+
   private volatile int lastStatus;
-  
-  public NFS4AsyncFuture(HDFSState hdfsState, Session session, UserGroupInformation ugi) {
+
+  public NFS4AsyncFuture(OperationFactory operationFactory, HDFSState hdfsState,
+      Session session, UserGroupInformation ugi) {
+    this.operationFactory = operationFactory;
     this.hdfsState = hdfsState;
     this.session = session;
     this.ugi = ugi;
@@ -64,10 +66,11 @@ implements AsyncFuture<CompoundResponse> {
     for (Iterator<OperationRequest> iterator = requests.iterator(); iterator.hasNext();) {
       OperationRequest request = iterator.next();
       if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug(session.getSessionID() + " " + session.getXIDAsHexString() + 
+        LOGGER.debug(session.getSessionID() + " " + session.getXIDAsHexString() +
             " processing " + request + " for " + ugi);
       }
-      OperationRequestHandler<OperationRequest, OperationResponse> requestHandler = OperationFactory.getHandler(request.getID());
+      OperationRequestHandler<OperationRequest, OperationResponse> requestHandler =
+          operationFactory.getHandler(request.getID());
       if(requestHandler.wouldBlock(hdfsState, session, request)) {
         return AsyncFuture.Complete.RETRY;
       }
@@ -85,7 +88,7 @@ implements AsyncFuture<CompoundResponse> {
     }
     return AsyncFuture.Complete.COMPLETE;
   }
-  
+
   @Override
   public AsyncFuture.Complete makeProgress() {
     try {
@@ -94,7 +97,7 @@ implements AsyncFuture<CompoundResponse> {
         public AsyncFuture.Complete run() throws Exception {
           return doMakeProgress();
         }
-      });   
+      });
       if(result != AsyncFuture.Complete.COMPLETE) {
         return AsyncFuture.Complete.RETRY;
       }
@@ -104,29 +107,17 @@ implements AsyncFuture<CompoundResponse> {
       set(response);
       hdfsState.incrementMetric(NFS_COMPOUND_REQUESTS, 1);
     } catch (Exception ex) {
-      if (ex instanceof UndeclaredThrowableException && ex.getCause() != null) {
-        Throwable throwable = ex.getCause();
-        setException(throwable);
-        if (throwable instanceof Exception) {
-          ex = (Exception) throwable;
-        } else if (throwable instanceof Error) {
-          // something really bad happened
-          LOGGER.error(session.getSessionID() + " Unhandled Error", throwable);
-        } else {
-          LOGGER.error(session.getSessionID() + " Unhandled Throwable", throwable);
-        }
-      } else {
-        setException(ex);
-      }
-      LOGGER.warn(session.getSessionID() + " Unhandled Exception", ex);
+      LOGGER.error(session.getSessionID() + " unhandled Exception " +
+      		"for " + session.getClientAddress() + " for " +
+          session.getCompoundRequest().getOperations(), ex);
       CompoundResponse response = new CompoundResponse();
       if (ex instanceof NFS4Exception) {
         response.setStatus(((NFS4Exception) ex).getError());
+      } else  if ((ex.getCause() != null) && (ex.getCause() instanceof NFS4Exception)) {
+        response.setStatus(((NFS4Exception) ex.getCause()).getError());
       } else if (ex instanceof UnsupportedOperationException) {
         response.setStatus(NFS4ERR_NOTSUPP);
       } else {
-        LOGGER.warn(session.getSessionID() + " Setting SERVERFAULT for " + session.getClientAddress()
-            + " for " + session.getCompoundRequest().getOperations());
         response.setStatus(NFS4ERR_SERVERFAULT);
       }
       set(response);

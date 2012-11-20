@@ -32,7 +32,7 @@ public class HDFSOutputStream extends OutputStream {
   private final FileHandle fileHandle;
   private long position;
   private long lastOperation;
-  
+
   public HDFSOutputStream(FSDataOutputStream outputStream, String filename, FileHandle fileHandle) {
     super();
     this.outputStream = outputStream;

@@ -74,7 +74,7 @@ public class TestManual {
 
   private Configuration conf;
   private SecurityHandlerFactory securityHandlerFactory;
-  
+
   private NFS4Handler server;
 
   /**
@@ -96,7 +96,7 @@ public class TestManual {
     }
     return message;
   }
-  
+
   @Before
   public void setup() throws IOException {
     conf = TestUtils.setupConf();
@@ -109,7 +109,7 @@ public class TestManual {
     }, new SessionSecurityHandlerGSSFactory());
     server = new NFS4Handler(conf, securityHandlerFactory);
   }
-  
+
   @After
   public void teardown() throws IOException {
     server.shutdown();
@@ -126,7 +126,7 @@ public class TestManual {
     accesssRequest.setAccess(NFS_ACCESS_READ);
     operations.add(accesssRequest);
     request.setOperations(operations);
-    CompoundResponse response = server.process(new RPCRequest(), request, 
+    CompoundResponse response = server.process(new RPCRequest(), request,
         AccessPrivilege.READ_WRITE, LOCALHOST, "test").get();
     assertEquals(NFS4_OK, response.getStatus());
     assertTrue(response.getOperations().size() == 3);
@@ -157,7 +157,7 @@ public class TestManual {
     List<OperationRequest> operations = Lists.newArrayList();
     operations.add(new PUTROOTFHRequest());
     request.setOperations(operations);
-    CompoundResponse response = server.process(new RPCRequest(), request, 
+    CompoundResponse response = server.process(new RPCRequest(), request,
         AccessPrivilege.READ_WRITE, LOCALHOST, "test").get();
     assertTrue(response.getOperations().size() == 1);
     OperationResponse operationResponse = response.getOperations().get(0);
@@ -298,7 +298,7 @@ public class TestManual {
     getAttrRequest.setAttrs(requestAttrs);
     operations.add(getAttrRequest);
     compoundRequest.setOperations(operations);
-    CompoundResponse response = server.process(new RPCRequest(), compoundRequest, 
+    CompoundResponse response = server.process(new RPCRequest(), compoundRequest,
         AccessPrivilege.READ_WRITE, LOCALHOST, "test").get();
     assertEquals(NFS4_OK, response.getStatus());
 
@@ -352,7 +352,7 @@ public class TestManual {
     List<OperationRequest> operations = Lists.newArrayList();
     operations.add(setClientIDRequest);
     request.setOperations(operations);
-    CompoundResponse response = server.process(new RPCRequest(), request, 
+    CompoundResponse response = server.process(new RPCRequest(), request,
         AccessPrivilege.READ_WRITE, LOCALHOST, "test").get();
     assertEquals(NFS4_OK, response.getStatus());
     SETCLIENTIDResponse setClientIDResponse = (SETCLIENTIDResponse) response.getOperations().get(0);

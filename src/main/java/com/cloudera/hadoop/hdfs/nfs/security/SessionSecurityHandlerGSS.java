@@ -53,13 +53,13 @@ public class SessionSecurityHandlerGSS extends SessionSecurityHandler<VerifierGS
   private final String mSuperUser;
   private final SortedSet<Integer> mSequenceNumbers;
   private byte[] mToken;
-  
-  public SessionSecurityHandlerGSS(CredentialsGSS crentialsGSS, 
+
+  public SessionSecurityHandlerGSS(CredentialsGSS crentialsGSS,
       GSSManager manager, int contextID, String superUser) {
     mCredentialsGSS = crentialsGSS;
     mManager = manager;
     try {
-      mContext = mManager.createContext((GSSCredential) null);      
+      mContext = mManager.createContext((GSSCredential) null);
     } catch (GSSException e) {
       throw Throwables.propagate(e);
     }
@@ -71,9 +71,9 @@ public class SessionSecurityHandlerGSS extends SessionSecurityHandler<VerifierGS
   public byte[] getContextID() {
     return mContextID;
   }
-  
+
   @Override
-  public synchronized String getUser() 
+  public synchronized String getUser()
       throws NFS4Exception {
     try {
       if(mContext.isEstablished()) {
@@ -90,12 +90,12 @@ public class SessionSecurityHandlerGSS extends SessionSecurityHandler<VerifierGS
         }
         return user;
       }
-      return ANONYMOUS_USERNAME; 
+      return ANONYMOUS_USERNAME;
     } catch (Exception e) {
       throw new NFS4Exception(NFS4ERR_SERVERFAULT, e);
     }
   }
-  
+
   @Override
   public synchronized VerifierGSS getVerifer(RPCRequest request) throws RPCException {
     CredentialsGSS creds = (CredentialsGSS)request.getCredentials();
@@ -109,12 +109,12 @@ public class SessionSecurityHandlerGSS extends SessionSecurityHandler<VerifierGS
     }
     return verifier;
   }
-  public synchronized Pair<? extends Verifier, InitializeResponse> initializeContext(RPCRequest request, RPCBuffer buffer) 
+  public synchronized Pair<? extends Verifier, InitializeResponse> initializeContext(RPCRequest request, RPCBuffer buffer)
     throws RPCException {
     CredentialsGSS creds = (CredentialsGSS)request.getCredentials();
-    Preconditions.checkState(creds.getProcedure() == RPCSEC_GSS_INIT || 
-        creds.getProcedure() == RPCSEC_GSS_CONTINUE_INIT, "Proc is " + creds.getFlavor());
-    Preconditions.checkState(request.getVerifier() instanceof VerifierNone, 
+    Preconditions.checkState((creds.getProcedure() == RPCSEC_GSS_INIT) ||
+        (creds.getProcedure() == RPCSEC_GSS_CONTINUE_INIT), "Proc is " + creds.getFlavor());
+    Preconditions.checkState(request.getVerifier() instanceof VerifierNone,
         String.valueOf(request.getVerifier()));
     if(!mContext.isEstablished()) {
       int length = buffer.readUint32();
@@ -122,8 +122,8 @@ public class SessionSecurityHandlerGSS extends SessionSecurityHandler<VerifierGS
       try {
         mToken = mContext.acceptSecContext(mToken, 0, mToken.length);
       } catch (GSSException e) {
-        LOGGER.warn("Error on accept: major = " + e.getMajor() + 
-            ", minor = " + e.getMinor() + ", major = " + e.getMajorString() + 
+        LOGGER.warn("Error on accept: major = " + e.getMajor() +
+            ", minor = " + e.getMinor() + ", major = " + e.getMajorString() +
             ", minor = " + e.getMinorString(), e);
         InitializeResponse initResponse = new InitializeResponse();
         initResponse.setContextID(null);
@@ -136,8 +136,8 @@ public class SessionSecurityHandlerGSS extends SessionSecurityHandler<VerifierGS
       if(mToken == null) {
         mToken = new byte[0];
       }
-      String msg = "Initializing context: Reading token " + length + 
-          "Writing token " + mToken.length + ", isEstablished = " + 
+      String msg = "Initializing context: Reading token " + length +
+          "Writing token " + mToken.length + ", isEstablished = " +
           mContext.isEstablished();
       LOGGER.info(msg);
     }
@@ -145,7 +145,7 @@ public class SessionSecurityHandlerGSS extends SessionSecurityHandler<VerifierGS
       try {
         String msg = "Initialized context: source = " + mContext.getSrcName() +
             ", target " + mContext.getTargName();
-        LOGGER.info(msg);        
+        LOGGER.info(msg);
       } catch (GSSException e) {
         LOGGER.warn("Error trying to obtain source and target names" + e);
       }
@@ -161,7 +161,7 @@ public class SessionSecurityHandlerGSS extends SessionSecurityHandler<VerifierGS
     MessageProp msgProp = new MessageProp(false);
     VerifierGSS verifier = new VerifierGSS();
     try {
-      verifier.set(mContext.getMIC(sequenceNumber, 0, sequenceNumber.length, msgProp));      
+      verifier.set(mContext.getMIC(sequenceNumber, 0, sequenceNumber.length, msgProp));
     } catch (GSSException ex) {
       throw new RPCAuthException(RPC_AUTH_STATUS_GSS_CTXPROBLEM, ex);
     }
@@ -179,7 +179,7 @@ public class SessionSecurityHandlerGSS extends SessionSecurityHandler<VerifierGS
   public synchronized boolean shouldSilentlyDrop(RPCRequest request) {
     CredentialsGSS creds = (CredentialsGSS)request.getCredentials();
     Preconditions.checkState(creds.getProcedure() == RPCSEC_GSS_DATA);
-    Preconditions.checkState(creds.getService()== RPCSEC_GSS_SERVICE_PRIVACY, 
+    Preconditions.checkState(creds.getService()== RPCSEC_GSS_SERVICE_PRIVACY,
         String.valueOf(creds.getService()));
     /*
      * Request should be dropped if we have seen the request or if it
@@ -191,8 +191,8 @@ public class SessionSecurityHandlerGSS extends SessionSecurityHandler<VerifierGS
     } else if(mSequenceNumbers.contains(creds.getSequenceNum())) {
       LOGGER.info("Dropping " + request.getXidAsHexString() + " due to duplicate sequence numbers");
       return true;
-    } else if(!mSequenceNumbers.isEmpty() && 
-        creds.getSequenceNum() < mSequenceNumbers.first()) {
+    } else if(!mSequenceNumbers.isEmpty() &&
+        (creds.getSequenceNum() < mSequenceNumbers.first())) {
       LOGGER.info("Dropping " + request.getXidAsHexString() + " low sequence number");
       return true;
     }
@@ -204,7 +204,7 @@ public class SessionSecurityHandlerGSS extends SessionSecurityHandler<VerifierGS
   public synchronized RPCBuffer unwrap(RPCRequest request, byte[] data) throws RPCException {
     CredentialsGSS creds = (CredentialsGSS)request.getCredentials();
     Preconditions.checkState(creds.getProcedure() == RPCSEC_GSS_DATA);
-    Preconditions.checkState(creds.getService()== RPCSEC_GSS_SERVICE_PRIVACY, 
+    Preconditions.checkState(creds.getService()== RPCSEC_GSS_SERVICE_PRIVACY,
         String.valueOf(creds.getService()));
     if(LOGGER.isDebugEnabled()) {
       try {
@@ -214,7 +214,7 @@ public class SessionSecurityHandlerGSS extends SessionSecurityHandler<VerifierGS
       }
     }
     MessageProp msgProp = new MessageProp(true);
-    byte[] inToken = ((VerifierGSS)request.getVerifier()).get();      
+    byte[] inToken = ((VerifierGSS)request.getVerifier()).get();
     byte[] inMsg = request.getVerificationBuffer();
     try {
       mContext.verifyMIC(inToken, 0, inToken.length, inMsg, 0, inMsg.length, msgProp);
@@ -227,7 +227,7 @@ public class SessionSecurityHandlerGSS extends SessionSecurityHandler<VerifierGS
       int expected = buffer.readUint32();
       if(expected != creds.getSequenceNum()) {
         LOGGER.warn("Sequence numbers did not match " + expected + " "  + creds.getSequenceNum());
-        throw new RPCAcceptedException(RPC_ACCEPT_GARBAGE_ARGS);        
+        throw new RPCAcceptedException(RPC_ACCEPT_GARBAGE_ARGS);
       }
       mSequenceNumbers.add(expected);
       if(mSequenceNumbers.size() > RPCSEC_GSS_SEQUENCE_WINDOW) {
@@ -240,11 +240,11 @@ public class SessionSecurityHandlerGSS extends SessionSecurityHandler<VerifierGS
     }
   }
   @Override
-  public synchronized byte[] wrap(RPCRequest request, MessageBase response) 
+  public synchronized byte[] wrap(RPCRequest request, MessageBase response)
       throws RPCException {
     CredentialsGSS creds = (CredentialsGSS)request.getCredentials();
     Preconditions.checkState(creds.getProcedure() == RPCSEC_GSS_DATA);
-    Preconditions.checkState(creds.getService()== RPCSEC_GSS_SERVICE_PRIVACY, 
+    Preconditions.checkState(creds.getService()== RPCSEC_GSS_SERVICE_PRIVACY,
         String.valueOf(creds.getService()));
     RPCBuffer buffer = new RPCBuffer();
     buffer.writeUint32(creds.getSequenceNum());

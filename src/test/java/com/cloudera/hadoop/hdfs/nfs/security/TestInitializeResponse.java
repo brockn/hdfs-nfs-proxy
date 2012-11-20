@@ -38,7 +38,7 @@ public class TestInitializeResponse {
     response1.setMajorErrorCode(10);
     response1.setMinorErrorCode(20);
     response1.setToken(TOKEN);
-    
+
     RPCBuffer buffer = new RPCBuffer();
     response1.write(buffer);
     buffer.flip();

@@ -557,7 +557,7 @@ public abstract class BaseClient {
     message.write(buffer);
     buffer.flip();
     try {
-      MessageBase result = message.getClass().newInstance();      
+      MessageBase result = message.getClass().newInstance();
       result.read(buffer);
       if(result instanceof RequiresCredentials) {
         RequiresCredentials requiresCredentials = (RequiresCredentials)result;

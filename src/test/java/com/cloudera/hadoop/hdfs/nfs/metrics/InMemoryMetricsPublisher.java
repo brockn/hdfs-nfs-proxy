@@ -36,7 +36,7 @@ public class InMemoryMetricsPublisher implements MetricPublisher {
   public void publish(Map<String, Long> values) {
     for(String key : values.keySet()) {
       long current = mLatest.containsKey(key) ? mLatest.get(key) : 0L;
-      mLatest.put(key, current + values.get(key));      
+      mLatest.put(key, current + values.get(key));
     }
   }
 }

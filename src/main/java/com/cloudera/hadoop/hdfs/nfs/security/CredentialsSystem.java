@@ -101,7 +101,7 @@ public class CredentialsSystem extends AuthenticatedCredentials {
     buffer.writeString(mHostName);
     buffer.writeUint32(mUID);
     buffer.writeUint32(mGID);
-    if(mAuxGIDs == null || mAuxGIDs.length == 0) {
+    if((mAuxGIDs == null) || (mAuxGIDs.length == 0)) {
       buffer.writeUint32(0);
     } else {
       buffer.writeUint32(mAuxGIDs.length);

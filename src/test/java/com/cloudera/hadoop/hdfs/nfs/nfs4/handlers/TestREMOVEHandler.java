@@ -33,19 +33,19 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.requests.REMOVERequest;
 public class TestREMOVEHandler extends TestBaseHandler {
 
   private REMOVEHandler handler;
-  private REMOVERequest request;  
+  private REMOVERequest request;
   private final Path path = new Path("/", "a");
-  
+
   @Override
   @Before
   public void setup() throws Exception {
     super.setup();
     handler = new REMOVEHandler();
     request = new REMOVERequest();
-    
+
     request.setName(path.getName());
     when(hdfsState.fileExists(fs, path)).thenReturn(true);
-    
+
     when(hdfsState.delete(fs, path)).thenReturn(true);
 
   }
@@ -60,26 +60,26 @@ public class TestREMOVEHandler extends TestBaseHandler {
     request.setName("");
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_INVAL, response.getStatus());
-    
+
     request.setName(null);
     response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_INVAL, response.getStatus());
   }
-  
+
   @Test
   public void testNoCurrentFileHandle() throws Exception {
     when(session.getCurrentFileHandle()).thenReturn(null);
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_NOFILEHANDLE, response.getStatus());
   }
-  
+
   @Test
   public void testPathDoesNotExist() throws Exception {
     when(hdfsState.fileExists(fs, path)).thenReturn(false);
     Status response = handler.handle(hdfsState, session, request);
     assertEquals(NFS4ERR_NOENT, response.getStatus());
   }
-  
+
   @Test
   public void testSuccess() throws Exception {
     Status response = handler.handle(hdfsState, session, request);

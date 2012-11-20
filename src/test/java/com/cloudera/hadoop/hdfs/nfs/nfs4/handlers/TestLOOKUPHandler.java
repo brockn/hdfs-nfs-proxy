@@ -37,7 +37,7 @@ public class TestLOOKUPHandler extends TestBaseHandler {
   private final Path dir = new Path("dir");
   private final Path file = new Path(dir, "file");
 
-  
+
   @Override
   @Before
   public void setup() throws Exception {

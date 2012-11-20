@@ -29,14 +29,14 @@ public class InitializeResponse implements MessageBase {
   private int minorErrorCode;
   private int sequenceWindow;
   private byte[] token = EMPTY;
-  
+
   @Override
   public void read(RPCBuffer buffer) {
     contextID = buffer.readBytes();
     majorErrorCode = buffer.readInt();
     minorErrorCode = buffer.readInt();
     sequenceWindow = buffer.readUint32();
-    token = buffer.readBytes();    
+    token = buffer.readBytes();
   }
 
   @Override
@@ -49,7 +49,7 @@ public class InitializeResponse implements MessageBase {
     buffer.writeUint32(token.length);
     buffer.writeBytes(token);
   }
-  
+
   public byte[] getContextID() {
     return contextID;
   }

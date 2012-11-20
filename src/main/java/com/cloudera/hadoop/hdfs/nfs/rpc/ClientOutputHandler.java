@@ -105,7 +105,7 @@ class ClientOutputHandler extends Thread {
         buffer.write(mOutputStream);
       }
     } catch (IOException e) {
-      LOGGER.info("OutputStreamHandler for " + mClientName + 
+      LOGGER.info("OutputStreamHandler for " + mClientName +
           " got error on final write: " + e.getMessage());
     }
   }

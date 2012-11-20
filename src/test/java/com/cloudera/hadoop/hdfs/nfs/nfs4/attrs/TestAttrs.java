@@ -107,7 +107,7 @@ public class TestAttrs {
     SetAccessTime copy = new SetAccessTime();
     testAttribute(base, copy);
   }
-  
+
   @Test
   public void testSetAccessTimeServer() throws Exception {
     SetAccessTime base = new SetAccessTime();
@@ -115,7 +115,7 @@ public class TestAttrs {
     SetAccessTime copy = new SetAccessTime();
     testAttribute(base, copy);
   }
-  
+
   @Test
   public void testSize() throws Exception {
     Size base = new Size();

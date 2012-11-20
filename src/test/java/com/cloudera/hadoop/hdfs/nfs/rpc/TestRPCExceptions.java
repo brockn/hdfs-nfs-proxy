@@ -35,8 +35,8 @@ public class TestRPCExceptions {
     Assert.assertNotNull(ex.getMessage());
     Assert.assertSame(t, ex.getCause());
   }
-  
-  
+
+
   @Test
   public void testDenied() throws Exception {
     Throwable t = new Throwable();
@@ -46,7 +46,7 @@ public class TestRPCExceptions {
     Assert.assertNotNull(ex.getMessage());
     Assert.assertSame(t, ex.getCause());
   }
-  
+
   @Test
   public void testAuth() throws Exception {
     Throwable t = new Throwable();

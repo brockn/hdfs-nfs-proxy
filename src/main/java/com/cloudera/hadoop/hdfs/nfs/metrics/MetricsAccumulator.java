@@ -53,7 +53,7 @@ public class MetricsAccumulator {
   private final Map<String, AtomicLong> mAdhocMetrics = Maps.newHashMap();
   private final Map<Metric, AtomicLong> mMetrics = Maps.newHashMap();
   private final MetricsLoggerTask mMetricsPrinter;
-  
+
   private final MetricPublisher mMetricPublisher;
   public MetricsAccumulator(MetricPublisher metricPublisher, long sleepIntervalMS) {
     mMetricPublisher = metricPublisher;
@@ -96,7 +96,7 @@ public class MetricsAccumulator {
     }
     counter.addAndGet(count);
   }
-  
+
   /**
    * Increment an adoc metric
    */
@@ -109,7 +109,7 @@ public class MetricsAccumulator {
     }
     counter.addAndGet(count);
   }
-  
+
   private synchronized void publish() {
     Map<String, Long> values = Maps.newTreeMap();
     for (String key : mAdhocMetrics.keySet()) {
@@ -128,7 +128,7 @@ public class MetricsAccumulator {
     for(Metric key : metricsWithDivisors) {
       Long counter = values.get(key.name());
       Long divisor = values.get(key.getDivisor());
-      if(divisor != null && divisor > 0L) {
+      if((divisor != null) && (divisor > 0L)) {
         values.put(key.name() + "_AVG", (counter / divisor));
       }
     }

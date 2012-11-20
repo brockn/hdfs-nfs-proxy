@@ -50,7 +50,7 @@ public class NFS4Server extends Configured implements Tool {
   static{
     Configuration.addDefaultResource("hdfs-nfs-site.xml");
   }
-  
+
   public static void main(String[] args) throws Exception {
     Configuration conf = new Configuration();
     SecurityConfiguration secConf = new SecurityConfiguration(conf);
@@ -88,8 +88,8 @@ public class NFS4Server extends Configured implements Tool {
     mNFSServer.shutdown();
   }
   public void start(InetAddress address, int port) throws IOException {
-    SecurityHandlerFactory securityHandlerFactory = 
-        new SecurityHandlerFactory(getConf(), 
+    SecurityHandlerFactory securityHandlerFactory =
+        new SecurityHandlerFactory(getConf(),
             new Supplier<GSSManager>() {
       @Override
       public GSSManager get() {

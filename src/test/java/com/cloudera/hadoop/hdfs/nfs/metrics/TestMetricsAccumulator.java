@@ -30,7 +30,7 @@ public class TestMetricsAccumulator {
 
   private InMemoryMetricsPublisher publisher;
   private MetricsAccumulator accumulator;
-  
+
   @Before
   public void setup() {
     publisher = new InMemoryMetricsPublisher();

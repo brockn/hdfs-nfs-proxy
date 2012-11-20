@@ -53,7 +53,7 @@ public class TestCREATEHandler extends TestBaseHandler {
     parent = new Path("a");
     child = new Path(parent, "b");
     request.setName(child.getName());
-    
+
     when(hdfsState.getPath(currentFileHandle)).thenReturn(parent);
     when(fs.exists(parent)).thenReturn(true);
     when(fs.mkdirs(child)).thenReturn(true);

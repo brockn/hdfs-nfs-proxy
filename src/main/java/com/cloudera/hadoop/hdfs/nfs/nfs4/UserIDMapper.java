@@ -36,13 +36,15 @@ import org.apache.hadoop.util.Shell;
 public abstract class UserIDMapper implements Configurable {
 
   private Configuration mConfiguration;
+  @Override
   public void setConf(Configuration conf) {
     mConfiguration = conf;
   }
+  @Override
   public Configuration getConf() {
     return mConfiguration;
   }
-  
+
   protected static final Map<Class<?>, UserIDMapper> classUserIdMapperMap = new HashMap<Class<?>, UserIDMapper>();
   public static synchronized UserIDMapper get(Configuration conf) {
     boolean cache = conf.getBoolean(USER_ID_MAPPER_CACHE, true);
@@ -78,6 +80,6 @@ public abstract class UserIDMapper implements Configurable {
 
   public abstract int getUIDForUser(String user, int defaultUID) throws Exception;
 
-  
+
   public abstract String getUserForUID(int gid, String defaultUser) throws Exception;
 }

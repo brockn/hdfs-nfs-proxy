@@ -45,7 +45,7 @@ public class TestBitmap {
     copy(base, copy);
     equals(base.getMask(), copy.getMask());
   }
-  
+
   @Test
   public void testLarge() {
     // both first int and second int in bitmap
@@ -70,7 +70,7 @@ public class TestBitmap {
     copy(base, copy);
     equals(base.getMask(), copy.getMask());
   }
-  
+
   @Test
   public void testNotDivisableBy32() {
     // first int only
