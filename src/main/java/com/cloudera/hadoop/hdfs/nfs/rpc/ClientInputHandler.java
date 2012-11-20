@@ -142,7 +142,6 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
         mRetransmits = mRetransmits > 0 ? mRetransmits : 0;
 
         RPCBuffer requestBuffer = RPCBuffer.from(in);
-        LOGGER.info(mSessionID + " got request");
         mHandler.incrementMetric(CLIENT_BYTES_READ, requestBuffer.length());
         request = new RPCRequest();
         request.read(requestBuffer);

@@ -19,8 +19,6 @@
  */
 package com.cloudera.hadoop.hdfs.nfs.nfs4;
 
-import static com.cloudera.hadoop.hdfs.nfs.nfs4.Constants.*;
-
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
@@ -201,9 +199,6 @@ public class UserIDMapperSystem extends UserIDMapper {
   }
   @Override
   public String getUserForUID(int uid, String user) throws Exception {
-    if(uid == ROOT_USER_UID) {
-      return getConf().get(SUPER_USER, DEFAULT_SUPER_USER);
-    }
     return getCachedUserGroup("/etc/passwd", uid, user, mNegativeUSERCache, mPositiveUSERCache);
   }
 }

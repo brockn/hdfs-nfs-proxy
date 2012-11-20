@@ -415,7 +415,7 @@ public class Constants {
   public static final int DEFAULT_MAX_OPEN_FILE_INACTIVITY_PERIOD = 30;
 
   public static final String SUPER_USER = "hdfs.nfs.super.user";
-  public static final String DEFAULT_SUPER_USER = UserIDMapper.getCurrentUser();
+  public static final String DEFAULT_SUPER_USER = "hdfs";
 
 
 
