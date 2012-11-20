@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.security.PrivilegedExceptionAction;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
@@ -52,6 +53,7 @@ import com.cloudera.hadoop.hdfs.nfs.security.SessionSecurityHandler;
 import com.cloudera.hadoop.hdfs.nfs.security.Verifier;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -73,6 +75,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   private final HDFSStateBackgroundWorker mHDFSStateBackgroundWorker;
   private final File[] mTempDirs;
 
+  private final Set<UserGroupInformation> ugis = Sets.newHashSet();
 
   /**
    * Create a handler with the configuration passed into the constructor
@@ -178,6 +181,11 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       } else {
         ugi = UserGroupInformation.createRemoteUser(username);
       }
+      
+      synchronized (ugis) {
+        System.err.println(ugi + " => " + ugi.hashCode() + "exists already? " + ugis.add(ugi));        
+      }
+      
       final FileSystem fileSystem = ugi.doAs(new PrivilegedExceptionAction<FileSystem>() {
         @Override
         public FileSystem run() throws Exception {
