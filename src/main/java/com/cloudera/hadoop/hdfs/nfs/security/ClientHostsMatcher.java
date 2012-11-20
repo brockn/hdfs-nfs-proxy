@@ -81,6 +81,11 @@ public class ClientHostsMatcher {
     @Override
     public boolean isIncluded(String address, String hostname) {
       if(subnetInfo.isInRange(address)) {
+        if(LOGGER.isDebugEnabled()) {
+          LOGGER.debug("CIDRNMatcher low = " + subnetInfo.getLowAddress() +
+              ", high = " + subnetInfo.getHighAddress() +
+              ", allowing client '" + address + "', '" + hostname + "'");
+        }
         return true;
       }
       if(LOGGER.isDebugEnabled()) {
@@ -101,10 +106,14 @@ public class ClientHostsMatcher {
     public boolean isIncluded(String address, String hostname) {
       if(ipOrHost.equalsIgnoreCase(address) ||
           ipOrHost.equalsIgnoreCase(hostname)) {
+        if(LOGGER.isDebugEnabled()) {
+          LOGGER.debug("ExactMatcher '" + ipOrHost + "', allowing client " +
+              "'" + address + "', '" + hostname + "'");
+        }
         return true;
       }
       if(LOGGER.isDebugEnabled()) {
-        LOGGER.debug("ExactMatcher '" + ipOrHost + "', denying  client " +
+        LOGGER.debug("ExactMatcher '" + ipOrHost + "', denying client " +
         		"'" + address + "', '" + hostname + "'");
       }
       return false;
@@ -121,6 +130,10 @@ public class ClientHostsMatcher {
     public boolean isIncluded(String address, String hostname) {
       if(pattern.matcher(address).matches() ||
           pattern.matcher(hostname).matches()) {
+        if(LOGGER.isDebugEnabled()) {
+          LOGGER.debug("RegexMatcher '" + pattern.pattern() +
+              "', allowing client '" + address + "', '" + hostname + "'");
+        }
         return true;
       }
       if(LOGGER.isDebugEnabled()) {
