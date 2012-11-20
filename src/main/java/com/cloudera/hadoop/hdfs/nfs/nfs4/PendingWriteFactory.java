@@ -61,8 +61,7 @@ public class PendingWriteFactory {
       File file = ((FileBackedWrite)write).getFileBackedByteArray().getFile();
       boolean delete = false;
       synchronized (mTempFileReferenceCounts) {
-        long count = mTempFileReferenceCounts.get(file).decrementAndGet();
-        if(count <= 0) {
+        if(getCounter(file).decrementAndGet() <= 0) {
           mTempFileReferenceCounts.remove(file);
           delete = true;
         }
@@ -86,9 +85,7 @@ public class PendingWriteFactory {
     FileBackedByteArray result = FileBackedByteArray.create(fileHandle.file,
         fileHandle.randomAccessFile, buffer, start, length);
     mTempFileQueue.add(fileHandle);
-    synchronized (mTempFileReferenceCounts) {
-      mTempFileReferenceCounts.get(fileHandle.file).incrementAndGet();
-    }
+    getCounter(fileHandle.file).incrementAndGet();
     return result;
   }
   private FileHandle nextTempFile(long offset) throws IOException {
@@ -97,11 +94,19 @@ public class PendingWriteFactory {
     File file = new File(base, UUID.randomUUID().toString());
     RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
     FileHandle fileHandle = new FileHandle(file, randomAccessFile);
-    synchronized (mTempFileReferenceCounts) {
-      mTempFileReferenceCounts.put(fileHandle.file, new AtomicLong(0));
-    }
     return fileHandle;
   }
+  private AtomicLong getCounter(File file) {
+    synchronized (mTempFileReferenceCounts) {
+      AtomicLong counter = mTempFileReferenceCounts.get(file);
+      if(counter == null) {
+        counter = new AtomicLong(0L);
+        mTempFileReferenceCounts.put(file, counter);
+      }
+      return counter;
+    }
+  }
+  
   private static class FileHandle {
     private final File file;
     private final RandomAccessFile randomAccessFile;
