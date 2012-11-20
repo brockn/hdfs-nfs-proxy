@@ -24,7 +24,7 @@ Questions? email brock at cloudera dot com
 
 1. Add this entry to /etc/fstab
 
-        <proxy hostname>:/   /mnt/hdfs   nfs4       rw,intr,timeo=600,port=2501      0 0
+        <proxy hostname>:/   /mnt/hdfs   nfs4       rw,intr,timeo=600,port=2051      0 0
 
 1. Build binary:
 
