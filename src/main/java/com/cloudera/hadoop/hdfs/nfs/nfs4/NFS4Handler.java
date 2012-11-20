@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.security.PrivilegedExceptionAction;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
@@ -52,8 +52,11 @@ import com.cloudera.hadoop.hdfs.nfs.security.SecurityHandlerFactory;
 import com.cloudera.hadoop.hdfs.nfs.security.SessionSecurityHandler;
 import com.cloudera.hadoop.hdfs.nfs.security.Verifier;
 import com.google.common.base.Preconditions;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -64,7 +67,6 @@ import com.google.common.util.concurrent.ListenableFuture;
  */
 public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   protected static final Logger LOGGER = Logger.getLogger(NFS4Handler.class);
-  private final Object fileSystemCreationLock = new Object();
   private final Configuration mConfiguration;
   private final SecurityHandlerFactory mSecurityHandlerFactory;
   private final OperationFactory mOperationFactory;
@@ -75,8 +77,21 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   private final HDFSStateBackgroundWorker mHDFSStateBackgroundWorker;
   private final File[] mTempDirs;
 
-  private final Set<UserGroupInformation> ugis = Sets.newHashSet();
-
+  private final Cache<String, UserGroupInformation> cache = CacheBuilder.newBuilder().
+      expireAfterAccess(30, TimeUnit.MINUTES).removalListener(new RemovalListener<String, UserGroupInformation>() {
+        @Override
+        public void onRemoval(RemovalNotification<String, UserGroupInformation> notification) {
+          String key = notification.getKey();
+          UserGroupInformation ugi = notification.getValue();
+          try {
+            FileSystem.closeAllForUGI(ugi);
+          } catch (IOException e) {
+            LOGGER.warn("Error closing FileSystem for key = " + 
+                key + ", ugi = " + ugi, e);
+          }
+        }        
+      }).build();
+  
   /**
    * Create a handler with the configuration passed into the constructor
    *
@@ -174,24 +189,22 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       SessionSecurityHandler<? extends Verifier> securityHandler =
           mSecurityHandlerFactory.getSecurityHandler(creds);
       final String username = securityHandler.getUser();
-      UserGroupInformation ugi;
-      if (UserGroupInformation.isSecurityEnabled()) {
-        ugi = UserGroupInformation.createProxyUser(username,
-            UserGroupInformation.getLoginUser());
-      } else {
-        ugi = UserGroupInformation.createRemoteUser(username);
-      }
-      
-      synchronized (ugis) {
-        System.err.println(ugi + " => " + ugi.hashCode() + "exists already? " + ugis.add(ugi));        
-      }
-      
-      final FileSystem fileSystem = ugi.doAs(new PrivilegedExceptionAction<FileSystem>() {
+      String key = String.format("%s@%s", username, clientAddress.getHostName());
+      UserGroupInformation ugi = cache.get(key, new Callable<UserGroupInformation>() {
+        @Override
+        public UserGroupInformation call() throws Exception {
+          if (UserGroupInformation.isSecurityEnabled()) {
+            return UserGroupInformation.createProxyUser(username,
+                UserGroupInformation.getLoginUser());
+          } else {
+            return UserGroupInformation.createRemoteUser(username);
+          }
+        }
+      });
+      FileSystem fileSystem = ugi.doAs(new PrivilegedExceptionAction<FileSystem>() {
         @Override
         public FileSystem run() throws Exception {
-          synchronized (fileSystemCreationLock) {
-            return FileSystem.get(mConfiguration);            
-          }
+          return FileSystem.get(mConfiguration);
         }
       });
       Session session = new Session(rpcRequest.getXid(), compoundRequest,
