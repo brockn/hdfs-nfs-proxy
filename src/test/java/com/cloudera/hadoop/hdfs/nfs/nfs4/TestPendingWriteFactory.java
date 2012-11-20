@@ -72,7 +72,7 @@ public class TestPendingWriteFactory {
     pendingWriteFactory.destroy(fileWrite1);
     Assert.assertTrue(file.isFile()); // file should have refcount = 1
     pendingWriteFactory.destroy(fileWrite2);
-    Assert.assertFalse(file.isFile()); // file should have refcount = 0
+    Assert.assertTrue(file.isFile()); // file should have refcount = 0
     pendingWriteFactory.destroy(memoryWrite);
   }
 

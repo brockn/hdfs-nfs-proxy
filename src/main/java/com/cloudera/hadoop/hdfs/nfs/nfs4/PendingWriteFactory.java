@@ -30,10 +30,13 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.log4j.Logger;
+
 import com.cloudera.hadoop.hdfs.nfs.PathUtils;
 import com.google.common.collect.Maps;
 
 public class PendingWriteFactory {
+  private static final Logger LOGGER = Logger.getLogger(PendingWriteFactory.class);
 
   private final File[] mTempDirs;
   private final long mMaxFileSize;
@@ -59,14 +62,9 @@ public class PendingWriteFactory {
   public void destroy(PendingWrite write) {
     if(write instanceof FileBackedWrite) {
       File file = ((FileBackedWrite)write).getFileBackedByteArray().getFile();
-      boolean delete = false;
-      synchronized (mTempFileReferenceCounts) {
-        if(getCounter(file).decrementAndGet() <= 0) {
-          mTempFileReferenceCounts.remove(file);
-          delete = true;
-        }
-      }
-      if(delete) {
+      long counter = getCounter(file).decrementAndGet();
+      if(counter <= 0 && file.length() > mMaxFileSize) {
+        LOGGER.info("Deleting " + file + " of size " + file.length());
         PathUtils.fullyDelete(file);
       }
     }
@@ -79,6 +77,7 @@ public class PendingWriteFactory {
       fileHandle = nextTempFile(offset);
     }
     if(fileHandle.file.length() > mMaxFileSize) {
+      LOGGER.info("Rolling " + fileHandle.file + " of size " + fileHandle.file.length());
       fileHandle.randomAccessFile.close();
       fileHandle = nextTempFile(offset);
     }
@@ -92,6 +91,7 @@ public class PendingWriteFactory {
     int fileIndex = ((int)(offset) & Integer.MAX_VALUE) % mTempDirs.length;
     File base = mTempDirs[fileIndex];
     File file = new File(base, UUID.randomUUID().toString());
+    LOGGER.info("Creating " + file);
     RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
     FileHandle fileHandle = new FileHandle(file, randomAccessFile);
     return fileHandle;
