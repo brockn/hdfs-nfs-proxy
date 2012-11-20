@@ -20,7 +20,7 @@ then
   exit 1
 fi
 HADOOP_CLASSPATH=
-if which hadoop 2>/dev/null
+if which hadoop 1>/dev/null 2>/dev/null
 then
   HADOOP_CLASSPATH=$(hadoop classpath)
 else
