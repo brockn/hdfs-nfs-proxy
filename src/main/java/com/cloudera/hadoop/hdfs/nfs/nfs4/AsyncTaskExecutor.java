@@ -33,6 +33,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 @SuppressWarnings({"rawtypes","unchecked"})
 public class AsyncTaskExecutor<T> {
+  protected static final Logger LOGGER = Logger.getLogger(AsyncTaskExecutor.class);
+  private static final AtomicInteger instanceCounter = new AtomicInteger(0);
+
+  private final BlockingQueue queue;
+  private final ThreadPoolExecutor executor;
+
   @VisibleForTesting
   static class DelayedRunnable extends FutureTask<Void> implements Delayed {
     private final long delayMS;
@@ -108,12 +114,6 @@ public class AsyncTaskExecutor<T> {
       }
     }
   }
-  protected static final Logger LOGGER = Logger.getLogger(AsyncTaskExecutor.class);
-  private static final AtomicInteger instanceCounter = new AtomicInteger(0);
-
-  private final BlockingQueue queue;
-
-  private final ThreadPoolExecutor executor;
   public AsyncTaskExecutor() {
     queue = new DelayQueue();
     /*
