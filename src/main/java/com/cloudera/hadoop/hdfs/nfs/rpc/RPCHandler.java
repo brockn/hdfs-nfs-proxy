@@ -35,6 +35,8 @@ public abstract class RPCHandler<REQUEST extends MessageBase, RESPONSE extends M
 
   public abstract void incrementMetric(Metric metric, long count);
 
+  public abstract void beforeProcess(final RPCRequest rpcRequest) throws RPCException;
+  
   public abstract ListenableFuture<RESPONSE> process(final RPCRequest rpcRequest, final REQUEST request,
       AccessPrivilege accessPrivilege, final InetAddress clientAddress, final String sessionID);
 

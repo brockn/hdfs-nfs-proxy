@@ -138,6 +138,7 @@ public class Constants {
 
   public static final int NFS_PROG = 100003;
   public static final int NFS_VERSION = 4;
+  public static final int NFS_MINOR_VERSION = 0;
 
 
   public final static int NFS_PROC_NULL = 0;

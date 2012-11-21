@@ -96,32 +96,6 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
     mResponseCache = mRPCServer.getResponseCache();
   }
 
-  private void execute(final SessionSecurityHandler<? extends Verifier> securityHandler,
-      AccessPrivilege accessPrivilege, final RPCRequest request, RPCBuffer requestBuffer) throws Exception {
-    if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug(mSessionID + " starting xid " + request.getXidAsHexString());
-    }
-    REQUEST applicationRequest = mHandler.createRequest();
-    applicationRequest.read(requestBuffer);
-    if (applicationRequest instanceof RequiresCredentials) {
-      RequiresCredentials requiresCredentials = (RequiresCredentials) applicationRequest;
-      // check to ensure it's auth creds is above
-      requiresCredentials.setCredentials((AuthenticatedCredentials) request.getCredentials());
-    }
-    final ListenableFuture<RESPONSE> future = mHandler.process(request, applicationRequest,
-        accessPrivilege, mClient.getInetAddress(), mSessionID);
-    future.addListener(new Runnable() {
-      @Override
-      public void run() {
-        try {
-          writeApplicationResponse(securityHandler, request, future.get());
-        } catch (Throwable t) {
-          LOGGER.error("Unexpected error processing request", t);
-        }
-      }
-    }, MoreExecutors.sameThreadExecutor());
-  }
-
   @Override
   public void run() {
     InputStream in = null;
@@ -228,6 +202,33 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
       clients.remove(mClient);
     }
   }
+  private void execute(final SessionSecurityHandler<? extends Verifier> securityHandler,
+      AccessPrivilege accessPrivilege, final RPCRequest request, RPCBuffer requestBuffer) 
+          throws RPCException {
+    if (LOGGER.isDebugEnabled()) {
+      LOGGER.debug(mSessionID + " starting xid " + request.getXidAsHexString());
+    }
+    mHandler.beforeProcess(request);
+    REQUEST applicationRequest = mHandler.createRequest();
+    applicationRequest.read(requestBuffer);
+    if (applicationRequest instanceof RequiresCredentials) {
+      RequiresCredentials requiresCredentials = (RequiresCredentials) applicationRequest;
+      // check to ensure it's auth creds is above
+      requiresCredentials.setCredentials((AuthenticatedCredentials) request.getCredentials());
+    }
+    final ListenableFuture<RESPONSE> future = mHandler.process(request, applicationRequest,
+        accessPrivilege, mClient.getInetAddress(), mSessionID);
+    future.addListener(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          writeApplicationResponse(securityHandler, request, future.get());
+        } catch (Throwable t) {
+          LOGGER.error("Unexpected error processing request", t);
+        }
+      }
+    }, MoreExecutors.sameThreadExecutor());
+  }
   private void handleRPCException(RPCRequest request, RPCException e) {
     LOGGER.error(mSessionID + " RPCException for client " + mClientName, e);
     if(request != null) {
@@ -247,7 +248,7 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
   public void shutdown() {
     this.interrupt();
   }
-  protected void writeApplicationResponse(SessionSecurityHandler<? extends Verifier> securityHandler,
+  private void writeApplicationResponse(SessionSecurityHandler<? extends Verifier> securityHandler,
       RPCRequest request, MessageBase applicationResponse) {
     mResponseCache.put(request.getXid(), applicationResponse);
     LOGGER.info(mSessionID + " " + request.getXidAsHexString() + " Writing " +
@@ -286,7 +287,7 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
       }
     }
   }
-  protected void writeRPCBuffer(RPCBuffer responseBuffer) {
+  private void writeRPCBuffer(RPCBuffer responseBuffer) {
     while(!mOutputBufferQueue.offer(responseBuffer)) {
       try {
         TimeUnit.SECONDS.sleep(1L);
@@ -297,11 +298,11 @@ class ClientInputHandler<REQUEST extends MessageBase, RESPONSE extends MessageBa
     mHandler.incrementMetric(CLIENT_BYTES_WROTE, responseBuffer.length());
   }
 
-  protected void writeRPCResponse(RPCResponse response) {
+  private void writeRPCResponse(RPCResponse response) {
     writeRPCResponse(response, null);
   }
 
-  protected void writeRPCResponse(RPCResponse response, RPCBuffer payload) {
+  private void writeRPCResponse(RPCResponse response, RPCBuffer payload) {
     if(LOGGER.isDebugEnabled()) {
       LOGGER.debug(mSessionID + " Writing bare RPC Response to "  + mClientName);
     }

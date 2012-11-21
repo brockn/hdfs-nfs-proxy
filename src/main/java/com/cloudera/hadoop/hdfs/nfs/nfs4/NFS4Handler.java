@@ -44,6 +44,8 @@ import com.cloudera.hadoop.hdfs.nfs.nfs4.state.FileHandleINodeMap;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSFile;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSState;
 import com.cloudera.hadoop.hdfs.nfs.nfs4.state.HDFSStateBackgroundWorker;
+import com.cloudera.hadoop.hdfs.nfs.rpc.RPCAcceptedException;
+import com.cloudera.hadoop.hdfs.nfs.rpc.RPCException;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCHandler;
 import com.cloudera.hadoop.hdfs.nfs.rpc.RPCRequest;
 import com.cloudera.hadoop.hdfs.nfs.security.AccessPrivilege;
@@ -77,11 +79,11 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   private final HDFSStateBackgroundWorker mHDFSStateBackgroundWorker;
   private final File[] mTempDirs;
 
-  private final Cache<String, UserGroupInformation> cache = CacheBuilder.newBuilder().
-      expireAfterAccess(30, TimeUnit.MINUTES).removalListener(new RemovalListener<String, UserGroupInformation>() {
+  private final Cache<Key, UserGroupInformation> cache = CacheBuilder.newBuilder().
+      expireAfterAccess(30, TimeUnit.MINUTES).removalListener(new RemovalListener<Key, UserGroupInformation>() {
         @Override
-        public void onRemoval(RemovalNotification<String, UserGroupInformation> notification) {
-          String key = notification.getKey();
+        public void onRemoval(RemovalNotification<Key, UserGroupInformation> notification) {
+          Key key = notification.getKey();
           UserGroupInformation ugi = notification.getValue();
           try {
             FileSystem.closeAllForUGI(ugi);
@@ -89,9 +91,9 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
             LOGGER.warn("Error closing FileSystem for key = " + 
                 key + ", ugi = " + ugi, e);
           }
-        }        
+        }
       }).build();
-  
+    
   /**
    * Create a handler with the configuration passed into the constructor
    *
@@ -171,6 +173,20 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   public void incrementMetric(Metric metric, long count) {
     mMetrics.incrementMetric(metric, count);
   }
+  
+  @Override
+  public void beforeProcess(final RPCRequest rpcRequest) throws RPCException {
+    if(rpcRequest.getProgram() != NFS_PROG) {
+      throw new RPCAcceptedException(RPC_ACCEPT_PROG_UNAVAIL);
+    }
+    if(rpcRequest.getProgramVersion() != NFS_VERSION) {
+      throw new RPCAcceptedException(RPC_ACCEPT_PROG_MISMATCH);
+    }
+    if(!(rpcRequest.getProcedure() == NFS_PROC_NULL || 
+        rpcRequest.getProcedure() == NFS_PROC_COMPOUND)) {
+      throw new RPCAcceptedException(RPC_ACCEPT_PROC_UNAVAIL);
+    }
+  }
 
   /**
    * Process a CompoundRequest and return a CompoundResponse.
@@ -179,6 +195,11 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
   public ListenableFuture<CompoundResponse> process(final RPCRequest rpcRequest,
       final CompoundRequest compoundRequest, AccessPrivilege accessPrivilege,
       final InetAddress clientAddress, final String sessionID) {
+    if(compoundRequest.getMinorVersion() != NFS_MINOR_VERSION) {
+      CompoundResponse response = new CompoundResponse();
+      response.setStatus(NFS4ERR_MINOR_VERS_MISMATCH);
+      return Futures.immediateFuture(response);
+    }
     AuthenticatedCredentials creds = compoundRequest.getCredentials();
     if (creds == null) {
       CompoundResponse response = new CompoundResponse();
@@ -189,7 +210,7 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       SessionSecurityHandler<? extends Verifier> securityHandler =
           mSecurityHandlerFactory.getSecurityHandler(creds);
       final String username = securityHandler.getUser();
-      String key = String.format("%s@%s", username, clientAddress.getHostName());
+      Key key = new Key(username, clientAddress.getHostName());
       UserGroupInformation ugi = cache.get(key, new Callable<UserGroupInformation>() {
         @Override
         public UserGroupInformation call() throws Exception {
@@ -234,4 +255,48 @@ public class NFS4Handler extends RPCHandler<CompoundRequest, CompoundResponse> {
       PathUtils.fullyDelete(tempDir);
     }
   }
+  
+  private static class Key {
+    final String username;
+    final String hostname;
+    public Key(String username, String hostname) {
+      super();
+      this.username = username;
+      this.hostname = hostname;
+    }
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + ((hostname == null) ? 0 : hostname.hashCode());
+      result = prime * result + ((username == null) ? 0 : username.hashCode());
+      return result;
+    }
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj)
+        return true;
+      if (obj == null)
+        return false;
+      if (getClass() != obj.getClass())
+        return false;
+      Key other = (Key) obj;
+      if (hostname == null) {
+        if (other.hostname != null)
+          return false;
+      } else if (!hostname.equals(other.hostname))
+        return false;
+      if (username == null) {
+        if (other.username != null)
+          return false;
+      } else if (!username.equals(other.username))
+        return false;
+      return true;
+    }
+    @Override
+    public String toString() {
+      return "Key [username=" + username + ", hostname=" + hostname + "]";
+    }
+  }
+
 }
